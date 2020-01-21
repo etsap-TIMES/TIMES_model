@@ -36,8 +36,17 @@ When all markets are in equilibrium the total economic surplus is maximized (i.e
 The main output TIMES are energy system configurations, which meet the end-use energy service demands at least cost while also adhering to the various constraints (e.g 80% emissions reduction, 40% renewable electricity penetration). 
 In the first instance, TIMES model addresses the question: is the target feasible? If an energy system is possible, it can then be examined, at what cost? The model outputs are energy flows, energy commodity prices, GHG emissions, capacities of technologies, energy costs and marginal emissions abatement costs. 
 
+## Documentation
+
+Detailed documentation is available on https://iea-etsap.org/index.php/documentation
+i)   Concept and Theory https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-I_July-2016.pdf
+ii)  Comprehensive Reference Manual https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-II_July-2016.pdf
+iii) Operation of TIMES code https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-III_July-2016.pdf
+
 ## Community
 
 Information on the activities of ETSAP are available on ETSAP's website: https://iea-etsap.org/
-If you are interested in receiving information and newsletters on ETSAP's tool you can register on ETSAP website https://iea-etsap.org/index.php/etsap-tools/acquiring-etsap-tools
+
+If you are interested in receiving information and newsletters on ETSAP's tool you can register on https://iea-etsap.org/index.php/etsap-tools/acquiring-etsap-tools
+
 A forum for TIMES users is available http://iea-etsap.org/forum/index.php 
