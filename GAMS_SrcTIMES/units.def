@@ -1,0 +1,19 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* UNITS.DEF has complete list of unit types                                   *
+*=============================================================================*
+
+* units by group
+  SET UNITS             'Units'            / Bv-km, Bv-kma, GW, kt, Mt, Mta, PJ, PJa, t, uvol, CUR, PKM_MRD, VKM_MRD,
+                                             nocarsmrd,TJ /
+      ALIAS(UNITS,U);
+  SET UNITS_COM(UNITS)  'Commodity Units'  / Bv-km, kt, Mt, PJ, t, uvol, PKM_MRD, VKM_MRD, TJ /
+  SET UNITS_CAP(UNITS)  'Capacity Units'   / PJA, GW, Mta, Bv-kma, nocarsmrd /
+  SET UNITS_ACT(UNITS)  'Activity Units'   / PJ, PKM_MRD, VKM_MRD, TJ /
+  SET UNITS_MONY(UNITS) 'Monatary Units'   / CUR /
+
+* unit mapping table(s)
+

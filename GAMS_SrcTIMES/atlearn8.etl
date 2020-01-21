@@ -1,0 +1,44 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* File      : ATLEARN8.ETL
+* Language  : GAMS
+* Programmer: Ad Seebregts, adaped by Gary Goldstein for TIMES
+* Origin    : 04-02-00
+* Last edit : 07-27-01
+*=============================================================================*
+* loop over TEG, PRC for key and clusters
+*      INV CAP
+*      CAM : maximum capacity based on growth factors
+*      GRP : growth in capacity in one period (CAP(TP)/CAP(TP-1))
+*      GRA : average annual growth in NYEARS of period TP
+*      GRF : growth factor (input): TID and time-dependent
+
+LOOP((TEG,REG)$SEG(REG,TEG),
+*    Investment levels
+     PUT /;
+*    first output for key, next its cluster PRC's
+$BATINCLUDE ATLEARN9.ETL k VAR_NCAP TEG 0 INV
+     LOOP(PRC$CLUSTER(REG,TEG,PRC),
+$BATINCLUDE ATLEARN9.ETL c VAR_NCAP PRC 0 INV
+         );
+
+*    Capacity levels and growth factors (input and resulting)
+     PUT /;
+$BATINCLUDE ATLEARN9.ETL k VAR_CAP TEG 0 CAP
+$BATINCLUDE ATLEARN9.ETL k VAR_CAP TEG 1 CAM
+$BATINCLUDE ATLEARN9.ETL k VAR_CAP TEG 2 GRP
+$BATINCLUDE ATLEARN9.ETL k VAR_CAP TEG 3 GRA
+$BATINCLUDE ATLEARN9.ETL k VAR_CAP TEG 4 GRF
+
+     LOOP(PRC$CLUSTER(REG,TEG,PRC),
+$BATINCLUDE ATLEARN9.ETL c VAR_CAP PRC 0 CAP
+$BATINCLUDE ATLEARN9.ETL c VAR_CAP PRC 1 CAM
+$BATINCLUDE ATLEARN9.ETL c VAR_CAP PRC 2 GRP
+$BATINCLUDE ATLEARN9.ETL c VAR_CAP PRC 3 GRA
+$BATINCLUDE ATLEARN9.ETL c VAR_CAP PRC 4 GRF
+         );
+
+     );

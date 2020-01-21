@@ -1,0 +1,82 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==============================================================================
+* TIMES MACRO/MSA DDF Writing utility
+*==============================================================================
+
+FILE DDFFILE /%1.DD/;
+PUT DDFFILE;
+* make 7 decimals points and allow for wider page
+DDFFILE.NW=15;DDFFILE.ND=7;DDFFILE.PW=255;
+
+* Output updated value of TM_EC0
+PUT 'PARAMETER  TM_EC0(R) /' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_EC0(R) /);
+PUT '/;' /;
+IF(CARD(TM_AMP),PUT 'PARAMETER  TM_AMP(R,ALLYEAR) /' /;
+LOOP((MR(R),T)$TM_AMP(R,T), PUT @1 R.TL:0,".":0,T.TL:0, TM_AMP(R,T) /);
+PUT '/;' /);
+* Output updated value of TM_GROWV
+PUT "PARAMETER TM_GROWV(R,ALLYEAR) /" /;
+LOOP((MR(R),T)$TM_GROWV(R,T), PUT R.TL:0,".":0, T.TL:0, TM_GROWV(R,T) /);
+PUT '/;' /;
+* Output calibrated Baseline GDP GROWth
+PUT "PARAMETER TM_GR(R,ALLYEAR) /" /;
+LOOP((MR(R),T)$PAR_GRGDP(R,T), PUT R.TL:0,".":0, T.TL:0, %2(R,T) /);
+PUT '/;' /;
+* Output calibrated Baseline IV
+PUT "PARAMETER PAR_IV(R,ALLYEAR) /" /;
+LOOP((MR(R),T)$PAR_IV(R,T), PUT R.TL:0,".":0, T.TL:0, PAR_IV(R,T) /);
+PUT '/;' /;
+* Output calibrated Baseline Discount Factors
+IF(CARD(TM_UDF),PUT "PARAMETER TM_UDF(R,ALLYEAR) /" /;
+LOOP((MR(R),T)$TM_UDF(R,T), PUT R.TL:0,".":0, T.TL:0, TM_UDF(R,T) /);
+PUT '/;' /);
+*
+* output the PREFs 
+PUT "PARAMETER TM_DDATPREF(R,C) /" /;
+LOOP(DEM(MR(R),C)$TM_DDATPREF(R,C), PUT R.TL:0,".":0,C.TL:0, TM_DDATPREF(R,C) /;);
+PUT "/;" /;
+
+* output the DDFs 
+PUT "PARAMETER TM_DDF(R,ALLYEAR,C) /" /;
+LOOP((MR(R),T,DM(C))$TM_DDF(R,T,DM),
+PUT PUT R.TL:0,".":0,T.TL:0,".":0,C.TL:0, TM_DDF(R,T,C) /;);
+PUT "/;" /;
+
+PUT / @1,'SCALAR  TM_ARBM' /  @1 '/' /;
+PUT @1 TM_ARBM / @1 '/;';
+
+PUT / @1,'SCALAR  TM_SCALE_UTIL' /  @1 '/' /;
+PUT @1 TM_SCALE_UTIL / @1 '/;';
+
+PUT / @1,'SCALAR  TM_SCALE_CST' /  @1 '/' /;
+PUT @1 TM_SCALE_CST / @1 '/;';
+
+PUT / @1,'SCALAR  TM_SCALE_NRG' /  @1 '/' /;
+PUT @1 TM_SCALE_NRG / @1 '/;';
+
+PUT / @1,'PARAMETER  TM_KGDP(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_KGDP(R) / @1 '/;');
+
+PUT / @1,'PARAMETER  TM_KPVS(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_KPVS(R) / @1 '/;');
+
+PUT / @1,'PARAMETER  TM_DEPR(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_DEPR(R) / @1 '/;');
+
+PUT / @1,'PARAMETER  TM_ESUB(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_ESUB(R) / @1 '/;');
+
+PUT / @1,'PARAMETER  TM_GDP0(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_GDP0(R) / @1 '/;');
+
+PUT / @1,'PARAMETER  TM_DMTOL(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_DMTOL(R) / @1 '/;');
+
+PUT / @1,'PARAMETER  TM_IVETOL(R)' /  @1 '/' /;
+LOOP(MR(R), PUT @1 R.TL:0, TM_IVETOL(R) / @1 '/;');
+
+PUTCLOSE DDFFILE;

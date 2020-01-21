@@ -1,0 +1,89 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==============================================================================*
+* EQ_UCRTP.MOD : Annual bounds for process dynamic development                 *
+*==============================================================================*
+* %1 - jump label
+* %2 - eq. declaration type
+* %3 - eq. definition type
+* %4 - bound type
+*-------------------------------------------------------------------------------
+$GOTO %1
+*-------------------------------------------------------------------------------
+$LABEL INIT_EXT
+* Move dynamic bounds to dedicated attribute
+  IF(CARD(UC_DYNBND),
+    PRC_DYNUC(UC_N,SIDE,R,LL,P,'CAP',BD)$UC_DYNBND(UC_N,BD) $= UC_CAP(UC_N,SIDE,R,LL,P);
+    PRC_DYNUC(UC_N,SIDE,R,LL,P,'NCAP',BD)$UC_DYNBND(UC_N,BD) $= UC_NCAP(UC_N,SIDE,R,LL,P);
+    PRC_DYNUC(UC_N,SIDE,R,LL,P,'ACT',BD)$UC_DYNBND(UC_N,BD) $= UC_ACT(UC_N,SIDE,R,LL,P,'ANNUAL');
+    UC_CAP(UC_N,SIDE,R,LL,P)$SUM(UC_DYNBND(UC_N,BD),1) = 0;
+    UC_NCAP(UC_N,SIDE,R,LL,P)$SUM(UC_DYNBND(UC_N,BD),1) = 0;
+    UC_ACT(UC_N,SIDE,R,LL,P,S)$SUM(UC_DYNBND(UC_N,BD),1) = 0;
+  );
+$GOTO FINISH
+*-------------------------------------------------------------------------------
+$LABEL PREP_EXT
+ IF(CARD(PRC_DYNUC),
+* Set LHS default IE to 5 and RHS default to 10
+  PRC_DYNUC(UC_N,'LHS',R,LL--ORD(LL),P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD))=5;
+  PRC_DYNUC(UC_N,'RHS',R,LL--ORD(LL),P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD))=
+    PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD)+10$(NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD));
+  LOOP(BD, UC_GMAP_P(R,UC_N,UC_GRPTYPE,P)$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD) = YES);
+* If no RHS defined, set RHS to EPS for all LHS years except for the IE option according to LHS
+  PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD))=
+    EPS+PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD)$LASTLL(LL);
+* If no LHS defined, set LHS to 1 for all RHS years except for the IE option according to RHS
+  PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD))=
+    (1+(PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD)-1)$LASTLL(LL))$(NOT SAMEAS('NCAP',UC_GRPTYPE));
+* Inter-/extrapolate without reset
+$ SET RESET 1
+$ BATINCLUDE prepparm PRC_DYNUC 'UC_N,SIDE,R' 'P,UC_GRPTYPE,BD' "" MILESTONYR 1 1
+* Disable growth/decay equation in first period of availability if no constant specified
+  PRC_DYNUC(UC_N,'RHS',R,T(MIYR_1),P,UC_GRPTYPE,BD)$((NOT UC_GMAP_P(R,UC_N,UC_GRPTYPE,P))$PRC_DYNUC(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD)) = 0;
+  PRC_DYNUC(UC_N,'RHS',RTP(R,T+1,P),UC_GRPTYPE,BD)$((NOT RTP(R,T,P))$(NOT UC_GMAP_P(R,UC_N,UC_GRPTYPE,P))$PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD)) = 0;
+* Set final UC_GMAPs for REDUCE
+  LOOP(BD, UC_GMAP_P(R,UC_N,UC_GRPTYPE,P)$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD) = YES);
+  );
+$GOTO FINISH
+*-------------------------------------------------------------------------------
+$LABEL PPM_EXT
+* Make sure that standard UCs are not being generated
+  LOOP(UC_DYNBND(UC_N,BD),
+    UC_T_SUCC(R,UC_N,T) = YES;
+    UC_R_SUM(R,UC_N) = NO;
+    UC_R_EACH(R,UC_N) = NO;
+  );
+$GOTO FINISH
+*-------------------------------------------------------------------------------
+$LABEL EQU_EXT
+*-------------------------------------------------------------------------------
+  %EQ%%2_UCRTP(UC_N,RTP(%R_T%,P),UC_GRPTYPE,BD(%4) %SWT%)$(UC_T_SUCC(R,UC_N,T)$PRC_DYNUC%MX%(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD))..
+
+*-------
+* Difference in capacity between previous and current period
+  (SUM(SAMEAS(T-1,V(TT))$RTP(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) * 
+     %VARV%_CAP(R,V,P %SWS%))*(1-2$BDUPX(BD))
+   -  %VAR%_CAP(R,T,P %SOW%) *(1-2$BDUPX(BD)))$SAMEAS('CAP',UC_GRPTYPE)
+*-------
+  +
+* Difference in NCAP between previous and current period
+  (SUM(SAMEAS(T-1,V(TT))$RTP(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) * 
+     %VARV%_NCAP(R,V,P %SWS%))*(1-2$BDUPX(BD))
+   -  %VAR%_NCAP(R,T,P %SOW%) *(1-2$BDUPX(BD)))$SAMEAS('NCAP',UC_GRPTYPE)
+*-------
+  +
+* Difference in ACT between previous and current period
+  (SUM(SAMEAS(T-1,V(TT))$RTP_VARA(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) * 
+       SUM((RTP_VINTYR(R,MODLYEAR,V,P),PRC_TS(R,P,S)),%VARTT%_ACT(R,MODLYEAR,V,P,S %SWS%)))*(1-2$BDUPX(BD))
+   -   SUM((RTP_VINTYR(R,MODLYEAR,T,P),PRC_TS(R,P,S)),  %VAR%_ACT(R,MODLYEAR,T,P,S %SOW%)) *(1-2$BDUPX(BD)))$SAMEAS('ACT',UC_GRPTYPE)
+
+  =%3=
+
+* RHS constant term
+  PRC_DYNUC(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD)*LEAD(T)*(-1+2$BDUPX(BD))
+
+  ;
+*-------------------------------------------------------------------------------
+$LABEL FINISH

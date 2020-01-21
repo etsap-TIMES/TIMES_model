@@ -1,0 +1,91 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQMAIN.EXT declarations & call for actual equations
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Questions/Comments:
+*-----------------------------------------------------------------------------
+$ SET VAS %VAR%
+*-----------------------------------------------------------------------------
+* Final adjustments to preprocessing
+  PARAMETER DP_UNS(R,LL,T,P,TSL,IPS,L) //;
+  RP_PL(RP,BD)$SUM(RPG_PACE(RP,CG),1)=NO;
+*-----------------------------------------------------------------------------
+  EQUATIONS
+*-----------------------------------------------------------------------------
+
+* Activity efficiency equation
+  %EQ%E_ACTEFF(R,ALLYEAR,ALLYEAR,P,CG,IO,S %SWTD%) 'Process Activity Efficiency (=)'
+
+* CAFLAC equations:
+  %EQ%E_CAFLAC(R,ALLYEAR,ALLYEAR,P,S %SWTD%) 'Commodity based availability (=E=)'
+  %EQ%L_CAFLAC(R,ALLYEAR,ALLYEAR,P,S %SWTD%) 'Commodity based availability (=L=)'
+  %EQ%L_CAPFLO(R,ALLYEAR,ALLYEAR,P,CG,S%SWTD%) 'Flow-specific availability (=L=)'
+
+* Advanced shares
+  %EQ%E_ASHAR(R,ALLYEAR,ALLYEAR,P,CG,COM_GRP,S %SWTD%) 'Advanced share constraint (=E=)'
+  %EQ%L_ASHAR(R,ALLYEAR,ALLYEAR,P,CG,COM_GRP,S %SWTD%) 'Advanced share constraint (=L=)'
+  %EQ%G_ASHAR(R,ALLYEAR,ALLYEAR,P,CG,COM_GRP,S %SWTD%) 'Advanced share constraint (=G=)'
+
+* Dynamic bounds
+  %EQ%N_UCRTP(UC_N,R,T,P,UC_GRPTYPE,BD %SWTD%) 'Dynamic process bound (=L=)'
+  %EQ%E_UCRTP(UC_N,R,T,P,UC_GRPTYPE,BD %SWTD%) 'Dynamic process bound (=E=)'
+  EQN_UCRTP(UC_N,R,T,P,UC_GRPTYPE,BD) 'Dynamic process bound (=NE=)'
+
+* Activity constraints
+  %EQ%_CAPLOAD(R,ALLYEAR,ALLYEAR,P,S,L %SWTD%) 'Augmented capacity-activity'
+  %EQ%_ACTRAMP(R,ALLYEAR,ALLYEAR,P,S,L %SWTD%) 'Activity ramping equations'
+  %EQ%E_ACTUPS(R,ALLYEAR,ALLYEAR,P,TSL,L,S %SWTD%) 'Activity startup equations'
+  %EQ%L_ACTUPS(R,ALLYEAR,ALLYEAR,P,TSL,L,S %SWTD%) 'Activity offline balance'
+  %EQ%L_ACTUPC(R,ALLYEAR,ALLYEAR,P,TSL,L,S %SWTD%) 'Activity cycling constraints'
+  %EQ%_ACTPL(R,ALLYEAR,ALLYEAR,P,S %SWTD%) 'Activity partial loads'
+  %EQ%_ACTRMPC(R,ALLYEAR,ALLYEAR,P,S%SWTD%) 'Activity ramping costs'
+  EQL_STGCCL(R,ALLYEAR,ALLYEAR,P,ALLSOW) 'Storage cycling constraints'
+  %EQ%_SLSIFT(R,ALLYEAR,P,C,S,L,L%SWTD%) 'Time-slice load sifting'
+
+* Unit commitment
+  eq_sdlogic(r,ll,t,p,tsl,s,l,allsow)  'logical relationship between decision variables'
+  eq_sudupt(r,ll,t,p,tsl,s,upt,allsow) 'selection of start up type a according to non-operational time'
+  eq_sdslant(r,ll,t,p,tsl,s,allsow)    'slanting equation for start-up and shut-down phase'
+  eq_sdminon(r,ll,t,p,s,allsow)        'minimum on-line capacity constraints'
+  eq_sudload(r,ll,t,p,s,allsow)        'load during start-up/shut down phase of the unit (linear growth)'
+  eq_sudtime(r,ll,t,p,tsl,s,bd,allsow) 'minimum on-line / off-line time constraint'
+  eq_sudpll(r,ll,t,p,tsl,s,allsow)     'efficiency losses due to start-up/shut-down of the unit'
+;
+*----------------------------End of equations---------------------------------
+  OPTION CLEAR=%VAR%_IRE;
+$ IF DEFINED PREMILE $BATINCLUDE bnd_ire.vda
+$ IF '%STAGES%'==YES $%SW_STVARS%
+$ SET UPSCAP0 (%UPSCAPS%$PRC_TS(R,P,S))$RP_UPL(R,P,'FX')
+*-----------------------------------------------------------------------------
+
+*-----------------------------------------------------------------------------
+* Call for Implementations
+*-----------------------------------------------------------------------------
+* Activity Efficiency Transformation
+$ BATINCLUDE pp_actef.%1
+*-----------------------------------------------------------------------------
+* Capacity-activity equations:
+$ BATINCLUDE eqcaflac.%1 E "'FX'" $ %MX%
+$ BATINCLUDE eqcaflac.%1 L "'UP'" * %MX%
+$ BATINCLUDE eqactups.%1 %MX%
+$ BATINCLUDE eqlducs.%1 EQU
+*-----------------------------------------------------------------------------
+* ASHAR equations:
+$ BATINCLUDE eqashar.%1 E FX
+$ BATINCLUDE eqashar.%1 L LO
+$ BATINCLUDE eqashar.%1 G UP
+*-----------------------------------------------------------------------------
+* UCBET equations
+$ IF DEFINED UC_FLOBET  $BATINCLUDE UCBET.%1
+$ IF DEFINED COM_CSTBAL $BATINCLUDE powerflo.vda OBJBAL
+$ IFI %POWERFLO%==YES   $BATINCLUDE powerflo.vda POWFLO
+$ IF DEFINED GR_VARGEN  $BATINCLUDE resloadc.vda EQUA
+*-----------------------------------------------------------------------------
+* EQUCRTP equations
+$ BATINCLUDE equcrtp.vda EQU_EXT N L BDNEQ
+$ BATINCLUDE equcrtp.vda EQU_EXT E E "'FX'"
+*-----------------------------------------------------------------------------

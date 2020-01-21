@@ -1,0 +1,16 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==============================================================================*
+* GLOBALS.DEF has all the declaration & defaults for SCALARS & Parameters      *
+*==============================================================================*
+
+* global initialization and other scalar defaults which may be changed here
+*  or overwritten in the user *.DD
+  SCALAR G_DYEAR     'Year to discount to'                          / 0 /;
+  SCALAR G_ILEDNO    '1/threshold at which to ignore ILED'          / 10 /;
+  SCALAR G_TLIFE     'Default technology life if not provided'      / 10 /;
+  SCALAR G_VINT      '% annual change in input data for vintaging'  / .1 /;
+  SCALAR G_NOINTERP  'Turn off interplation'                        / 0 /;
+  PARAMETER G_CYCLE(TSLVL) 'Number of cycles in average year' / ANNUAL 1, SEASON 1, DAYNITE 365 /;

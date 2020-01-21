@@ -1,0 +1,67 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* COEF_EXT.vda oversees extended preprocessor activities after COEF_MAIN
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Questions/Comments:
+*
+*-----------------------------------------------------------------------------
+  PARAMETER VDA_DISC(R,ALLYEAR);
+$ CLEAR VDA_DISC
+$ IFI NOT %WAVER%==YES $GOTO RESID
+$ BATINCLUDE fillwave PRC_RESID PRC 0
+$ BATINCLUDE fillwave COM_PROJ COM 1
+  OPTION CLEAR=VDA_DISC;
+$ LABEL RESID
+* Try making sensible RESID PASTI (although it does not affect solution)
+* Finalize PRC_RESID capacity coefficients:
+  LOOP(T, TRACKP(R,P)$((PRC_RESID(R,T,P)>0)$PRC_RESID(R,T,P)) = YES);
+  LOOP(PYR_S(V),
+$IF DEFINED PRC_RCAP LOOP(PRC_RCAP(TRACKP(R,P)),Z=SMAX(T,PRC_RESID(R,T,P));RTFORC(RTP_CPTYR(R,V,T,P))=Z-PRC_RESID(R,T,P)+EPS;PRC_RESID(R,T,P)$RTFORC(R,V,T,P)=Z);
+    NCAP_PASTI(R,V,P)$PRC_RESID(R,'0',P) = (SUM(T,PRC_RESID(R,T,P)*D(T))/SUM(T$(PRC_RESID(R,T,P)>0),D(T)))$TRACKP(R,P);
+  );
+  PRC_RESID(R,'0',P)$(NOT TRACKP(R,P)) = 0;
+  COEF_CPT(RTP_CPTYR(R,PYR_S(V),T,P))$TRACKP(R,P) = PRC_RESID(R,T,P)/NCAP_PASTI(R,V,P);
+*-----------------------------------------------------------------------------
+* Offline capacity term:
+$ SETGLOBAL UPSCAPS -SUM(TS_MAP(R,ALL_TS,S)$RPS_UPS(R,P,ALL_TS),%VAR%_UPS(R,V,T,P,ALL_TS,'N'%SOW%))
+*-----------------------------------------------------------------------------
+* Allow using NCAP_CLED as NCAP_CLAG if no ICOM
+  NCAP_CLAG(RTP(R,V,P),C,IO)$((NOT NCAP_ICOM(RTP,C))$TOP(R,P,C,IO)) $= NCAP_CLED(RTP,C);
+  NCAP_CLED(R,V,P,C)$(NOT NCAP_ICOM(R,V,P,C)) = 0;
+* Get AF-UPs for processes having storage level constrained
+  COEF_AFUPS(RTP(R,V,P),S)$(NOT RPS_CAFLAC(R,P,S,'UP')) $= NCAP_AF(RTP,S,'UP')$RPS_STG(R,P,S);
+  COEF_AFUPS(RTP(R,V,P),S(STL))$RPS_STG(R,P,S) $= NCAP_AFC(RTP,%PGPRIM%,STL);
+  COEF_AFUPS(R,V,P,S)$(NOT PRC_CAP(R,P))=NO;
+* Cycling cost annuity
+  ACT_CSTUP(RTP(R,V,P),TSL(S),CUR)$(RDCUR(R,CUR)$STG_MAXCYC(RTP))=ACT_CSTUP(RTP,TSL,CUR)*G_DRATE(R,V,CUR)/(1-(1+G_DRATE(R,V,CUR))**(-NCAP_TLIFE(RTP)));
+*-----------------------------------------------------------------------------
+* Remove commodity balance equations from non-demand sinks
+  OPTION TRACKP < RTP, TRACKC < RHS_COMBAL, RCS < IRE_FLOSUM;
+  LOOP(TRACKP(R,P),TRACKC(R,C)$TOP(R,P,C,'IN') = YES);
+  TRACKC(R,C) $= SUM(RPC_IRE(TRACKP(R,P),C,'EXP'),1);
+  TRACKC(RC)  $= SUM(RCS(RC,S),1); TRACKC(DEM)=YES;
+  TRACKC(R,C) $= SUM(RPC_NOFLO(TRACKP(R,P),C),1);
+  RCS_COMBAL(RTCS_VARC(R,T,C,S),L)$(NOT TRACKC(R,C)) = NO;
+  OPTION CLEAR=TRACKC,CLEAR=TRACKP,CLEAR=RCS;
+*-----------------------------------------------------------------------------
+* Add singleton ACT_EFFs to COEF_PTRANS
+  OPTION TRACKPC < RPG_1ACE; OPTION TRACKPG <= RPG_1ACE;
+  COEF_PTRAN(RTP(R,V,P),CG,C,COM,S)$(RPCS_VAR(R,P,C,S)$RPC_PG(R,P,COM)$RPG_1ACE(R,P,CG,C)) =
+    ACT_EFF(RTP,CG,S)*PRC_ACTFLO(RTP,COM)*(1+(ACT_EFF(RTP,C,S)-1)$ACT_EFF(RTP,C,S)$(NOT SAMEAS(C,CG)));
+  RPC_NOFLO(TRACKPC) = NO; TRACKPC(RP_SGS,C) = NO;
+$IF %REDUCE%==YES     RPCG_PTRAN(TRACKPC(R,P,C),COM,CG,COM)$(RPG_1ACE(R,P,CG,C)$RPC_ACT(R,P,COM)) = YES; RPC_FFUNC(TRACKPC(R,P,C)) = YES;
+$IF NOT %REDUCE%==YES RPCC_FFUNC(TRACKPG(R,P,CG),COM)$RPC_PG(R,P,COM) = YES;
+  RPCC_FFUNC(TRACKPG(RP_SGS(R,P),CG),COM)$RPC_PG(R,P,COM) = YES;
+  ACT_EFF(R,LL,P,CG,S)$TRACKPG(R,P,CG) = 0;
+  OPTION CLEAR=TRACKPC,CLEAR=TRACKPG;
+*-----------------------------------------------------------------------------
+$ BATINCLUDE eqlducs.vda
+$ BATINCLUDE eqashar.vda
+$IF DEFINED COM_CSTBAL $BATINCLUDE powerflo.vda CSTBAL
+  COEF_PVT(R,T)$(NOT COEF_PVT(R,T)) = FPD(T);
+  VDA_DISC(R,T) $= COEF_PVT(R,T);
+  COEF_ILED(RTP(R,T,P))$NCAP_BND(RTP,'N') = MOD(COEF_ILED(RTP),1000)+EPS$NCAP_ILED(RTP);

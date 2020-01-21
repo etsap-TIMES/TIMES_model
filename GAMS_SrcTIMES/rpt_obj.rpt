@@ -1,0 +1,144 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* RPT_OBJ.rpt is the objective function reporter for rptlite TIMES
+*   %1 - S OR ''
+*   %2 - SOW, or '1', OR ''
+*   %3 - ,SOW OR ''
+*=============================================================================*
+  OPTION CLEAR=NCAP_YES,CLEAR=RTP_OBJ,CLEAR=RTP_NPV,CLEAR=RTP_CAPVL;
+  RTP_CAPVL(RTP)=VAR_NCAP.L(RTP)+NCAP_PASTI(RTP);
+  NCAP_YES(RTP)$(RTP_CAPVL(RTP)>0) = YES;
+  MY_F=ROUND(RPT_OPT('OBJ','1'));
+$ SETLOCAL SIC '' SET TMP ''
+$IFI '%STAGES%'==YES $SETLOCAL SIC "*(1+PASTSUM(R,V,P))"
+$IFI '%STAGES%'==YES PASTSUM(NCAP_YES(R,T,P)) = SUM(SW_TSW(SOW,T,WW),OBJ_SIC(R,T,P,WW)); MY_F=EPS$MY_F;
+*------------------------------------------------------------------------------
+* Hurdle rates
+  COEF_CRF(OBJ_ICUR(NCAP_YES(R,V,P),CUR))$(NCAP_DRATE(R,V,P)>0) = MAX(0,1-
+   ((1-(1+NCAP_DRATE(R,V,P))**(-NCAP_ELIFE(R,V,P))) / (1-(1+G_DRATE(R,V,CUR))**(-NCAP_ELIFE(R,V,P)))) /
+   (NCAP_DRATE(R,V,P)/G_DRATE(R,V,CUR)*((1+NCAP_DRATE(R,V,P))/(1+G_DRATE(R,V,CUR)))**MIN(%DISCSHIFT%-1,-0.5$NCAP_ILED(R,V,P))));
+*------------------------------------------------------------------------------
+* Lump-sum investment costs
+*------------------------------------------------------------------------------
+$SET P1 "'%SYSPREFIX%INSTCAP'"
+  %1CAP_NEW(%2RVPT(NCAP_YES(R,T,P),TT),%P1%) = VAR_NCAP.L(R,T,P);
+  %1CAP_NEW(%2NCAP_YES(R,T,P),T,%P1%)$(NOT OBJ_2A(R,T,P)) = COEF_RPTI(R,T,P)*VAR_NCAP.L(R,T,P);
+  OPTION CLEAR=UNCD1; UNCD1(J)$(ORD(J)<3)=YES;
+  RTP_OBJ(JJ(UNCD1(J)),OBJ_ICUR(NCAP_YES(R,T(V),P),CUR))=
+$IF '%ETL%'==YES (VAR_IC.L(R,T,P)*COR_SALVI(R,T,P,CUR))$SEG(R,P) +
+    SUM((OBJ_SUMII(R,T,P,LIFE,K_EOH,JOT),INVSPRED(K_EOH,JOT,Y,K)),
+        (OBJ_ICOST(R,K,P,CUR)%SIC%$(ORD(J)=2)+(OBJ_ITAX(R,K,P,CUR)-OBJ_ISUB(R,K,P,CUR))$(ORD(J)=1))) *
+    VAR_NCAP.L(R,T,P) * COR_SALVI(R,T,P,CUR) / OBJ_DIVI(R,T,P) /
+    (1+G_DRATE(R,T,CUR))**(%DISCSHIFT%$(NOT NCAP_ILED(R,T,P)));
+  SYSPLIT(SYSUC)=1-SUM(SYSUCMAP(SYSUC,ITEM),1);
+  LOOP(UNCD1(J),%1CAP_NEW(%2R,T,P,TT,SYSUC)$(%1CAP_NEW(%2R,T,P,TT,%P1%)$SUCMAP(J,SYSUC))=SUM(RDCUR(R,CUR),RTP_OBJ(J,R,T,P,CUR)*ABS(SYSPLIT(SYSUC)-COEF_CRF(R,T,P,CUR)))
+    IF(NOT MY_F,OPTION CLEAR=COEF_CRF));
+  OPTION CLEAR=RTP_OBJ;
+*-----------------------------------------------------------------------------
+* Objective function by component
+*-----------------------------------------------------------------------------
+* Check objective INV
+  RTP_OBJ('1',OBJ_ICUR(NCAP_YES(R,V,P),CUR)) =
+    SUM(OBJ_SUMII(R,V,P,AGE,K_EOH,JOT), %CAPJD%
+      SUM(INVSPRED(K_EOH,JOT,YEAR,K), OBJ_DISC(R,K,CUR) * (1-SALV_INV(R,V,P,YEAR)) * OBJ_ICOST(R,K,P,CUR)) *
+      (VAR_NCAP.L(R,V,P)$T(V) + OBJ_PASTI(R,V,P,CUR))%SIC% * COR_SALVI(R,V,P,CUR) / OBJ_DIVI(R,V,P)) +
+     SUM(OBJ_SUMIII(R,V,P,LL,K,Y), OBJ_DISC(R,Y,CUR) * (1-SALV_INV(R,V,P,LL)) *
+       (VAR_NCAP.L(R,V,P)$T(V) + OBJ_PASTI(R,V,P,CUR)) / OBJ_DIVIII(R,V,P) *
+       (COR_SALVD(R,V,P,CUR)*OBJ_DCOST(R,K,P,CUR)-SUM(C$NCAP_OCOM(R,V,P,C),NCAP_OCOM(R,V,P,C)*NCAP_VALU(R,K,P,C,CUR))$(NOT Y_EOH(Y)))) -
+     SUM(OBJ_SUMIVS(R,V,P,K,Y),OBJ_DISC(R,Y,CUR)*SALV_INV(R,V,P,K)*OBJ_DLAGC(R,K,P,CUR)*RTP_CAPVL(R,V,P));
+
+* Discounted taxes & subsidies
+  RTP_OBJ('2',OBJ_ICUR(NCAP_YES(R,V,P),CUR)) =
+    SUM(OBJ_SUMII(R,V,P,AGE,K_EOH,JOT), %CAPJD%
+      SUM(INVSPRED(K_EOH,JOT,YEAR,K), OBJ_DISC(R,K,CUR) * (1-SALV_INV(R,V,P,YEAR)) *
+        (OBJ_ITAX(R,K,P,CUR) - OBJ_ISUB(R,K,P,CUR))) *
+      (VAR_NCAP.L(R,V,P)$T(V) + OBJ_PASTI(R,V,P,CUR)) * COR_SALVI(R,V,P,CUR) / OBJ_DIVI(R,V,P));
+
+$IF NOT DEFINED PRC_RCAP $GOTO ISUM
+  PAR_OBJCAP(OBJ_ICUR(NCAP_YES(R,V,P),CUR))$RVPRL(R,V,P)=OBJSCC(R,V,P,CUR)*OBJ_DCEOH(R,CUR)*(RTP_CAPVL(R,V,P)-VAR_SCAP.L(R,V,'0',P));
+  RTP_OBJ('1',R,V,P,CUR)$PAR_OBJCAP(R,V,P,CUR) = RTP_OBJ('1',R,V,P,CUR)+PAR_OBJCAP(R,V,P,CUR)*(1-(1/(1+RTP_OBJ('1',R,V,P,CUR)/RTP_OBJ('2',R,V,P,CUR)))$(RTP_OBJ('2',R,V,P,CUR)>0));
+  RTP_OBJ('2',R,V,P,CUR)$((RTP_OBJ('2',R,V,P,CUR)>0)$PAR_OBJCAP(R,V,P,CUR)) = RTP_OBJ('2',R,V,P,CUR)+PAR_OBJCAP(R,V,P,CUR)/(1+RTP_OBJ('1',R,V,P,CUR)/RTP_OBJ('2',R,V,P,CUR));
+  RTP_ISHPR(RTP(R,V,P))$PRC_RCAP(R,P)=YES;
+$ SET TMP (1-(VAR_SCAP.L(R,V,Y,P)/PASTSUM(R,V,P)/OBJ_DIVIV(R,V,P))$PRC_RCAP(R,P))*
+$LABEL ISUM
+
+  %1REG_WOBJ(%2R,'INVX',CUR) = SUM(OBJ_ICUR(NCAP_YES(R,V,P),CUR),RTP_OBJ('2',R,V,P,CUR));
+  OBJVAL_1 = SUM(OBJ_ICUR(NCAP_YES(R,V,P),CUR),RTP_OBJ('1',R,V,P,CUR)) + SUM(RDCUR(R,CUR),%1REG_WOBJ(%2R,'INVX',CUR));
+  OBJVAL_2 = SUM(RDCUR(R,CUR),SUM(OBV,SUM_OBJ('OBJINV',OBV)*%VAR%_OBJ.L(R,OBV,CUR%3))-%VAR%_OBJ.L(R,'OBJSAL',CUR%3));
+$IF NOT %1==S DISPLAY OBJVAL_1,OBJVAL_2;
+
+ IF(MY_F, SYSINV('%4INV+')=YES);
+ IF(MY_F>0,OPTION TRACKP<RTP_OBJ; %1CST_PVP(%2SYSINV,TRACKP(R,P))=SUM((J,V,CUR)$RTP_OBJ(J,R,V,P,CUR),RTP_OBJ(J,R,V,P,CUR)*ABS(SYSONE(SYSINV)-COEF_CRF(R,V,P,CUR))));
+
+*------------------------------------------------------------------------------
+* Fixed costs / sub / tax
+*------------------------------------------------------------------------------
+* Check objective FIX
+ PASTSUM(NCAP_YES(R,V,P))$OBJ_DIVIV(R,V,P) = RTP_CAPVL(R,V,P)/OBJ_DIVIV(R,V,P);
+
+ RTP_NPV('1',OBJ_FCUR(NCAP_YES(R,V,P),CUR)) =
+   SUM(OBJ_SUMIV(K_EOH,R,V,P,JOT,LIFE)$(NOT RTP_ISHPR(R,V,P)),
+      SUM(INVSPRED(K_EOH,JOT,LL,K), OBJ_LIFE(LL,R,JOT,LIFE,CUR) * %CAPWD%
+        OBJ_FOM(R,K,P,CUR)) * PASTSUM(R,V,P)) +
+   SUM(OBJ_SUMIV(K_EOH,RTP_ISHPR(R,V,P),JOT,LIFE), PASTSUM(R,V,P) *
+      SUM(INVSPRED(K_EOH,JOT,LL,K), %CAPWD%
+        SUM(KTYAGE(LL,Y,Y_EOH,AGE)$OPYEAR(LIFE,AGE), OBJ_DISC(R,Y_EOH,CUR) * (1+RTP_CPX(R,V,P,Y)$NCAP_CPX(R,V,P)) * %TMP%
+             OBJ_FOM(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'1',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1))))) +
+   SUM(OBJ_SUMIVS(R,V,P,K,Y),OBJ_DISC(R,Y,CUR)*OBJ_DLAGC(R,K,P,CUR)*PASTSUM(R,V,P));
+
+* Discounted taxes & subsidies
+  RTP_NPV('2',OBJ_FCUR(NCAP_YES(R,V,P),CUR)) =
+    SUM(OBJ_SUMIV(K_EOH,R,V,P,JOT,LIFE)$(NOT RTP_ISHPR(R,V,P)),
+      SUM(INVSPRED(K_EOH,JOT,LL,K), OBJ_LIFE(LL,R,JOT,LIFE,CUR) * %CAPWD%
+        (OBJ_FTX(R,K,P,CUR)-OBJ_FSB(R,K,P,CUR))) * PASTSUM(R,V,P)) +
+    SUM(OBJ_SUMIV(K_EOH,RTP_ISHPR(R,V,P),JOT,LIFE), PASTSUM(R,V,P) *
+      SUM(INVSPRED(K_EOH,JOT,LL,K), %CAPWD%
+        SUM(KTYAGE(LL,Y,Y_EOH,AGE)$OPYEAR(LIFE,AGE), OBJ_DISC(R,Y_EOH,CUR) * (1+RTP_CPX(R,V,P,Y)$NCAP_CPX(R,V,P)) * %TMP%
+            (
+              OBJ_FTX(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'2',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1)) -
+              OBJ_FSB(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'3',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1))
+            ))));
+
+  %1REG_WOBJ(%2R,'FIXX',CUR) = SUM(OBJ_FCUR(NCAP_YES(R,V,P),CUR),RTP_NPV('2',R,V,P,CUR));
+  OBJVAL_1 = SUM(OBJ_FCUR(NCAP_YES(R,V,P),CUR),RTP_NPV('1',R,V,P,CUR)) + SUM(RDCUR(R,CUR),%1REG_WOBJ(%2R,'FIXX',CUR));
+  OBJVAL_2 = SUM(RDCUR(REG,CUR),SUM(OBV,SUM_OBJ('OBJFIX',OBV)*%VAR%_OBJ.L(REG,OBV,CUR%3)));
+$IF NOT %1==S DISPLAY OBJVAL_1,OBJVAL_2;
+
+ IF(MY_F>0,OPTION TRACKP<RTP_NPV; %1CST_PVP(%2'%4FIX',TRACKP(R,P))=SUM((J,V,CUR)$RTP_NPV(J,R,V,P,CUR),RTP_NPV(J,R,V,P,CUR)));
+ OPTION CLEAR=PASTSUM,CLEAR=TRACKP;
+
+*------------------------------------------------------------------------------
+$SET TPULSE PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR)*
+$SET TMP Y_EOH$OBJ_LINT(R,T,Y_EOH,CUR),OBJ_LINT(R,T,Y_EOH,CUR)*
+$IFI %OBJ%==ALT     $SET TPULSE %TPULSE% OBJ_ALTV(R,T)*
+$IFI %OBJ%==LIN     $SET TPULSE TPULSEYR(T,Y_EOH),TPULSE(T,Y_EOH)*OBJ_DISC(R,Y_EOH,CUR)*
+$IFI %VARCOST%==LIN $SET TPULSE %TMP%
+*------------------------------------------------------------------------------
+  OPTION CLEAR=UNCD1; UNCD1('1')=MY_F+ACL;
+$ BATINCLUDE eqobjvar.rpt PAR J(UNCD1), "J('2')," Y_EOH SUM
+  IF(MY_F>0,
+    OPTION PAR_RPMX < PAR_ACTC;
+    %1CST_PVP(%2'%4ACT',RP) $= SUM((J,V,T,C,CUR)$PAR_RPMX(RP,J,V,T,C,CUR),PAR_RPMX(RP,J,V,T,C,CUR));
+    OPTION PAR_RPMX < PAR_FLOC;
+    %1CST_PVP(%2'%4FLO',RP) $= SUM((J,V,T,C,CUR)$PAR_RPMX(RP,J,V,T,C,CUR),PAR_RPMX(RP,J,V,T,C,CUR));
+    OPTION PAR_RCMX < PAR_COMC;
+    %1CST_PVC(%2'%4COM',RC) $= SUM((J,T,CUR)$PAR_RCMX(RC,J,T,CUR),PAR_RCMX(RC,J,T,CUR));
+  );
+  %1REG_WOBJ(%2R,'VARX',CUR) = SUM((V,T,P,C)$PAR_FLOC('2',R,V,T,P,C,CUR),PAR_FLOC('2',R,V,T,P,C,CUR)) +
+                               SUM((T,C)$PAR_COMC('2',R,T,C,CUR),PAR_COMC('2',R,T,C,CUR));
+*------------------------------------------------------------------------------
+  LOOP(RDCUR(R,CUR),
+   %1REG_WOBJ(%2R,'INV',CUR) = SUM(OBV,SUM_OBJ('OBJINV',OBV)*%VAR%_OBJ.L(R,OBV,CUR%3))-%VAR%_OBJ.L(R,'OBJSAL',CUR%3)-%1REG_WOBJ(%2R,'INVX',CUR)+EPS;
+   %1REG_WOBJ(%2R,'FIX',CUR) = SUM(OBV,SUM_OBJ('OBJFIX',OBV)*%VAR%_OBJ.L(R,OBV,CUR%3))-%1REG_WOBJ(%2R,'FIXX',CUR)+EPS;
+   %1REG_WOBJ(%2R,'VAR',CUR) = SUM(OBV,SUM_OBJ('OBJVAR',OBV)*%VAR%_OBJ.L(R,OBV,CUR%3))-%1REG_WOBJ(%2R,'VARX',CUR)+EPS;
+* Elastic demand costs
+   %1REG_WOBJ(%2R,'ELS',CUR) = EPS
+$IF %TIMESED% == YES  +SUM(BD,%VAR%_OBJELS.L(R,BD,CUR%3)*(BDSIG(BD)-1$LNX(BD)))
+  );
+$IFI %5==0 $EXIT
+*------------------------------------------------------------------------------
+* Calculate VAR_NCAP coefficients
+$BATINCLUDE rpt_objc.rpt "%1" "%2" %4

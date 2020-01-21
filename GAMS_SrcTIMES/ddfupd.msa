@@ -1,0 +1,46 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==============================================================================
+* DDFUPD.msa - Update DDF factors directly after previous MACRO run
+*==============================================================================
+
+*
+* initialize Y
+  TM_DDF_Y(MR(R),T(T_1)) = 1;
+  TM_DDF_Y(MR(R),PP) = ((TM_GDPGOAL(R,PP)/TM_GDP(R,PP))**.5) * PAR_Y(R,PP)/SUM(T_1(T),PAR_Y(R,T));
+  DISPLAY TM_DDF_Y;
+
+* normalize to base year
+  TM_DDF_DM(R,T,DM)$TM_DEM(R,T,DM) = 1;
+  LOOP(T_1(TT),TM_DDF_DM(R,T,DM)$TM_DEM(R,TT,DM) = TM_DEM(R,T,DM) / TM_DEM(R,TT,DM));
+  LOOP(T_1(TT),TM_DDF_SP(R,T,DM)$PAR_MC(R,TT,DM) = PAR_MC(R,T,DM) / PAR_MC(R,TT,DM));
+
+* estimate DDF factors
+  OPTION CLEAR=TM_DDF;
+  TM_F2(R,T,DM)$TM_DDF_SP(R,T,DM) = TM_DDF_DM(R,T,DM) / (TM_DDF_Y(R,T) * TM_DDF_SP(R,T,DM) ** (-TM_ESUB(R)));
+  TM_DDF(R,PP(T+1),DM)$TM_F2(R,T,DM) = 100 * (1 - (TM_F2(R,PP,DM)/TM_F2(R,T,DM))**((TM_RHO(R)-1)/(NYPER(T)*TM_RHO(R))));
+
+* update growth indicators
+  TM_GROWV(R,T) = TM_GROWV(R,T) + (TM_GR(R,T) - PAR_GRGDP(R,T));
+  TM_GROWV(R,TLAST) = TM_GR(R,TLAST);
+
+* update other parameters depending on DDFs or growth
+  TM_AEEIV(MR,T,DM) = TM_DDF(MR,T,DM) / 100;
+  TM_DFACTCURR(R,T) = 1 - (TM_KPVS(R)/TM_KGDP(R) - TM_DEPR(R)/100 - TM_GROWV(R,T)/100);
+  TM_IV0(R)         = TM_K0(R) * (TM_DEPR(R) + SUM(T_1(T),TM_GROWV(R,T)))/100;
+  TM_C0(R)          = TM_GDP0(R) - TM_IV0(R);
+
+  LOOP(PP(T+1),
+    TM_AEEIFAC(MR,PP,DM) = TM_AEEIFAC(MR,T,DM) * (1 - TM_AEEIV(MR,PP,DM)) ** NYPER(T);
+    TM_DFACT(R,PP)       = TM_DFACT(R,T) * TM_DFACTCURR(R,T) ** NYPER(T);
+    TM_L(R,PP)           = TM_L(R,T) * (1+TM_GROWV(R,T)/100) ** NYPER(T);
+  );
+
+* Arbitrary multiplier on utility in last time period.
+  TM_DFACT(MR(R),TLAST)$(TM_ARBM NE 1) = TM_DFACT(R,TLAST) * 
+      (1-MIN(.999,TM_DFACTCURR(R,TLAST))**(NYPER(TLAST)*TM_ARBM)) / 
+      (1-MIN(.999,TM_DFACTCURR(R,TLAST))**(NYPER(TLAST) * 1 ));
+
+  VAR_INV.FX(MR,T(T_1))  = TM_IV0(MR);

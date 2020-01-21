@@ -1,0 +1,48 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*============================================================================*
+* MOD_EXT.EXT Extension equations
+* Called from MAINDRV.MOD
+*============================================================================*
+
+  %EQ%E_ACTEFF
+  %EQ%L_CAFLAC
+  %EQ%E_CAFLAC
+  %EQ%L_CAPFLO
+
+  %EQ%_CAPLOAD
+  %EQ%_ACTRAMP
+  %EQ%E_ACTUPS
+  %EQ%L_ACTUPS
+  %EQ%L_ACTUPC
+  %EQ%_ACTPL
+  %EQ%_ACTRMPC
+  %EQ%_SLSIFT
+  EQL_STGCCL
+
+  %EQ%E_UCRTP
+  %EQ%N_UCRTP
+
+  %EQ%E_ASHAR
+  %EQ%L_ASHAR
+  %EQ%G_ASHAR
+
+$IF %OBMAC%==YES
+  eq_sdlogic,  eq_sudupt, eq_sdslant, eq_sdminon, eq_sudload, eq_sudtime, eq_sudpll
+
+$IFI %DUC%%OBMAC%==YESYES
+  eq_sdind_1, eq_sdind_0
+
+$IF DEFINED UC_FLOBET
+  %EQ%G_UCMAX, %EQ%G_UCSUMAX
+
+$IF DEFINED COM_CSTBAL
+  EQ_OBJBAL
+
+$IFI %POWERFLO%==YES
+  %EQ%_GR_POWFLO, %EQ%_GR_GENALL, %EQ%_GR_DEMALL, %EQ%_GR_XBND
+
+$IF DEFINED GR_VARGEN
+  %EQ%_RL_LOAD, %EQ%_RL_NDIS, %EQ%_RL_STCAP, %EQ%_RL_PKCAP, %EQ%_RL_THMIN

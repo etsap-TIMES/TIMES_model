@@ -1,0 +1,63 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* RPT_EXT.msa - Extension for MACRO Stand-Alone link: soft-link driver
+*-----------------------------------------------------------------------------
+* Questions/Comments:
+*
+*-----------------------------------------------------------------------------
+  SET MACST / VAR, IRE, DAM /;
+  LOOP(T,MR(R)$(REG_FIXT(R) LT YEARVAL(T)) = YES);
+  MR(R)$(NOT SUM(ALLYEAR$TM_GR(R,ALLYEAR),YES)) = NO;
+  MSAREG(MR) = YES;
+*-----------------------------------------------------------------------------
+$ SET SOLVEDA 1
+$ BATINCLUDE rptlite.rpt
+$ SET SOLVEDA 0
+$ BATINCLUDE solprep.msa INIT 0
+$ IF %RPOINT%==NO $GOTO PREPRO
+  %MODEL_NAME%.OPTFILE = 1;
+$ BATINCLUDE pp_clean.mod
+$ IF SET FIXBOH $BATINCLUDE solve.stp mod
+$ LABEL PREPRO
+*-----------------------------------------------------------------------------
+* Process macro parameters
+  TM_DEPR(R)$(NOT TM_DEPR(R)) = TM_DEFVAL('DEPR');
+  TM_ESUB(R)$(NOT TM_ESUB(R)) = TM_DEFVAL('ESUB');
+  TM_KGDP(R)$(NOT TM_KGDP(R)) = TM_DEFVAL('KGDP');
+  TM_KPVS(R)$(NOT TM_KPVS(R)) = TM_DEFVAL('KPVS');
+  TM_DMTOL(R)$(NOT TM_DMTOL(R))   = TM_DEFVAL('DMTOL');
+  TM_IVETOL(R)$(NOT TM_IVETOL(R)) = TM_DEFVAL('IVETOL');
+
+  IF(CARD(TM_GROWV)=0, TM_GROWV(R,T) $= TM_GR(R,T));
+$IFI %MSA%==CSA TM_AMP(MR,T) = MAX(0,SMAX(PP(TT)$(ORD(TT)>ORD(T)),TM_ANNC(MR,TT)/(TM_GDPGOAL(MR,TT)/TM_GDPGOAL(MR,T))*POWER(TM_DEFVAL('ESC'),YEARVAL(T)-YEARVAL(TT)))-TM_ANNC(MR,T));
+  OPTION DEM < TM_DEM;
+  OPTION MRTC < TM_DEM;
+  IF(CARD(TM_DDF) = 0, TM_DDF(MRTC) = EPS);
+  VAR_NTX.FX(MR,TP,TRD) = EPS; TRD(MACST) = NO;
+
+*-----------------------------------------------------------------------------
+$ BATINCLUDE solvcoef.msa
+*-----------------------------------------------------------------------------
+* Complete BEOH parameters for damage
+  LOOP(TLAST(T), F=E(T); CNT=TM_PWT(T)/D(T));
+  LOOP((XTP(YEAR),SUPERYR(TLAST,LL(YEAR-CM_LED(YEAR)))),Z=CM_LED(XTP)/2; MY_F=YEARVAL(LL);
+   IF(MY_F>F,TM_PWT(LL)=CNT*(MY_F-F+Z); F=MY_F+Z); TM_PWT(XTP)=CNT*CEIL(YEARVAL(XTP)-F);
+   TM_UDF(R,XTP) = TM_UDF(R,LL) * TM_DFACTCURR(R,LL)**(2*Z));
+  Z=SUM(TLAST(T),B(T)+TM_ARBM*D(T)); TM_XWT(R,XTP)$(CM_LED(XTP)>0)=(MIN(YEARVAL(XTP),Z)-MIN(YEARVAL(XTP)-CM_LED(XTP),Z))/CM_LED(XTP)*TM_PWT(XTP)*TM_UDF(R,XTP);
+  LOOP(PP(T),TM_XWT(MR(R),XTP)$SUPERYR(T,XTP)=TM_XWT(R,XTP)/SUM(SUPERYR(T,LL)$XTP(LL),TM_XWT(R,LL)));
+*-----------------------------------------------------------------------------
+$ BATINCLUDE solve.msa
+*-----------------------------------------------------------------------------
+
+* Reporting parameters
+  TM_RESULT('TM_GDP-REF',MR,T) = TM_GDPGOAL(MR,T);
+  TM_RESULT('TM_GDP-ACT',MR,T) = TM_GDP(MR,T);
+  TM_RESULT('TM_PRD-Y',MR,T)   = VAR_Y.L(MR,T);
+  TM_RESULT('TM_CON-C',MR,T)   = VAR_C.L(MR,T);
+  TM_RESULT('TM_INV-I',MR,T)   = VAR_INV.L(MR,T);
+  TM_RESULT('TM_ESCOST',MR,T)  = VAR_EC.L(MR,T);
+$IFI %MSA%==MSA TM_RESULT('TM_GDPLOS',MR,T) = 100*(TM_GDPGOAL(MR,T)-TM_GDP(MR,T))/TM_GDPGOAL(MR,T);
+  DISPLAY TM_RESULT;

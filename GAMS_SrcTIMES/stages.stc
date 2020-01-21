@@ -1,0 +1,273 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* STAGES.stc - Preprocessing for multi-stage stochastics
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+$IF %MACRO%==YES $ABORT Stochastic MACRO Not Implemented - aborted.
+$IF %1==MCA $GOTO POST
+*
+$SETGLOBAL SW_TAGS SET EQ 'ES' SET VAR 'VAS' SET SWD ',WW' SET SWTD ',T,WW' SET SWS ',W)' SET SOW ',SOW' SET SWT ',SW_T(T,SOW)' SET VART 'SUM(SW_TSW(SOW,T,W),VAS' SET VARV 'SUM(SW_TSW(SOW,V,W),VAS' SET VARM 'SUM(SW_TSW(SOW,MODLYEAR,W),VAS'
+$IF %STAGES%==YES $SETGLOBAL SW_STVARS SET VARTT 'SUM(SW_TSW(SOW,TT,W),VAS' SET SWSW SW_TSW(SOW,T,WW),
+$SETGLOBAL SWD ',WW' SETGLOBAL WITSPINE ''
+$IF %STAGES%==YES $SETGLOBAL SWX ',SOW' SETGLOBAL SWTX SW_T(T,SOW)$
+$IF %SENSIS%==YES $SETGLOBAL SWD ''
+SET AUXSOW(ALLSOW) / 1 /;
+*-----------------------------------------------------------------------------
+* Use slack variables in user-constraints
+$SETGLOBAL VAR_UC YES
+$IF NOT %VAR_UC%==YES $ABORT Invalid VAR_UC setting in stochastic mode - abort.
+*$SETLOCAL DEBUG YES
+*-----------------------------------------------------------------------------
+* Pre-preprocessing of inputs to internal mappings
+ SW_SUBS('1',WW)$(ORD(WW) GT 1) = 0;
+ IF(SW_SUBS('1','1') EQ 0,
+   IF(CARD(SW_SUBS)+CARD(SW_SPROB) EQ 0, SW_SUBS('1','1') = MAX(1,SMAX(WW$SW_PROB(WW),ORD(WW)));
+   ELSE SW_SUBS('1','1') = MAX(1,SMAX(WW$(SW_SPROB('2',WW)+SW_SUBS('2',WW)),ORD(WW)))));
+
+* Copy number of childs from first parent to others when missing
+ LAST_VAL = SMAX((J,WW)$SW_SUBS(J,WW),ORD(J));
+ LOOP(JJ(J-1)$(ORD(J) LE LAST_VAL),
+   F = MAX(1,SW_SUBS(J,'1')); Z = SUM(WW$SW_SUBS(JJ,WW),SW_SUBS(JJ,WW));
+   LOOP(WW$(ORD(WW) LE Z),
+     IF(NOT SW_SUBS(J,WW), SW_COPY(J,WW)$(ORD(WW) GT 1) = YES; SW_SUBS(J,WW) = F;)));
+
+* Construch SW_CHILD
+ LOOP((J,ALLSOW)$SW_SUBS(J,ALLSOW),
+  IF(ORD(ALLSOW) EQ 1, F = 0);
+  Z = SW_SUBS(J,ALLSOW)+F;
+  SW_CHILD(J,ALLSOW,WW)$((ORD(WW) LE Z)*(ORD(WW) GT F)) = YES;
+  F = Z;);
+
+* Construct sow:
+ LOOP(SW_CHILD(J,ALLSOW,WW), SOW(WW) = YES);
+
+*-----------------------------------------------------------------------------
+  SW_PHASE = 0;
+* Make sure OBJZ will not be generated
+    UC_TS_SUM(R,'OBJZ',S) = NO;
+    UC_TS_EACH(R,'OBJZ',S) = NO;
+  IF(SUM((UC_N,SOW)$S_UCOBJ(UC_N,SOW),1),
+    SW_START('1') = 9999;
+    SW_LAMBDA = 0;
+    SW_PHASE = -9;
+* Make sure OBJ1 will not be generated
+    UC_TS_SUM(R,'OBJ1',S) = NO;
+    UC_TS_EACH(R,'OBJ1',S) = NO;
+    UC_T_SUM(R,'OBJ1',T) = NO;
+* Complete checking for uncertain parameters
+    CNT = SW_PARM;
+    CNT$(NOT CNT) = SUM((UC_N,BD,J,W)$S_UC_RHS(UC_N,BD,J,W),1);
+    CNT$(NOT CNT) = SUM((R,UC_N,BD,J,W)$S_UC_RHSR(R,UC_N,BD,J,W),1);
+    CNT$(NOT CNT) = SUM((UC_N,T,BD,J,W)$S_UC_RHST(UC_N,T,BD,J,W),1);
+    CNT$(NOT CNT) = SUM((R,UC_N,T,BD,J,W)$S_UC_RHSRT(R,UC_N,T,BD,J,W),1);
+    CNT$(NOT CNT) = SUM((UC_N,T,S,BD,J,W)$S_UC_RHSTS(UC_N,T,S,BD,J,W),1);
+    CNT$(NOT CNT) = SUM((R,UC_N,T,S,BD,J,W)$S_UC_RHSRTS(R,UC_N,T,S,BD,J,W),1);
+* Reset UCOBJ(OBJ1) flags to either 1 or 2:
+  FIRST_VAL = S_UCOBJ('OBJ1','1');
+  S_UCOBJ('OBJ1',SOW) = 1+1$(S_UCOBJ('OBJ1',SOW) GE 0);
+* Copy UCOBJ from previous if missing and uncertain parameters defined
+    LOOP((SOW(WW),W(WW-1)),
+      IF(SUM(UC_N$S_UCOBJ(UC_N,SOW),1) EQ 1,
+        S_UCOBJ(UC_N,SOW) $= S_UCOBJ(UC_N,W);
+        S_UCOBJ('OBJ1',SOW) = 4+2$CNT;));
+* Check setups with single terminal SOW:
+    IF(FIRST_VAL,
+$IF %STAGES%==YES IF((FIRST_VAL EQ 0)$(NOT SW_PARM), SW_PARM = 1;
+$IF %STAGES%==YES ELSE S_UCOBJ('OBJ1',SOW)=S_UCOBJ('OBJ1',SOW)-ABS(S_UCOBJ('OBJ1',SOW)-4); SW_PARM = -1);
+    ELSE SW_PARM = 0); S_UCOBJ('OBJ1',SOW(WW))$(ORD(WW) EQ CARD(SOW)) = MAX(0,S_UCOBJ('OBJ1',WW));
+* Check MinMax Regret option
+  ELSEIF SUM((J,SOW)$S_UC_RHS('OBJ1','FX',J,SOW),1), UC_T_SUM(R,'OBJ1',T) = NO; SW_LAMBDA = -1
+  );
+$IF NOT %STAGES%==YES SW_START('1') = 9999; SW_LAMBDA = 0; SW_PARM = 0;
+*-----------------------------------------------------------------------------
+* Contruct spanning tree
+ FOR(Z = LAST_VAL-1 DOWNTO 0,
+  LOOP((SAMEAS(J-Z,'1'),JJ(J+1)),
+   IF(Z=LAST_VAL-1,SW_TREE(J,ALLSOW,SOW)$SW_CHILD(J,ALLSOW,SOW) = YES;
+   ELSE LOOP(SW_CHILD(J,ALLSOW,WW),SW_TREE(J,ALLSOW,SOW)$SW_TREE(JJ,WW,SOW) = YES;));
+ ));
+
+* Adjust SW_START to period years
+ MY_FYEAR = SW_START('1'); Z = 0; SW_START('1') = 0;
+ SW_START(J)$(ORD(J) GT LAST_VAL+1) = 0;
+ LOOP(MIYR_1(TT), F = -1;
+  LOOP(J$(ORD(J) LE LAST_VAL+1),
+    MY_F = SW_START(J);
+    IF(NOT MY_F, F = F+1; Z = MAX(Z+1,YEARVAL(TT+F)); SW_START(J) = Z;
+    ELSEIF MY_F GT Z, Z = MY_F; F = MAX(1,F,SUM(T$(YEARVAL(T) LT MY_F),1));
+      SW_START(J) = MAX(YEARVAL(TT+(F-1))+1,Z);
+    ELSE SW_START(J) = SW_START(J-1));
+ ));
+
+* Construct mapping of valid data stages for each T
+ LOOP(J$SW_START(J), SW_TSTG(T,J)$(SW_START(J) LE YEARVAL(T)) = YES);
+* Reset SW_START if first year is large
+ IF(MY_FYEAR GE SW_START('2'), SW_START(J)$((SW_START(J) LE MY_FYEAR)$SW_START(J)) = MIYR_V1);
+
+* Construct SW_STAGE for internal SOWs
+ SW_DESC(J,WW) = SUM(SW_TREE(J,WW,SOW),1);
+ LOOP(SAMEAS(WW,'1'), F = 0;
+   LOOP((J,SOW)$SW_SUBS(J,SOW),
+     IF(ORD(J) NE F, Z = 0; F = ORD(J));
+     SW_STAGE(J,WW+Z) = YES;
+     Z = Z + SW_DESC(J,SOW);
+ ));
+
+* Copy probabilities when missing
+ LOOP((JJ(J-1),ALLSOW)$SW_SUBS(JJ,ALLSOW), Z=0; MY_F=0;
+   IF(ORD(ALLSOW) EQ 1, F=0; ELSE F=F+CNT); CNT=SW_SUBS(JJ,ALLSOW);
+   LOOP(SW_CHILD(JJ,ALLSOW,WW)$SW_SPROB(J,WW), Z=Z+SW_SPROB(J,WW); MY_F=MY_F+1);
+   IF(SW_COPY(JJ,ALLSOW)$(NOT MY_F), SW_SPROB(J,WW)$SW_CHILD(JJ,ALLSOW,WW) = SW_SPROB(J,WW-F);
+   ELSE SW_SPROB(J,WW)$((NOT SW_SPROB(J,WW))*SW_CHILD(JJ,ALLSOW,WW)) = MAX(0,1-Z)/(CNT-MY_F));
+ );
+* Set map for copying attributes
+ LOOP(SW_COPY(JJ(J-1),W), F=0; LOOP(SW_CHILD(JJ,W,WW), IF(F=0,F=ORD(WW)-1); SW_CPMAP(J,WW,WW-F)=YES));
+
+* Normalize probabilities under each parent
+ SW_SPROB('1','1') = 1;
+ LOOP((J,WW)$SW_SUBS(J,WW),
+   Z = SUM(SOW$SW_CHILD(J,WW,SOW),SW_SPROB(J+1,SOW));
+   IF(Z NE 1,SW_SPROB(J+1,SOW)$SW_CHILD(J,WW,SOW) = SW_SPROB(J+1,SOW)/Z;);
+ );
+
+* Add final stage to SW_TREE
+  LOOP(SAMEAS(J-LAST_VAL,'1'), SW_TREE(J,SOW,SOW) = YES);
+  OPTION SW_REV < SW_TREE;
+* Calculate final stage probabilities
+  SW_PROB(SOW)$(NOT SW_PROB(SOW)) = PROD(SW_TREE(JJ,ALLSOW,SOW),SW_SPROB(JJ,ALLSOW));
+$IF SETLOCAL DEBUG DISPLAY SW_PROB,SW_SPROB;
+*-----------------------------------------------------------------------------
+* Normalize probability distribution
+  SW_PROB(ALLSOW)$(SW_PROB(ALLSOW) LE 0) = 0;
+  Z = SUM(ALLSOW,SW_PROB(ALLSOW));
+  IF(Z EQ 0, Z = 1; SW_PROB('1') = Z);
+  SW_PROB(SOW) = SW_PROB(SOW)/Z;
+
+* Set all SOWs into the last stage and Cumulate SOW from each stage to next:
+  LOOP(SAMEAS(J,'1'), SW_STAGE(J+LAST_VAL,SOW) = YES;);
+  LOOP(J$(ORD(J) LE LAST_VAL), SW_STAGE(J+1,SOW)$SW_STAGE(J,SOW) = YES;);
+
+* Convert stages to periods
+  LOOP(SW_STAGE(J,SOW), SW_T(T,SOW)$(SW_START(J) LE YEARVAL(T)) = YES);
+
+* Map SOWs to unique SOW at each period:
+  LOOP(T, F = 0;
+    LOOP(SW_T(T,WW), Z = ORD(WW);
+      SW_TSW(SOW(ALLSOW),T,WW+(F-Z))$((ORD(ALLSOW) GE F)*(ORD(ALLSOW) LT Z)) = YES;
+      F = Z;);
+    SW_TSW(SOW(ALLSOW),T,WW)$((ORD(WW) EQ F)*(ORD(ALLSOW) GE F)) = YES;
+  );
+
+* Calculate aggregate probablilities; remove from maps all SOWs with zero PROB
+  SW_TPROB(T,W) = SUM(SW_TSW(SOW,T,W),SW_PROB(SOW));
+  SW_T(T,ALLSOW)$(SW_TPROB(T,ALLSOW) EQ 0) = NO;
+  SW_TSW(SOW,T,WW)$(NOT SW_T(T,WW)) = NO;
+
+* Construct mapping between internal (T,SOW) and original (J,SOW)
+  SW_MAP(SW_T(T,WW),J,SOW)$(SW_TSTG(T,J)*SW_TREE(J,SOW,WW)) = YES;
+
+$IF SETLOCAL DEBUG DISPLAY SW_START,SW_SUBS,SW_CHILD,SW_TREE,SW_MAP,SW_STAGE,SW_T,SW_TSW,SW_TPROB,SW_TSTG;
+
+*-----------------------------------------------------------------------------
+* Construct SW_UCT (needed to control dynamic stochastic UC-constraints)
+  LOOP(R, SW_UCT(UC_N,SW_T(T,SOW))$(UC_T_SUCC(R,UC_N,T)$UC_DYNDIR(R,UC_N,'RHS'))  = YES;
+    LOOP(SW_T(T+1,SOW),SW_UCT(UC_N,T,SOW)$(UC_T_SUCC(R,UC_N,T)*(NOT UC_DYNDIR(R,UC_N,'RHS'))) = YES;));
+*-----------------------------------------------------------------------------
+* Pre-Process cumulative bounds
+  S_FLO_CUM(R,P,C,BOHYEAR+BEOH(BOHYEAR),EOHYEAR+BEOH(EOHYEAR),BD,J,SOW) $= S_FLO_CUM(R,P,C,BOHYEAR,EOHYEAR,BD,J,SOW);
+  S_FLO_CUM(R,P,C,BOHYEAR,EOHYEAR,BD,J,SOW)$(NOT LL(BOHYEAR)*LL(EOHYEAR)) = 0;
+  RPC_CUMFLO(RP(R,P),C,ALLYEAR,LL) $= SUM((BD,J,SOW)$S_FLO_CUM(R,P,C,ALLYEAR,LL,BD,J,SOW),YES);
+*-----------------------------------------------------------------------------
+* Construct SUPERYR (needed in cumulative constraints)
+  SUPERYR(PERIODYR(T,LL)) = YES;
+  LOOP(MIYR_1(T),SUPERYR(T--1,LL)$(YEARVAL(LL) GT MIYR_VL) = YES);
+*-----------------------------------------------------------------------------
+$ BATINCLUDE fillsow.stc COM_PROJ 'R,' C T NO
+$ BATINCLUDE fillsow.stc COM_TAX 'R,' 'C,S,COM_VAR,CUR' T YES 'SW_T(T,WW)' NO
+$ BATINCLUDE fillsow.stc NCAP_COST 'R,' P T NO
+$ IF DEFINED S_FLO_FUNC $BATINCLUDE fillsow.stc FLO_FUNC 'R,' 'P,CG,CG2' T NO
+$ IF DEFINED S_NCAP_AFS $BATINCLUDE fillsow.stc NCAP_AFS 'R,' 'P,S' T NO
+$ IF DEFINED S_COM_FR   $BATINCLUDE fillsow.stc COM_FR 'R,' 'C,S' T NO
+$ BATINCLUDE fillsow.stc CAP_BND 'R,' 'P,BD' T YES 'SW_T(T,WW)' NO
+$ BATINCLUDE fillsow.stc COM_CUM 'R,COM_VAR,ALLYEAR,' 'C,BD' LL YES 'SUPERYR(T,LL)' YES
+$ BATINCLUDE fillsow.stc FLO_CUM 'R,P,C,ALLYEAR,' 'BD' LL YES 'SUPERYR(T,LL)' YES
+$ BATINCLUDE fillsow.stc UC_RHST 'UC_N,' 'LIM' T YES 'SW_T(T,WW)' NO
+$ BATINCLUDE fillsow.stc UC_RHSRT 'R,UC_N,' 'LIM' T YES 'SW_T(T,WW)' NO
+$ BATINCLUDE fillsow.stc UC_RHSTS 'UC_N,' 'TS,LIM' T YES 'SW_T(T,WW)' NO
+$ BATINCLUDE fillsow.stc UC_RHSRTS 'R,UC_N,' 'TS,LIM' T YES 'SW_T(T,WW)' NO
+$IF DEFINED S_DAM_COST $BATINCLUDE fillsow.stc DAM_COST 'R,' 'COM,CUR' T YES 'SW_T(T,WW)' YES
+* Handle uncertain attributes without year index
+$ BATINCLUDE fillsow.stc UC_RHS 'UC_N,LIM' '' '' YES YES YES
+$ BATINCLUDE fillsow.stc UC_RHSR 'R,UC_N,LIM' '' '' YES YES YES
+  OPTION CLEAR=SUPERYR;
+$ IF %MCA%==YES $EXIT
+$ LABEL POST
+* Levelize & merge
+$ BATINCLUDE pp_lvlfc.mod S_COM_TAX C COM_TS ',COM_VAR,CUR,J,WW' "" ALL_TS T RC(R,C)$(ORD(J)=1)
+  S_COM_TAX(RTC(R,T,C),S,COM_VAR,CUR,'1',W)$(NOT SW_T(T,W)) $= SUM(SW_TSW(W,T,WW),S_COM_TAX(RTC,S,COM_VAR,CUR,'1',WW));
+*-----------------------------------------------------------------------------
+* Pre-Process FLO_FUNC transformation
+$IF NOT DEFINED S_FLO_FUNC $GOTO DIDFUNC
+  PARAMETER RTP_FFCS(R,ALLYEAR,P,CG,CG%SWD%); OPTION CLEAR=RTP_FFCS;
+  RP_FFSGG(R,P,CG(%PGPRIM%),CG) = NO;
+  RP_FFSGGM(RP_PG(R,P,CG),COM_GRP,%PGPRIM%,COM_GRP)$RP_FFSGG(R,P,%PGPRIM%,COM_GRP) = YES;
+  RP_FFSGG(R,P,%PGPRIM%,CG) = NO;
+  RP_FFSGGM(RP_FFSGG(R,P,CG,COM_GRP),CG,COM_GRP) = YES;
+  OPTION RP_FFSGG <= RP_FFSGGM;  OPTION TRACKP < RP_FFSGG;
+$IF %SENSIS%==YES $GOTO DIDFUNC
+  OPTION CLEAR=UNCD7; UNCD7(R,TT,T--ORD(T),P,SOW,'','')$TRACKP(R,P) $= RTP_VINTYR(R,TT,T,P)$SW_T(T,SOW);
+  LOOP(UNCD7(R,T,TT,P,SOW,'',''),RTPW(R,T,P,SOW)=YES);
+  RTP_FFCS(R,T,P,CG,COM_GRP,SOW)$(RTPW(R,T,P,SOW)*RP_FFSGG(R,P,CG,COM_GRP)) =
+    SUM((RP_FFSGGM(R,P,CG,COM_GRP,CG1,CG2),SW_TSW(SOW,T,W)),
+      PROD(SW_MAP(T,W,J,WW)$S_FLO_FUNC(R,T,P,CG1,CG2,J,WW),S_FLO_FUNC(R,T,P,CG1,CG2,J,WW))-1);
+  OPTION CLEAR=S_FLO_FUNC,CLEAR=RTPW,CLEAR=RP_FFSGG,CLEAR=RP_FFSGGM;
+$LABEL DIDFUNC
+* Pre-process uncertain NCAP_COST
+  OPTION RVP < S_NCAP_COST;
+  OBJ_SIC(RVP(R,T,P),SOW)$SW_T(T,SOW) = PROD(SW_MAP(T,SOW,J,WW)$S_NCAP_COST(R,T,P,J,WW),S_NCAP_COST(R,T,P,J,WW))-1;
+  OPTION CLEAR=RVP,CLEAR=TRACKP,CLEAR=S_NCAP_COST;
+* Process uncertain NCAP_AFS
+$IF NOT DEFINED S_NCAP_AFS $GOTO DIDAFS
+  PARAMETER RTP_SAFS(R,T,P,S,WW);
+  LOOP(J, RTP_SAFS(R,T,P,S,W) $= SUM(SW_MAP(T,W,J,WW),S_NCAP_AFS(R,T,P,S,J,WW)));
+  OPTION CLEAR=S_NCAP_AFS;
+  LOOP(BDUPX(BD),
+  S_NCAP_AFS(R,T,P,S,'1',W)$((NCAP_AF(R,T,P,S,BD) GT 0)$RTP_SAFS(R,T,P,S,W)) = RTP_SAFS(R,T,P,S,W)/NCAP_AF(R,T,P,S,BD);
+  S_NCAP_AFS(R,T,P,S,'1',W)$((NCAP_AFS(R,T,P,S,BD) GT 0)$RTP_SAFS(R,T,P,S,W)) = RTP_SAFS(R,T,P,S,W)/NCAP_AFS(R,T,P,S,BD);
+  S_NCAP_AFS(R,T,P,ANNUAL(S),'1',W)$((NCAP_AFA(R,T,P,BD) GT 0)$RTP_SAFS(R,T,P,S,W)) = RTP_SAFS(R,T,P,S,W)/NCAP_AFA(R,T,P,BD));
+  OPTION CLEAR=RTP_SAFS;
+  RTP_SAFS(R,T,P,S,W)$S_NCAP_AFS(R,T,P,S,'1',W) = ROUND(S_NCAP_AFS(R,T,P,S,'1',W)-1,8);
+  OPTION CLEAR=S_NCAP_AFS;
+$LABEL DIDAFS
+* Process uncertain COM_FR
+$IF NOT DEFINED S_COM_FR $GOTO DIDCOMFR
+  SET T0(LL);
+  SET SW_T2W(WW,T,WW,LL);
+  SET RTCSW(R,T,C,S,WW);
+  PARAMETER RTCS_SFR(R,LL,C,S,WW,TS);
+  PARAMETER RCS_SSFR(R,C,S,TS,WW,LL);
+  T0(T)=YES; T0('0')=YES; SW_T2W(SW_TSW(SOW,T,WW),T)=YES; SW_T2W(SW_TSW(SOW,T,WW),'0')$SW_TSTG(T,'2')=YES;
+  LOOP(J, RTCS_SFR(R,T,C,S,W,S) $= SUM(SW_MAP(T,W,J,WW),S_COM_FR(R,T,C,S,J,WW)));
+  RTCS_SFR(R,T,C,S,W,S)$RTCS_SFR(R,T,C,S,W,S) = RTCS_SFR(R,T,C,S,W,S)-1;
+  OPTION CLEAR=S_COM_FR;
+* Fill down the multipliers
+  RTCSW(R,T,C,S+STOA(S),W)$RTCS_SFR(R,T,C,S,W,S) = YES;
+  RTCSW(R,T,C,S,W)$((COM_FR(R,T,C,S) GT 0)$RTCSW(R,T,C,'ANNUAL',W)) = YES;
+  RTCS_SFR(RTCSW(R,T,C,S,W),S)$((NOT RTCS_SFR(RTCSW,S))$TS_GROUP(R,'WEEKLY',S)) = SUM(RS_BELOW1(R,TS,S),RTCS_SFR(R,T,C,TS,W,TS));
+  RTCS_SFR(RTCSW(R,T,C,S,W),S)$((NOT RTCS_SFR(RTCSW,S))$TS_GROUP(R,'DAYNITE',S)) = SUM(RS_BELOW1(R,TS,S),RTCS_SFR(R,T,C,TS,W,TS));
+* Sum up COM_FR for all commodities that have it defined
+  FOR(Z=3 DOWNTO 1,LOOP(TSLVL$(ORD(TSLVL)=Z),
+  RTCS_SFR(RTCSW(R,T,C,S,W),S)$TS_GROUP(R,TSLVL,S) =
+    SUM(RS_BELOW1(R,S,TS),(1+RTCS_SFR(R,T,C,TS,W,TS))*COM_FR(R,T,C,TS))/COM_FR(R,T,C,S)-1;
+  ));
+  S_COM_FR(R,T,C,S,'1',W)$RTCSW(R,T,C,S,W) = (1+RTCS_SFR(R,T,C,S,W,S))/(1+RTCS_SFR(R,T,C,'ANNUAL',W,'ANNUAL'))-1;
+  OPTION CLEAR=RTCS_SFR;
+  RTCS_SFR(RTCSW(R,T,C,S,W),TS)$RS_BELOW(R,TS,S) = (1+RTCS_FRMX(R,T,C,S,TS))*(((1+S_COM_FR(R,T,C,S,'1',W))/MAX(1E-9,1+S_COM_FR(R,T,C,TS,'1',W)))-1);
+  RTCS_SFR(RTCSW(R,T,C,S,W),TS)$(ABS(RTCS_SFR(R,T,C,S,W,TS)) LT 1E-9) = 0;
+  RTCS_SFR(R,LL--ORD(LL),C,S,W,TS)$SW_TSTG(LL,'2') $= RTCS_SFR(R,LL,C,S,W,TS);
+  RTCS_SFR(R,T,C,S,W,TS)$(SW_TSTG(T,'2')$RTCS_SFR(R,'0',C,S,W,TS)) = RTCS_SFR(R,T,C,S,W,TS)-RTCS_SFR(R,'0',C,S,W,TS);
+  OPTION RCS_SSFR <= RTCS_SFR; OPTION CLEAR=RTCSW,CLEAR=RTCS_SFR;
+$LABEL DIDCOMFR

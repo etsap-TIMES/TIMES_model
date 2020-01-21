@@ -1,0 +1,33 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* PREP_ext.abs oversees all the added interpolation activities needed by ABS
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Add reserve commodities to RC
+  RC(R,C) $= BS_RTYPE(R,C);
+  LOOP((RP,ITEM)$GR_GENMAP(RP,ITEM),BS_K(ITEM)=YES);
+  LOOP((R,T,C,P,BD)$BS_SHARE(R,T,C,P,BD),BS_K(P)=YES);
+
+* Bulk processing
+  OPTION BS_RTCS < BS_DEMDET;
+  BS_RTCS('OMEGA',R,YEAR,C,S) $= BS_OMEGA(R,YEAR,C,S);
+  BS_RTCS('DELTA',R,YEAR,C,S) $= BS_DELTA(R,YEAR,C,S);
+
+* Interpolation/extrapolation
+$ BATINCLUDE fillparm BS_LAMBDA R C ",'0','0','0','0','0'" T YES '>=0'
+$ BATINCLUDE fillparm BS_DETWT  R C ",'0','0','0','0','0'" T YES '>=0'
+$ BATINCLUDE fillparm BS_SIGMA  R 'C,BS_K,S' ",'0','0','0'" T YES >=0
+$ BATINCLUDE fillparm BS_SHARE  R 'C,BS_K,BD' ",'0','0','0'" T YES >=0
+$ BATINCLUDE fillparm BS_RTCS 'RSP,R' 'C,S' ",'0','0','0'" T YES >=0
+$ BATINCLUDE fillparm BS_MAINT  R 'P,S' ",'0','0','0','0'" V 'RTP(R,V,P)' >=0
+$ BATINCLUDE fillparm BS_RMAX   R 'P,C,S' ",'0','0','0'" V 'RTP(R,V,P)' >=0
+$ BATINCLUDE prepparm BS_BNDPRS R 'P,C,S,BD' ",'0'" T 'RTP(R,T,P)' 1
+
+  BS_RTCS(RSP('OMEGA'),R,T,C,S)$BS_RTCS(RSP,R,T,C,S) = ROUND(BS_RTCS(RSP,R,T,C,S));
+  BS_SIGMA(R,T,C,BS_K,S)$(BS_LAMBDA(R,T,C)=0)=0;
+  BS_RMAX(R,LL--ORD(LL),P,C,S+STOA(S)) $= (BS_RMAX(R,LL,P,C,S)>0);
+  BS_RMAX(R,LL,P,C,S)$(NOT BS_RMAX(R,'0',P,C,'ANNUAL'))=0;
+  OPTION BS_BSC < BS_RMAX, CLEAR=BS_OMEGA;

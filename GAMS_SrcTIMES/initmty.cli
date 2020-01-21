@@ -1,0 +1,123 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* INITMTY.cli - Extension for Climate Module
+*-----------------------------------------------------------------------------
+* Questions/Comments:
+*-----------------------------------------------------------------------------
+$ SETGLOBAL CLI YES
+  SCALAR ATTLVL /0/, VALLVL /0/, CM_CALIB /0/;
+*-----------------------------------------------------------------------------
+* Set for calibration quantities
+  SET CM_HISTS 'Historical CO2 concentration and incremental forcing quantities' /
+    CO2-ATM 'Mass of CO2 in the atmosphere (in GtC)'
+    CO2-UP 'Mass of CO2 in the upper ocean layer (in GtC)'
+    CO2-LO 'Mass of CO2 in the lower ocean layer (in GtC)'
+    CH4-ATM, CH4-UP, CH4-LO 'Mass of CH4 in the atmosphere'
+    N2O-ATM, N2O-UP, N2O-LO 'Mass of N2O in the atmosphere'
+    FORCING 'Radiative Forcing'
+    FORC-CO2, FORC-CH4, FORC-N2O, FORC-FGS, FORC-KYO
+    CO2-GTC, CH4-MT,  N2O-MT
+    CO2-PPM, CH4-PPB, N2O-PPB
+    DELTA-ATM 'Temperature change in the surface'
+    DELTA-LO 'Temperature change in the deep ocean layer'
+  /;
+  ALIAS(CM_VAR,CM_HISTS);
+  SET CM_OFOR(CM_VAR) / FORC-CH4, FORC-N2O, FORC-FGS /;
+  SET UC_GRPTYPE / CLI /;
+
+* Mapping and conversion parameter for total CO2 emissions
+  PARAMETER CM_CO2GTC(REG,C) 'Conversion factors from CO2 commodities to GtC' //;
+  PARAMETER CM_GHGMAP(R,C,CG) 'Conversion factors from regional GHG commodities to CLI' //;
+  PARAMETER CM_PPM(CM_VAR) 'Conversion factors between Gt/Mt and ppm/ppb'
+    / CO2-GTC 2.13, CH4-MT 2.84, N2O-MT 7.81 /;
+
+* Climate module time-dependent parameters
+  PARAMETER CM_HISTORY(ALLYEAR,CM_VAR) 'Calibration values for CO2 and forcing' //;
+  PARAMETER CM_EXOFORC(ALLYEAR) 'Radiative forcing from exogenous sources' //;
+  PARAMETER CM_MAXCO2C(ALLYEAR) 'Maximum allowable atmospheric CO2 concentration' //;
+  PARAMETER CM_MAXC(ALLYEAR,ITEM) 'Maximum level of climate variable' //;
+  PARAMETER CM_LINFOR(ALLYEAR,CM_VAR,LIM) 'Linearized forcing function' //;
+  PARAMETER UC_CLI(UC_N,SIDE,REG,ALLYEAR,CM_VAR) 'Climate variable' //;
+
+* Reporting parameters
+  PARAMETER CM_DT_FORC(ALLYEAR) 'Delta forcing' //;
+  PARAMETER CM_MAXC_M(ITEM,ALLYEAR) 'Marginals of max constraints' //;
+  PARAMETER CM_SRESULT(ALLSOW,ITEM,ALLYEAR) 'Climate Module basic results' //;
+  PARAMETER CM_SMAXC_M(ALLSOW,ITEM,ALLYEAR) 'Marginals for max constraints' //;
+
+* Internal sets for reservoirs
+  SET CM_STCC / CS, SIGMA1 /;
+  SET CM_BOX 'Reservoir buckets' / ATM, UP, LO /;
+  SET CM_EMIS(CM_HISTS) / CO2-GTC /;
+  SET CM_KIND(CM_HISTS) / CO2-GTC /;
+  SET CM_TKIND(CM_HISTS);
+  SET CM_CONC(CM_HISTS,CM_BOX) / CO2-GTC.ATM /;
+  SET CM_ATMAP(CM_VAR,CM_VAR) 'Atmospheric reservoir buckets' / CO2-GTC.CO2-PPM, CH4-MT.CH4-PPB, N2O-MT.N2O-PPB, FORCING.DELTA-ATM /;
+  ALIAS (CM_BUCK, CM_BOX);
+  SET CM_BOXMAP(CM_HISTS,CM_HISTS,CM_BOX) / CO2-GTC.CO2-ATM.ATM, CO2-GTC.CO2-UP.UP, CO2-GTC.CO2-LO.LO,
+                                    CH4-MT.CH4-ATM.ATM, CH4-MT.CH4-UP.UP, N2O-MT.N2O-ATM.ATM, N2O-MT.N2O-UP.UP
+                                    FORCING.DELTA-ATM.ATM, FORCING.DELTA-LO.LO /;
+  SET PRET(T,T) //;  
+  SET SUPERYR(T,ALLYEAR) 'SUpremum PERiod YeaR' //;
+  SET CM_FORCMAP(CM_VAR,CM_VAR)   / FORCING.FORC-FGS,FORC-KYO.FORC-FGS
+    FORC-CO2.CO2-GTC,FORC-CH4.CH4-MT,FORC-N2O.N2O-MT,FORC-FGS.FORC-FGS /;
+
+* Internal parameters
+  PARAMETER CM_SIG1(ALLSOW) //;
+  PARAMETER CM_PHI(CM_HISTS,*,*) 'Conc. transport matrix between reservoirs' //;
+  PARAMETER CM_SIG(ALLSOW,*,*) 'Temperature transport matrix between reservoirs' //;
+  PARAMETER CM_AA(CM_HISTS,ALLYEAR,ALLSOW,*,*) 'Periodical CO2 transport matrix' //;
+  PARAMETER CM_BB(CM_HISTS,ALLYEAR,ALLSOW,CM_BOX) 'Periodical emission transport vector' //;
+  PARAMETER CM_CC(CM_HISTS,ALLYEAR,ALLSOW,CM_BOX) 'Periodical emission transport vector' //;
+  PARAMETER CM_RR(J,CM_BOX,*) 'Reporting' //;
+  PARAMETER CM_DELTAT(ALLYEAR,CM_BOX) 'Temperature change in T boxes' //;
+  PARAMETER CM_LED(ALLYEAR) //;
+  PARAMETER CM_BEMI(CM_HISTS,LL) //;
+  PARAMETER CM_EVAR(CM_HISTS,LL) //;
+
+*-----------------------------------------------------------------------------
+* If parameter CM_CO2GTC is not implemented in the shell, IRE_CCVT can alternatively be used
+* For that purpose, a predefined commodity for global CO2 emissions is needed:
+  SET COM_GRP / FORCING, CO2-GTC, CO2-ATM, CO2-PPM, CH4-MT, N2O-MT, CH4-PPB, N2O-PPB, DELTA-ATM /;
+  SET COM_GRP / FORC-CO2, FORC-CH4, FORC-N2O, FORC-FGS, FORC-KYO /;
+  SET COM     / CO2-GTC, CH4-MT, N2O-MT, FORCING, CO2-ATM, DELTA-ATM /;
+*-----------------------------------------------------------------------------
+  PARAMETER CM_CONST(*) 'Climate module constants' /
+    PHI-UP-AT	0.0453
+    PHI-AT-UP	0.0495
+    PHI-LO-UP	0.00053
+    PHI-UP-LO	0.0146
+    GAMMA	0
+    LAMBDA	1.41
+    CS		2.91
+    SIGMA1	0.024
+    SIGMA2	0.44
+    SIGMA3	0.002
+    CO2-PREIND	596.4
+    PHI-CH4     0.09158
+    PHI-N2O     0.008803
+    EXT-EOH     -1
+    BEOHMOD     20
+ /;
+IF(NOT CM_CONST('GAMMA'), CM_CONST('GAMMA') = 5.35*LOG(2));
+IF(CM_CONST('LAMBDA') EQ 0, CM_CONST('LAMBDA') = 1.25);
+IF(CM_CONST('CS') EQ 0, CM_CONST('CS') = CM_CONST('GAMMA')/CM_CONST('LAMBDA'));
+CM_CONST('LAMBDA') = CM_CONST('GAMMA')/CM_CONST('CS');
+E('0')=0; IF(CM_CONST('EXT-EOH') EQ 0, CM_CONST('EXT-EOH')=SMAX(LL$E(LL),E(LL)));
+*-----------------------------------------------------------------------------
+* The following parameters describe historical mass of CO2 in the ATM and ocean
+* as well as historical temperature increases in surface and deep ocean
+**** User provided values override these default hard-coded values ****
+  PARAMETER CM_DEFAULT(ALLYEAR,CM_HISTS) //;
+  TABLE CM_DEFAULT(ALLYEAR,CM_HISTS)
+        CO2-ATM   CO2-UP   CO2-LO   DELTA-ATM   DELTA-LO  CH4-ATM  CH4-UP  N2O-ATM  N2O-UP
+1990       735              19230      0.43       0.06
+1995       765      781     19230      0.50       0.06
+2000       785      798     19230      0.65       0.06      3030    1988     360     2109
+2005       806              19230      0.75       0.06      3067    1988     390     2109
+2010       826      830     19230      0.80       0.06      3122    1988     414     2109
+;
+*-----------------------------------------------------------------------------

@@ -1,0 +1,173 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* RPTLITE.rpt is the main driver for the light-weight report writer for TIMES
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+*-----------------------------------------------------------------------------
+$IF NOT %SOLVEDA%==1 $SHIFT SHIFT SHIFT
+$IF '%4'=='NO' $GOTO REPORT
+$BATINCLUDE solsysd.v3 SYSUC ! '%SYSPREFIX%' VAR VARX INV INVX INV+ INVX+ FIX FIXX IRE COM ACT FLO ELS DAM DAS DAM-EXT+
+$BATINCLUDE solsysd.v3 SYSUC ,% '%SYSPREFIX%' INSTCAP LUMPINV LUMPIX COST CGAP GGAP RNGLO RNGUP RATIO GRATIO LEVCOST
+*-----------------------------------------------------------------------------
+  ALIAS(ALLSOW,WW);
+$IF SET RPT_OPT PARAMETER RPT_OPT / %RPT_OPT% /;
+$IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
+  RPT_OPT(ITEM,J)$(RPT_OPT(ITEM,J)=0)=0;
+  RPT_OPT('FLO','1')$RPT_OPT('FLO','3')=1;
+*-----------------------------------------------------------------------------
+* Other general parameters and sets
+ PARAMETERS
+   RTP_OBJ(J,R,ALLYEAR,P,CUR)      //
+   RTP_NPV(J,R,ALLYEAR,P,CUR)      //
+   PAR_ACTC(J,R,LL,T,P,C,CUR)
+   PAR_FLOC(J,R,LL,T,P,C,CUR)
+   PAR_COMC(J,R,T,C,CUR)
+   PAR_RPMX(R,P,J,LL,T,C,CUR)
+   PAR_RCMX(R,C,J,T,CUR)
+   PAR_OBJCAP(R,ALLYEAR,P,CUR)
+   COEF_OBJINV(R,ALLYEAR,PRC)      //
+   COEF_OBINV(R,ALLYEAR,P,CUR)     //
+   COEF_OBFIX(R,ALLYEAR,P,CUR)     //
+   COEF_CRF(R,ALLYEAR,P,CUR)       //
+   VAR_NCAPRNG(R,ALLYEAR,P,BD)     //
+   F_VIO(R,ALLYEAR,T,P,IO)
+   F_IOS(R,ALLYEAR,T,P,C,S)        //
+   F_INOUT(R,ALLYEAR,T,P,C,IO)     //
+   F_INOUTS(R,ALLYEAR,T,P,C,S,IO)  //
+   REG_OBJ(REG)                    //
+   BC_INVACT(R,ALLYEAR,LL,PRC,S)   //
+   BC_INVTOT(R,ALLYEAR,PRC)        //
+   VAL_FLO(R,ALLYEAR,LL,PRC,C)     //
+   PAR_RTCS(R,T,C,S)
+   PAR_TOP(R,T,P,C,IO);
+
+ SET NCAP_YES(R,ALLYEAR,P)         //;
+ SET F_IOSET(R,ALLYEAR,T,P,C,S,IO) //;
+ SET RVTPC(R,ALLYEAR,T,P,C)        //;
+ SET RTTC(R,ALLYEAR,C);
+ SET PASTCV / '0','¤' /, RPM / '-','+' /;
+ SET RNGLIM(SYSUC), SYSINV(SYSUC);
+ SET SUCMAP(J,SYSUC) /2.%SYSPREFIX%LUMPINV,2.%SYSPREFIX%INV+,1.%SYSPREFIX%LUMPIX,1.%SYSPREFIX%INVX+/;
+ SET RNGMAP(SYSUC,BD) / %SYSPREFIX%RNGLO.LO, %SYSPREFIX%RNGUP.UP /;
+ OPTION RNGLIM < RNGMAP;
+ SCALAR OBJVAL_1 / 0 /, OBJVAL_2 / 0 /;
+ PARAMETER SYSONE(SYSUC) / %SYSPREFIX%INV 1 /, SYSPLIT(SYSUC);
+*------------------------------------------------------------------------------
+* Stochastic result parameters
+ PARAMETER %1CST_PVC(%2SYSUC,R,C)       //;
+ PARAMETER %1CST_PVP(%2SYSUC,R,P)       //;
+ PARAMETER %1F_IN(%2R,ALLYEAR,T,P,C,S)  //;
+ PARAMETER %1F_OUT(%2R,ALLYEAR,T,P,C,S) //;
+ PARAMETER %1P_OUT(%2R,T,P,C,S)         //;
+ PARAMETER %1AGG_OUT(%2R,T,C,TS)        //;
+ PARAMETER %1PAR_ACTL(%2R,LL,LL,P,S)    //;
+ PARAMETER %1PAR_ACTM(%2R,LL,LL,P,S)    //;
+ PARAMETER %1PAR_PASTI(%2R,T,P,ITEM)    //;
+ PARAMETER %1PAR_CAPL(%2R,YEAR,P)       //;
+ PARAMETER %1PAR_CAPM(%2R,YEAR,P)       //;
+ PARAMETER %1PAR_CAPLO(%2R,YEAR,P)      //;
+ PARAMETER %1PAR_CAPUP(%2R,YEAR,P)      //;
+
+ PARAMETER %1PAR_NCAPL(%2R,ALLYEAR,P)      //;
+ PARAMETER %1PAR_NCAPM(%2R,ALLYEAR,P)      //;
+ PARAMETER %1PAR_NCAPR(%2R,ALLYEAR,P,ITEM) //;
+ PARAMETER %1PAR_OBJSAL(%2R,ALLYEAR,P,CUR) //;
+
+ PARAMETER %1PAR_COMPRDL(%2R,ALLYEAR,C,S)   //;
+ PARAMETER %1PAR_COMPRDM(%2R,ALLYEAR,C,S)   //;
+ PARAMETER %1PAR_COMNETL(%2R,ALLYEAR,C,S)   //;
+ PARAMETER %1PAR_COMNETM(%2R,ALLYEAR,C,S)   //;
+ PARAMETER %1PAR_COMBALEM(%2R,ALLYEAR,C,S)  //;
+ PARAMETER %1PAR_COMBALGM(%2R,ALLYEAR,C,S)  //;
+ PARAMETER %1PAR_IPRIC(%2R,YEAR,P,C,TS,IE)  //;
+ PARAMETER %1PAR_PEAKM(%2R,ALLYEAR,CG,S)    //;
+ PARAMETER %1PAR_UCSL(%2UC_N,*,*,*)         //;
+ PARAMETER %1PAR_UCSM(%2UC_N,*,*,*)         //;
+ PARAMETER %1PAR_CUMFLOL(%2R,P,C,LL,LL)     //;
+ PARAMETER %1PAR_CUMFLOM(%2R,P,C,LL,LL)     //;
+ PARAMETER %1PAR_CUMCST(%2R,LL,LL,COSTAGG,CUR) //;
+ PARAMETER %1PAR_UCMRK(%2R,T,ITEM,C,S)      //;
+ PARAMETER %1PAR_UCRTP(%2UC_N,R,T,P,UC_GRPTYPE)//;
+ PARAMETER %1PAR_UCMAX(%2UC_N,ALL_R,ITEM,C) //;
+
+* Stochastic cost parameters
+ PARAMETER REG_WOBJ(REG,ITEM,CUR)              //;
+ PARAMETER %1REG_WOBJ(%2REG,ITEM,CUR)          //;
+ PARAMETER %1REG_IREC(%2REG)                   //;
+ PARAMETER %1REG_ACOST(%2R,ALLYEAR,ITEM)       //;
+ PARAMETER %1CST_INVC(%2R,ALLYEAR,T,P,SYSUC)   //;
+ PARAMETER %1CST_INVX(%2R,ALLYEAR,T,P,SYSUC)   //;
+ PARAMETER %1CST_DECC(%2R,ALLYEAR,T,P)         //;
+ PARAMETER %1CST_FIXC(%2R,ALLYEAR,T,P)         //;
+ PARAMETER %1CST_FIXX(%2R,ALLYEAR,T,P)         //;
+ PARAMETER %1CST_ACTC(%2R,ALLYEAR,T,P,RPM)     //;
+ PARAMETER %1CST_FLOC(%2R,ALLYEAR,T,P,C)       //;
+ PARAMETER %1CST_FLOX(%2R,ALLYEAR,T,P,C)       //;
+ PARAMETER %1CST_IREC(%2R,ALLYEAR,T,P,C)       //;
+ PARAMETER %1CST_COMC(%2R,ALLYEAR,C)           //;
+ PARAMETER %1CST_COMX(%2R,ALLYEAR,C)           //;
+ PARAMETER %1CST_COME(%2R,ALLYEAR,C)           //;
+ PARAMETER %1CST_SALV(%2R,ALLYEAR,P)           //;
+ PARAMETER %1CST_TIME(%2R,ALLYEAR,S,SYSUC)     //;
+ PARAMETER %1CAP_NEW(%2R,ALLYEAR,P,T,SYSUC)    //;
+* Damage cost and custom parameters
+ PARAMETER %1DAM_OBJ(%2R,T,C,CUR);
+ PARAMETER %1CST_DAM(%2R,T,C) 'Damage costs'   //;
+ PARAMETER %1PAR_EOUT(%2R,ALLYEAR,T,P,C)       //;
+*------------------------------------------------------------------------------
+* Prepare some sets and parameters that can be used for all SOW
+*------------------------------------------------------------------------------
+  SALV_INV(OBJ_SUMS(R,PASTMILE(V),P),V)=SUM(OBJ_ICUR(R,V,P,CUR)$OBJ_PASTI(R,V,P,CUR),SALV_INV(R,V,P,V)*(NCAP_PASTI(R,V,P)/OBJ_PASTI(R,V,P,CUR)))*(1-0%CTST%);
+* Hold on to costs
+  OBJ_VFLO(R,P,C,CUR,UC_COST)$(NOT RDCUR(R,CUR)) = NO;
+  OBJ_VFLO(R,P,C,CUR,'TAX')$=OBJ_VFLO(R,P,C,CUR,'SUB');
+  SYSINV(SYSUC)$=SYSONE(SYSUC);
+* Hold on to auxliary flows and past investments
+  LOOP(RPC_IRE(R,P,COM,IE),F_IOSET(RTP_VINTYR(R,V,T,P),C,TS,IO)$(RPCS_VAR(R,P,COM,TS)$IRE_FLOSUM(R,T,P,COM,TS,IE,C,IO)) = RC(R,C));
+$IFI %SENSIS%==YES $BATINCLUDE solsetv.v3
+  OPTION CLEAR=COEF_RTP;
+*------------------------------------------------------------------------------
+$IF "%3%SOLVEDA%%3"=="1" $EXIT
+$LABEL REPORT
+*------------------------------------------------------------------------------
+* Reports based on SOW-specific values
+*------------------------------------------------------------------------------
+* Calculation of solution values for (due to reduction) substituted flows
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=PAR_FLO,CLEAR=PAR_FLOM;
+$ BATINCLUDE sol_flo.red PAR_FLO '' .L
+$ BATINCLUDE sol_flo.red PAR_FLO M .M
+$ BATINCLUDE sol_ire.rpt
+*-----------------------------------------------------------------------------
+* Objective function
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=COEF_OBJINV;
+$ BATINCLUDE rpt_obj.rpt '%1' "%3" "%SOW%" %SYSPREFIX%
+*-----------------------------------------------------------------------------
+* Calculation of annual costs
+*-----------------------------------------------------------------------------
+$ BATINCLUDE cost_ann.rpt '%1' "%3"
+*-----------------------------------------------------------------------------
+* Miscellaneous reportings
+$ BATINCLUDE rptmisc.rpt '%1' "%3"
+* Add aggregation levels
+$ IFI NOT %SENSIS%==YES LOOP(NRG_TYPE,Z=RPT_OPT(NRG_TYPE,'1'); IF(Z,PAR_RTCS(RTCS_VARC(R,T,C,S))$NRG_TMAP(R,NRG_TYPE,C)=%1AGG_OUT(%3R,T,C,S)/G_YRFR(R,S)/Z));
+*-----------------------------------------------------------------------------
+* User constraints
+$IF %VAR_UC% == YES $GOTO UC_DONE
+$ BATINCLUDE par_uc.rpt SM EQE '%1' "%3"
+$ BATINCLUDE par_uc.rpt SM EQG '%1' "%3"
+$ BATINCLUDE par_uc.rpt SM EQL '%1' "%3"
+
+$LABEL UC_DONE
+*-----------------------------------------------------------------------------
+$IF %STAGES%==YES      REG_WOBJ(R,ITEM,CUR) $= SUM(W$SREG_WOBJ(W,R,ITEM,CUR),SW_PROB(W)*SREG_WOBJ(W,R,ITEM,CUR));
+$IFI NOT %STAGES%==YES REG_WOBJ(R,ITEM,CUR) $= %1REG_WOBJ(%3R,ITEM,CUR);
+
+$IFI %OBMAC%==YES $ONDOTL
+$IFI %ABS%==YES Z=RPT_OPT('RATE','1'); IF(Z,TRACKPC(BS_BSC)=YES; TRACKPC(BS_STGP(R,P),C)$=BS_RTYPE(R,C));
+$IFI %ABS%==YES %1P_OUT(%3RTP(R,T,P),C,S)$(PRC_TS(R,P,S)$BS_COMTS(R,C,S)$TRACKPC(R,P,C)$Z)=SUM(RTP_VINTYR(R,V,T,P),VAR_BSFSP(R,V,T,P,C,S)+VAR_BSFNSP(R,V,T,P,C,S))*PRC_CAPACT(R,P)/Z;
+  OPTION CLEAR=TRACKPC;

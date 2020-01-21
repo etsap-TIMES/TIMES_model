@@ -1,0 +1,263 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+*---------------------------------------------------------------------
+* SOLPUTTA.ANS
+*
+* Output routine for ANSWER
+*    - creating table for TIMES Analyst within ANSWER
+*    - seperate calls for primal/dual values
+*---------------------------------------------------------------------
+* placeholder for stochastic scenario
+* SET SOW / EMPTY /;
+$IF %SCUM%==1 SOW(W)=AUXSOW(W);
+*---------------------------------------------------------------------
+$IF NOT %SOLVEDA%==1
+$IFI NOT %STAGES%==YES $SHIFT SHIFT SHIFT
+$SETLOCAL ITEM2 ',ITEM'
+$IF %1==S $SETLOCAL ITEM2 ''
+*---------------------------------------------------------------------
+* reconstruct variable levels and marginals for those eliminated by the REDUCE option
+
+* Scenario name for run coming from $SET RUN_NAME in *.DD or .RUN file
+FILE sola / %RUN_NAME%.ANT /;
+
+sola.PW=1000;
+sola.ND=4;
+sola.NW=15;
+sola.LW=0;
+
+PUT sola;
+PUT '*** ' SYSTEM.TITLE
+PUT / '*** Case  %RUN_NAME%' /
+
+SET PUTIT(%2R,T,P);
+SET PUTI1(%2R,ALLYEAR,T,P);
+SET PUTI2(%2R,ALLYEAR,T,P,TS);
+SET PUTI3(%2R,ALLYEAR,T,P,C,S);
+SET PUTI4(%2R,T,C,TS);
+SET PUTI5(%2R,T,P,TS);
+SET PUTI6(%2R,T,P,C,S);
+SET PUTI7(%2R,T,P,C);
+SET UCITEM3(%2UC_N,ITEM,ITEM,ITEM);
+SET CUMITEM4(%2R,ITEM,ITEM,ITEM,ITEM);
+* --- Retirement results ---
+PARAMETER %1PAR_RET(%2R,ALLYEAR,T,P) //;
+* --- CumCom results ---
+PARAMETER %1PAR_CUMCOML(%2R,C,COM_VAR,ALLYEAR,ALLYEAR) //;
+PARAMETER %1PAR_CUMCOMM(%2R,C,COM_VAR,ALLYEAR,ALLYEAR) //;
+
+*---------------------------------------------------------------------
+* Output of VAR_NCAP, units of capacity
+*---------------------------------------------------------------------
+*                                              ATTR       R     P     COM     V        TS    P/D
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)' VAR_NCAP  'R.TL' 'P.TL' "' '"  "'  '"   "'  '"  '.L' %1PAR_NCAPL(%3R,T,P) (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)' VAR_NCAP  'R.TL' 'P.TL' "' '"  "'  '"   "'  '"  '.M' %1PAR_NCAPM(%3R,T,P) (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+
+*---------------------------------------------------------------------
+* Output of VAR_ACT, units of activity
+*---------------------------------------------------------------------
+* split out non/vintage processes
+  PARAMETER APARRTP(%2R,T,P);
+  PARAMETERS NV_ACTL(%2R,T,P,S);
+  PARAMETERS NV_ACTM(%2R,T,P,S);
+  NV_ACTL(%3RTP_VARA(R,T,P),S)$PRC_TS(R,P,S) = SUM(YK(T,V)$%1PAR_ACTL(%3R,V,T,P,S),%1PAR_ACTL(%3R,V,T,P,S));
+  NV_ACTM(%3R,T,P,S)$(NOT PRC_VINT(R,P)) $= ABS(%1PAR_ACTM(%3R,T,T,P,S));
+  NV_ACTM(%3RTP_VARA(R,T,P),S)$(PRC_TS(R,P,S)$PRC_VINT(R,P)) = SMIN(RTP_VINTYR(R,V,T,P),ABS(%1PAR_ACTM(%3R,V,T,P,S)));
+
+* ALL-vintage
+$ BATINCLUDE solsubta.ans PUTI5 '(RTP_VARA(R,T,P)*PRC_TS(R,P,S))'                     VAR_ACT   'R.TL' 'P.TL' "' '" "' '"  'S.TL' '.L' 'NV_ACTL(%3R,T,P,S)' (%3R,TT,P,S) (%3R,TT(T--ORD(T)),P,S)
+$ BATINCLUDE solsubta.ans PUTI5 '(RTP_VARA(R,T,P)*PRC_TS(R,P,S))'                     VAR_ACT   'R.TL' 'P.TL' "' '" "' '"  'S.TL' '.M' 'NV_ACTM(%3R,T,P,S)' (%3R,TT,P,S) (%3R,TT(T--ORD(T)),P,S)
+* by vintage for PRC_VINT
+$ BATINCLUDE solsubta.ans PUTI2 '((RTP_VINTYR(R,V,T,P)*PRC_TS(R,P,S))$PRC_VINT(R,P))' VAR_ACTV  'R.TL' 'P.TL' "' '" 'V.TL' 'S.TL' '.L' '%1PAR_ACTL(%3R,V,T,P,S)' (%3R,V,TT,P,S) (%3R,V,TT(T--ORD(T)),P,S)
+$ BATINCLUDE solsubta.ans PUTI2 '((RTP_VINTYR(R,V,T,P)*PRC_TS(R,P,S))$PRC_VINT(R,P))' VAR_ACTV  'R.TL' 'P.TL' "' '" 'V.TL' 'S.TL' '.M' '%1PAR_ACTM(%3R,V,T,P,S)' (%3R,V,TT,P,S) (%3R,V,TT(T--ORD(T)),P,S)
+* For retirements
+$IF NOT DEFINED PRC_RCAP $GOTO NORET
+  LOOP(TT(T--1),Z=ORD(T)-1;%1PAR_RET(%3RTP_CPTYR(R,V,T,P))$PRC_RCAP(R,P) = MAX(0,%VART%_SCAP.L(R,V,T,P%SWS%)-RTFORC(R,V,T,P)-(%VART%_SCAP.L(R,V,TT,P%SWS%)-RTFORC(R,V,TT,P))$Z));
+$ BATINCLUDE solsubta.ans PUTI1 '(RTP_CPTYR(R,V,T,P)$PRC_RCAP(R,P))'                  VAR_RCAPGV 'R.TL' 'P.TL' "' '" 'V.TL'  "' '" '.L' '%1PAR_RET(%3R,V,T,P)' (%3R,V,TT,P) (%3R,V,TT(T--ORD(T)),P)
+  OPTION CLEAR=%1PAR_RET; LOOP(RTP(R,V,P)$PRC_RCAP(R,P),Z=1;LOOP(RTP_CPTYR(R,VNRET(V,T),P)$Z,Z=0; %1PAR_RET(%3R,V,T,P) $= %VART%_SCAP.L(R,V,T,P%SWS%)));
+  %1PAR_RET(%3R,V,T,P) $= %VART%_RCAP.L(R,V,T,P%SWS%);
+$ BATINCLUDE solsubta.ans PUTI1 '(RTP_CPTYR(R,V,T,P)$VNRET(V,T)$PRC_RCAP(R,P))'       VAR_RCAPV 'R.TL' 'P.TL' "' '" 'V.TL'  "' '" '.L' '%1PAR_RET(%3R,V,T,P)' (%3R,V,TT,P) (%3R,V,TT(T--ORD(T)),P)
+  OPTION CLEAR=%1PAR_RET; %1PAR_RET(%3R,V,T,P) $= %VART%_RCAP.M(R,V,T,P%SWS%);
+$ BATINCLUDE solsubta.ans PUTI1 '(RTP_CPTYR(R,V,T,P)$VNRET(V,T)$PRC_RCAP(R,P))'       VAR_RCAPV 'R.TL' 'P.TL' "' '" 'V.TL'  "' '" '.M' '%1PAR_RET(%3R,V,T,P)' (%3R,V,TT,P) (%3R,V,TT(T--ORD(T)),P)
+$LABEL NORET
+*---------------------------------------------------------------------
+* Output of VAR_FLO, units of activity
+*---------------------------------------------------------------------
+$SET FLOTS RPCS_VAR(R,P,C,S)
+$IFI %RPT_FLOTS%==ANNUAL $SET FLOTS ANNUAL(S)
+$IFI %RPT_FLOTS%==COM    $SET FLOTS COM_TS(R,C,S)
+
+* split in/out
+  PARAMETER NV_FLOL(%2R,T,P,C,S);
+*                                                                           ATTR       R      P     COM     V      TS   L/M   DATA                  LOOP         ASSIGN
+* VAR_FLO: ALL-vintage
+  OPTION CLEAR=NV_FLOL; OPTION PUTI6 < %1F_IN;
+  NV_FLOL(PUTI6(%3R,T,P,C,S)) = SUM(YK(T,V)$%1F_IN(%3R,V,T,P,C,S),%1F_IN(%3R,V,T,P,C,S));
+$ BATINCLUDE solsubta.ans PUTI6 "(TOP(R,P,C,'IN')*%FLOTS%)"      VAR_FIN   'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.L'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+$ BATINCLUDE solsubta.ans PUTI6 "((NOT TOP(R,P,C,'IN')+RPC_IRE(R,P,C,'EXP'))$NV_FLOL(%3R,T,P,C,S))" VAR_FIN   'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.L'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+  OPTION CLEAR=NV_FLOL; OPTION PUTI6 < %1F_OUT;
+  NV_FLOL(PUTI6(%3R,T,P,C,S)) = SUM(YK(T,V)$%1F_OUT(%3R,V,T,P,C,S),%1F_OUT(%3R,V,T,P,C,S));
+$ BATINCLUDE solsubta.ans PUTI6 "(TOP(R,P,C,'OUT')*%FLOTS%)"     VAR_FOUT  'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.L'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+$ BATINCLUDE solsubta.ans PUTI6 "((NOT TOP(R,P,C,'OUT')+RPC_IRE(R,P,C,'IMP'))$NV_FLOL(%3R,T,P,C,S))" VAR_FOUT 'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.L'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+
+* VAR_FLO marginals: ALL-vintage (only non-substituted and PG flows)
+$IFI %1==S $GOTO DONEFLOM
+  OPTION CLEAR=NV_FLOL;
+  TRACKPC(RPC(R,P,C))$(NOT RPC_FFUNC(R,P,C)+RPC_EMIS(R,P,C)) = YES;
+  NV_FLOL(%3R,T,P,C,S)$(TRACKPC(R,P,C)$(NOT PRC_VINT(R,P))) $= ABS(%1PAR_FLOM(%3R,T,T,P,C,S))*(1/COEF_PVT(R,T));
+  NV_FLOL(RTPCS_VARF(%3R,T,P,C,S))$(TRACKPC(R,P,C)$PRC_VINT(R,P)) = SMIN(RTP_VINTYR(R,V,T,P),ABS(%1PAR_FLOM(%3R,V,T,P,C,S)))/COEF_PVT(R,T);
+$ BATINCLUDE solsubta.ans PUTI6 "(TOP(R,P,C,'IN')*%FLOTS%)"      VAR_FIN   'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.M'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+$ BATINCLUDE solsubta.ans PUTI6 "(TOP(R,P,C,'OUT')*%FLOTS%)"     VAR_FOUT  'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.M'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+  OPTION CLEAR=TRACKPC;
+$LABEL DONEFLOM
+
+* VAR_IRE: ALL-vintage
+  OPTION CLEAR=NV_FLOL,CLEAR=PUTI3;
+  PUTI3(%3R,LL--ORD(LL),T,P,C,S)$RP_IRE(R,P) $= %1F_IN(%3R,LL,T,P,C,S); OPTION PUTI6 < PUTI3;
+  NV_FLOL(PUTI6(%3R,T,P,C,S)) = SUM(YK(T,V)$%1F_IN(%3R,V,T,P,C,S),%1F_IN(%3R,V,T,P,C,S));
+$ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'EXP')*%FLOTS%)" VAR_XEXP  'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.L'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+  OPTION CLEAR=NV_FLOL,CLEAR=PUTI3;
+  PUTI3(%3R,LL--ORD(LL),T,P,C,S)$RP_IRE(R,P) $= %1F_OUT(%3R,LL,T,P,C,S); OPTION PUTI6 < PUTI3;
+  NV_FLOL(PUTI6(%3R,T,P,C,S)) = SUM(YK(T,V)$%1F_OUT(%3R,V,T,P,C,S),%1F_OUT(%3R,V,T,P,C,S));
+$ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'IMP')*%FLOTS%)" VAR_XIMP  'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.L'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+
+$IFI %1==S $GOTO DONEIREM
+* VAR_IRE marginals: All vintage
+  OPTION CLEAR=NV_FLOL;
+  NV_FLOL(RTPCS_VARF(R,T,P,C,S))$RPC_IRE(R,P,C,'EXP') = SMIN(RTP_VINTYR(R,V,T,P),ABS(PAR_IREM(R,V,T,P,C,S,'EXP')))/COEF_PVT(R,T);
+$ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'EXP')*RPCS_VAR(R,P,C,S))" VAR_XEXP  'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.M'  NV_FLOL(R,T,P,C,S) (R,TT,P,C,S) (R,TT(T--ORD(T)),P,C,S)
+  OPTION CLEAR=NV_FLOL;
+  NV_FLOL(RTPCS_VARF(R,T,P,C,S))$RPC_IRE(R,P,C,'IMP') = SMIN(RTP_VINTYR(R,V,T,P),ABS(PAR_IREM(R,V,T,P,C,S,'IMP')))/COEF_PVT(R,T);
+$ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'IMP')*RPCS_VAR(R,P,C,S))" VAR_XIMP  'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.M'  NV_FLOL(R,T,P,C,S) (R,TT,P,C,S) (R,TT(T--ORD(T)),P,C,S)
+$LABEL DONEIREM
+
+* EQIRE marginals: ALL-vintage
+  OPTION CLEAR=NV_FLOL;
+  NV_FLOL(%3R,T,P,C,S)$RP_IRE(R,P) $= %1PAR_IPRIC(%3R,T,P,C,S,'EXP');
+$ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'EXP')*RPCS_VAR(R,P,C,S))" EQIRE_EXP 'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.M'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+  OPTION CLEAR=NV_FLOL;
+  NV_FLOL(%3R,T,P,C,S)$RP_IRE(R,P) $= %1PAR_IPRIC(%3R,T,P,C,S,'IMP');
+$ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'IMP')*RPCS_VAR(R,P,C,S))" EQIRE_IMP 'R.TL' 'P.TL' 'C.TL' "' '"  'S.TL' '.M'  NV_FLOL(%3R,T,P,C,S) (%3R,TT,P,C,S) (%3R,TT(T--ORD(T)),P,C,S)
+
+* ELC supply by source
+  OPTION CLEAR=NV_FLOL; OPTION PUTI7 < %1PAR_EOUT; NV_FLOL(%3R,T,P,C,ANNUAL)$PUTI7(%3R,T,P,C)=SUM(YK(T,V)$%1PAR_EOUT(%3R,V,T,P,C),%1PAR_EOUT(%3R,V,T,P,C));
+$ BATINCLUDE solsubta.ans PUTI6 KEEP_FLOP(R,P,C) ELC- 'R.TL' 'P.TL' C.TL  "''"  "''"  'BY-SRC'  NV_FLOL(%3R,T,P,C,'ANNUAL') (%3R,TT,P,C,ANNUAL) (%3R,TT(T--ORD(T)),P,C,ANNUAL)
+
+*---------------------------------------------------------------------
+* Output of VAR_CAP, units of capacity
+*---------------------------------------------------------------------
+*                                                                   ATTR      R      P     COM    V    TS   L/M
+  APARRTP(%3RTP(R,T,P)) = %1PAR_CAPL(%3R,T,P)+SUM(PASTCV,%1PAR_PASTI(%3R,T,P,PASTCV));
+$ BATINCLUDE solsubta.ans PUTIT '(RTP(R,T,P)*PRC_CAP(R,P))'        VAR_CAP  'R.TL' 'P.TL' "' '" "' '" "' '" '.L'  APARRTP(%3R,T,P) (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+$ BATINCLUDE solsubta.ans PUTIT '(RTP(R,T,P)*%1PAR_CAPM(%3R,T,P))' VAR_CAP  'R.TL' 'P.TL' "' '" "' '" "' '" '.M'  %1PAR_CAPM(%3R,T,P) (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+
+*---------------------------------------------------------------------
+* Output of Commodity and peaking balance, commodity units
+*---------------------------------------------------------------------
+*                                                                       ATTR       R    P    COM     V    TS    L/M
+$IFI %STAGES%%SCUM%==YES $GOTO DONEBALL
+$ BATINCLUDE solsubta.ans PUTI4 "RCS_COMBAL(R,T,C,S,'LO')"             EQ_COMBAL R.TL "' '" 'C.TL' "' '" 'S.TL' '.L' 'EQG_COMBAL.L(R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$ BATINCLUDE solsubta.ans PUTI4 "RCS_COMBAL(R,T,C,S,'FX')"             EQ_COMBAL R.TL "' '" 'C.TL' "' '" 'S.TL' '.L' 'EQE_COMBAL.L(R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$ BATINCLUDE solsubta.ans PUTI4 '(RTCS_VARC(R,T,C,S)$COM_PKTS(R,C,S))' EQ_PEAK   R.TL "' '" 'C.TL' "' '" 'S.TL' '.L' 'EQ_PEAK.L(R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$LABEL DONEBALL
+$ BATINCLUDE solsubta.ans PUTI4 "RTCS_VARC(R,T,C,S)"                   EQ_COMBAL R.TL "' '" 'C.TL' "' '" 'S.TL' '.M' '%1PAR_COMBALEM(%3R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$ BATINCLUDE solsubta.ans PUTI4 '(RTCS_VARC(R,T,C,S)$COM_PKTS(R,C,S))' EQ_PEAK   R.TL "' '" 'C.TL' "' '" 'S.TL' '.M' '%1PAR_PEAKM(%3R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+* Balance variables
+$IFI %1==S LOOP(%3
+  RHS_COMBAL(R,T,C,S)$=%1PAR_COMNETL(%3R,T,C,S); RHS_COMPRD(R,T,C,S)$=%1PAR_COMPRDL(%3R,T,C,S);
+$IFI %1==S );
+$ BATINCLUDE solsubta.ans PUTI4 "RHS_COMBAL(R,T,C,S)"                  VAR_COMNET R.TL "' '" 'C.TL' "' '" 'S.TL' '.L' '%1PAR_COMNETL(%3R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$ BATINCLUDE solsubta.ans PUTI4 "RHS_COMBAL(R,T,C,S)"                  VAR_COMNET R.TL "' '" 'C.TL' "' '" 'S.TL' '.M' '%1PAR_COMNETM(%3R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$ BATINCLUDE solsubta.ans PUTI4 "RHS_COMPRD(R,T,C,S)"                  VAR_COMPRD R.TL "' '" 'C.TL' "' '" 'S.TL' '.L' '%1PAR_COMPRDL(%3R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+$ BATINCLUDE solsubta.ans PUTI4 "RHS_COMPRD(R,T,C,S)"                  VAR_COMPRD R.TL "' '" 'C.TL' "' '" 'S.TL' '.M' '%1PAR_COMPRDM(%3R,T,C,S)' (%3R,TT,C,S) (%3R,TT(T--ORD(T)),C,S)
+
+*---------------------------------------------------------------------
+* Output of user constraints
+*---------------------------------------------------------------------
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSL(%3UC_N,'NONE','NONE','NONE') UC.L    "''" UC_N.TL "' '" "' '" "' '" "''" "%1PAR_UCSL(%3UC_N,'NONE','NONE','NONE')" (%3UC_N,ITEM,ITEM,ITEM) "(%3UC_N,'','','')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSL(%3UC_N,R,'NONE','NONE')      UCR.L   R.TL UC_N.TL "' '" "' '" "' '" "''" "%1PAR_UCSL(%3UC_N,R,'NONE','NONE')" (%3UC_N,R,ITEM,ITEM) "(%3UC_N,R,'','')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSL(%3UC_N,'NONE',T,'NONE')      UCT     "''" UC_N.TL "' '" "' '" "' '" '.L' "%1PAR_UCSL(%3UC_N,'NONE',T,'NONE')" (%3UC_N,ITEM,TT,ITEM) "(%3UC_N,'',TT(T--ORD(T)),'')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSL(%3UC_N,R,T,'NONE')           UCRT    R.TL UC_N.TL "' '" "' '" "' '" '.L' "%1PAR_UCSL(%3UC_N,R,T,'NONE')" (%3UC_N,R,TT,ITEM) "(%3UC_N,R,TT(T--ORD(T)),'')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSL(%3UC_N,'NONE',T,S)           UCTS    "''" UC_N.TL "' '" "' '"  S.TL '.L' "%1PAR_UCSL(%3UC_N,'NONE',T,S)" (%3UC_N,ITEM,TT,S) "(%3UC_N,'',TT(T--ORD(T)),S)"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSL(%3UC_N,R,T,S)                UCRTS   R.TL UC_N.TL "' '" "' '"  S.TL '.L' "%1PAR_UCSL(%3UC_N,R,T,S)" (%3UC_N,R,TT,S) "(%3UC_N,R,TT(T--ORD(T)),S)"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSM(%3UC_N,'NONE','NONE','NONE') UC.M    "''" UC_N.TL "' '" "' '" "' '" "''" "%1PAR_UCSM(%3UC_N,'NONE','NONE','NONE')" (%3UC_N,ITEM,ITEM,ITEM) "(%3UC_N,'','','')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSM(%3UC_N,R,'NONE','NONE')      UCR.M   R.TL UC_N.TL "' '" "' '" "' '" "''" "%1PAR_UCSM(%3UC_N,R,'NONE','NONE')" (%3UC_N,R,ITEM,ITEM) "(%3UC_N,R,'','')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSM(%3UC_N,'NONE',T,'NONE')      UCT     "''" UC_N.TL "' '" "' '" "' '" '.M' "%1PAR_UCSM(%3UC_N,'NONE',T,'NONE')" (%3UC_N,ITEM,TT,ITEM) "(%3UC_N,'',TT(T--ORD(T)),'')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSM(%3UC_N,R,T,'NONE')           UCRT    R.TL UC_N.TL "' '" "' '" "' '" '.M' "%1PAR_UCSM(%3UC_N,R,T,'NONE')" (%3UC_N,R,TT,ITEM) "(%3UC_N,R,TT(T--ORD(T)),'')"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSM(%3UC_N,'NONE',T,S)           UCTS    "''" UC_N.TL "' '" "' '"  S.TL '.M' "%1PAR_UCSM(%3UC_N,'NONE',T,S)" (%3UC_N,ITEM,TT,S) "(%3UC_N,'',TT(T--ORD(T)),S)"
+$ BATINCLUDE solsubta.ans UCITEM3 %1PAR_UCSM(%3UC_N,R,T,S)                UCRTS   R.TL UC_N.TL "' '" "' '"  S.TL '.M' "%1PAR_UCSM(%3UC_N,R,T,S)" (%3UC_N,R,TT,S) "(%3UC_N,R,TT(T--ORD(T)),S)"
+$ BATINCLUDE solsubta.ans CUMITEM4 %1PAR_UCMRK(%3R,T,ITEM,C,S)            UC_MARK R.TL ITEM.TL C.TL "' '" S.TL '.M' "%1PAR_UCMRK(%3R,T,ITEM,C,S)" (%3R,TT,ITEM,C,S) "(%3R,TT(T--ORD(T)),ITEM,C,S)"
+
+*---------------------------------------------------------------------
+* Output of cumulatives
+*---------------------------------------------------------------------
+* Cumcom results (unscaling)
+  %1PAR_CUMCOML(%3R,C,COM_VAR,ALLYEAR,LL) $= %VAR%_CUMCOM.L(R,C,COM_VAR,ALLYEAR,LL%SOW%)*%CUCSCAL%;
+  %1PAR_CUMCOMM(%3R,C,COM_VAR,ALLYEAR,LL) $= %VAR%_CUMCOM.M(R,C,COM_VAR,ALLYEAR,LL%SOW%)*(1/%CUCSCAL%);
+$ BATINCLUDE solsubta.ans CUMITEM4 RC_CUMCOM(R,COM_VAR,YEAR,LL,C) VAR_CUMNET.L 'R.TL' '" "'  'C.TL' 'YEAR.TL,"-",LL.TL' "' '" "''" '%1PAR_CUMCOML(%3R,C,"NET",YEAR,LL)' (%3R,C,COM_VAR,YEAR,LL) (%3R,C,COM_VAR("NET"),YEAR,LL)
+$ BATINCLUDE solsubta.ans CUMITEM4 RC_CUMCOM(R,COM_VAR,YEAR,LL,C) VAR_CUMNET.M 'R.TL' '" "'  'C.TL' 'YEAR.TL,"-",LL.TL' "' '" "''" '%1PAR_CUMCOMM(%3R,C,"NET",YEAR,LL)' (%3R,C,COM_VAR,YEAR,LL) (%3R,C,COM_VAR("NET"),YEAR,LL)
+$ BATINCLUDE solsubta.ans CUMITEM4 RC_CUMCOM(R,COM_VAR,YEAR,LL,C) VAR_CUMPRD.L 'R.TL' '" "'  'C.TL' 'YEAR.TL,"-",LL.TL' "' '" "''" '%1PAR_CUMCOML(%3R,C,"PRD",YEAR,LL)' (%3R,C,COM_VAR,YEAR,LL) (%3R,C,COM_VAR("PRD"),YEAR,LL)
+$ BATINCLUDE solsubta.ans CUMITEM4 RC_CUMCOM(R,COM_VAR,YEAR,LL,C) VAR_CUMPRD.M 'R.TL' '" "'  'C.TL' 'YEAR.TL,"-",LL.TL' "' '" "''" '%1PAR_CUMCOMM(%3R,C,"PRD",YEAR,LL)' (%3R,C,COM_VAR,YEAR,LL) (%3R,C,COM_VAR("PRD"),YEAR,LL)
+$ BATINCLUDE solsubta.ans CUMITEM4 RPC_CUMFLO(R,P,C,YEAR,LL)      VAR_CUMFLO.L 'R.TL' 'P.TL' 'C.TL' 'YEAR.TL,"-",LL.TL' "' '" "''" '%1PAR_CUMFLOL(%3R,P,C,YEAR,LL)' (%3R,P,C,YEAR,LL) (%3R,P,C,YEAR,LL)
+$ BATINCLUDE solsubta.ans CUMITEM4 RPC_CUMFLO(R,P,C,YEAR,LL)      VAR_CUMFLO.M 'R.TL' 'P.TL' 'C.TL' 'YEAR.TL,"-",LL.TL' "' '" "''" '%1PAR_CUMFLOM(%3R,P,C,YEAR,LL)' (%3R,P,C,YEAR,LL) (%3R,P,C,YEAR,LL)
+
+*---------------------------------------------------------------------
+* Output of various cost components - only non-zero series
+*---------------------------------------------------------------------
+$SET SUPZERO YES
+*---------------------------------------------------------------------
+* Objective by component
+PARAMETER REG_OBJ2(%2REG,ITEM);
+REG_OBJ2(%3R,ITEM) $= SUM(RDCUR(R,CUR)$%1REG_WOBJ(%3R,ITEM,CUR),%1REG_WOBJ(%3R,ITEM,CUR));
+REG_OBJ2(%3R,'IRE') = %1REG_IREC(%3R);
+$IFI NOT %STAGES%==YES
+$ BATINCLUDE solsubta.ans UNCD1 YES              OBJZ     "' '"   "' '"  "' '"      "' '"  "''" "''" 'OBJZ.L' (ANNUAL) (ANNUAL)
+$ BATINCLUDE solsubta.ans RXX REG_OBJ2(%3R,ITEM) REG_OBJ  'R.TL'  "' '"  'ITEM.TL'  "' '"  "''" "''" 'REG_OBJ2(%3R,ITEM)' (R,%3ITEM%ITEM2%) (R,%3ITEM%ITEM2%)
+
+*                                                            ATTR       R      P     COM    V     TS    L/M
+* Annualized investment costs
+OPTION CLEAR=NV_ACTL; OPTION PUTIT < %1CST_INVC; NV_ACTL(%3R,T,P,ANNUAL)$PUTIT(%3R,T,P)=SUM((YK(T,V),SYSINV)$%1CST_INVC(%3R,V,T,P,SYSINV),%1CST_INVC(%3R,V,T,P,SYSINV));
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)'                COST_     'R.TL' 'P.TL' "' '" "' '"  "''"  'INV'  NV_ACTL(%3R,T,P,'ANNUAL') (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+* Annualized investment taxes/subsidies
+OPTION CLEAR=NV_ACTL; OPTION PUTIT < %1CST_INVX; NV_ACTL(%3R,T,P,ANNUAL)$PUTIT(%3R,T,P)=SUM((YK(T,V),SYSINV)$%1CST_INVX(%3R,V,T,P,SYSINV),%1CST_INVX(%3R,V,T,P,SYSINV));
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)'                COST_     'R.TL' 'P.TL' "' '" "' '"  "''"  'INVX' NV_ACTL(%3R,T,P,'ANNUAL') (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+* Total salvage value at EOH+1
+OPTION CLEAR=NV_ACTL;NV_ACTL(%3R,TT(MIYR_1),P,ANNUAL) $= SUM((RTP(R,T,P),RDCUR(R,CUR)),%1PAR_OBJSAL(%3R,T,P,CUR)*(1/OBJ_DCEOH(R,CUR)));
+$ BATINCLUDE solsubta.ans PUTIT 'RP(R,P)'                   COST_SALV 'R.TL' 'P.TL' "' '" "' '"  "''"   "''"  NV_ACTL(%3R,T,P,'ANNUAL') (%3R,T,P) (%3R,T(MIYR_1),P)
+* Annualized decommissioning costs
+OPTION CLEAR=NV_ACTL;NV_ACTL(%3R,T,P,ANNUAL) $= SUM(RTP_CPTYR(R,V,T,P),%1CST_DECC(%3R,V,T,P));
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)'                COST_     'R.TL' 'P.TL' "' '" "' '"  "''"  'DEC' NV_ACTL(%3R,T,P,'ANNUAL') (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+* Annualized fixed costs
+OPTION CLEAR=NV_ACTL; OPTION PUTIT < %1CST_FIXC; NV_ACTL(%3R,T,P,ANNUAL)$PUTIT(%3R,T,P)=SUM(YK(T,V)$%1CST_FIXC(%3R,V,T,P),%1CST_FIXC(%3R,V,T,P));
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)'                COST_     'R.TL' 'P.TL' "' '" "' '"  "''"  'FOM'  NV_ACTL(%3R,T,P,'ANNUAL') (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+* Annualized fixed taxes/subsidies
+OPTION CLEAR=NV_ACTL; OPTION PUTIT < %1CST_FIXX; NV_ACTL(%3R,T,P,ANNUAL)$PUTIT(%3R,T,P)=SUM(YK(T,V)$%1CST_FIXX(%3R,V,T,P),%1CST_FIXX(%3R,V,T,P));
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)'                COST_     'R.TL' 'P.TL' "' '" "' '"  "''"  'FIXX' NV_ACTL(%3R,T,P,'ANNUAL') (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+* Annualized activity costs
+OPTION CLEAR=NV_ACTL; OPTION PUTIT < %1CST_ACTC; NV_ACTL(%3R,T,P,ANNUAL)$PUTIT(%3R,T,P)=SUM((YK(T,V),RPM)$%1CST_ACTC(%3R,V,T,P,RPM),%1CST_ACTC(%3R,V,T,P,RPM));
+$ BATINCLUDE solsubta.ans PUTIT 'RTP(R,T,P)'                COST_     'R.TL' 'P.TL' "' '" "' '"  "''"  'ACT'  NV_ACTL(%3R,T,P,'ANNUAL') (%3R,TT,P) (%3R,TT(T--ORD(T)),P)
+* Annualized flow costs
+OPTION CLEAR=NV_FLOL; OPTION PUTI7 < %1CST_FLOC; NV_FLOL(%3R,T,P,C,ANNUAL)$PUTI7(%3R,T,P,C)=SUM(YK(T,V)$%1CST_FLOC(%3R,V,T,P,C),%1CST_FLOC(%3R,V,T,P,C));
+$ BATINCLUDE solsubta.ans PUTI6 'RPC(R,P,C)'                COST_     'R.TL' 'P.TL' C.TL  "' '"  "''"  'FLO'  NV_FLOL(%3R,T,P,C,'ANNUAL') (%3R,TT,P,C,ANNUAL) (%3R,TT(T--ORD(T)),P,C,ANNUAL)
+* Annualized flow taxes/subsidies
+OPTION CLEAR=NV_FLOL; OPTION PUTI7 < %1CST_FLOX; NV_FLOL(%3R,T,P,C,ANNUAL)$PUTI7(%3R,T,P,C)=SUM(YK(T,V)$%1CST_FLOX(%3R,V,T,P,C),%1CST_FLOX(%3R,V,T,P,C));
+$ BATINCLUDE solsubta.ans PUTI6 'RPC(R,P,C)'                COST_     'R.TL' 'P.TL' C.TL  "' '"  "''"  'FLOX' NV_FLOL(%3R,T,P,C,'ANNUAL') (%3R,TT,P,C,ANNUAL) (%3R,TT(T--ORD(T)),P,C,ANNUAL)
+* Annualized implied trade costs
+OPTION CLEAR=NV_FLOL; OPTION PUTI7 < %1CST_IREC; NV_FLOL(%3R,T,P,C,ANNUAL)$PUTI7(%3R,T,P,C)=SUM(YK(T,V)$%1CST_IREC(%3R,V,T,P,C),%1CST_IREC(%3R,V,T,P,C));
+$ BATINCLUDE solsubta.ans PUTI6 'RPC(R,P,C)'                COST_     'R.TL' 'P.TL' C.TL  "' '"  "''"  'IRE'  NV_FLOL(%3R,T,P,C,'ANNUAL') (%3R,TT,P,C,ANNUAL) (%3R,TT(T--ORD(T)),P,C,ANNUAL)
+* Annualized commodity costs
+$ BATINCLUDE solsubta.ans PUTI4 'RTC(R,T,C)'                COST_     'R.TL' 'C.TL' "' '" "' '"  "''"  'COM'  %1CST_COMC(%3R,T,C) (%3R,TT,C,ANNUAL) (%3R,TT(T--ORD(T)),C,ANNUAL)
+* Annualized commodity taxes/subsidies
+$ BATINCLUDE solsubta.ans PUTI4 'RTC(R,T,C)'                COST_     'R.TL' 'C.TL' "' '" "' '"  "''"  'COMX' %1CST_COMX(%3R,T,C) (%3R,TT,C,ANNUAL) (%3R,TT(T--ORD(T)),C,ANNUAL)
+* Annualized demand elasticity costs
+$ BATINCLUDE solsubta.ans PUTI4 'RTC(R,T,C)'                COST_     'R.TL' 'C.TL' "' '" "' '"  "''"  'ELS'  %1CST_COME(%3R,T,C) (%3R,TT,C,ANNUAL) (%3R,TT(T--ORD(T)),C,ANNUAL)
+* Annualized commodity costs
+$ BATINCLUDE solsubta.ans PUTI4 'RTC(R,T,C)'                COST_     'R.TL' 'C.TL' "' '" "' '"  "''"  'DAM'  %1CST_DAM(%3R,T,C)  (%3R,TT,C,ANNUAL) (%3R,TT(T--ORD(T)),C,ANNUAL)
+
+* MACRO
+SET XRT(%2ITEM,U2,T);
+$IF %1==''
+$ BATINCLUDE solsubta.ans XRT TM_RESULT(ITEM,R,T)   "" 'R.TL' "''"  "''"  "''"  "''" '_' TM_RESULT(ITEM,R,T) (ITEM,R,TT) (ITEM,R,TT(T--ORD(T))) @1,ITEM.TL
+$ BATINCLUDE solsubta.ans XRT CM_%1RESULT(%3ITEM,T) CM  "''"  "''"  "''"  "''"  "''" '_' CM_%1RESULT(%3ITEM,T) (%3ITEM,'',TT) (%3ITEM,'',TT(T--ORD(T))) ITEM.TL
+*---------------------------------------------------------------------
+PUTCLOSE sola;

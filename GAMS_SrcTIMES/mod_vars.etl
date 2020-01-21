@@ -1,0 +1,39 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* MOD_VARS.ETL endogenous technology change variables
+*=============================================================================*
+* %1 - source code extension
+*-----------------------------------------------------------------------------
+*  VARIABLES
+*-----------------------------------------------------------------------------
+POSITIVE VARIABLES
+  %VAR%_LAMBD(R,ALLYEAR, PRC, KP %SWD%)
+  %VAR%_CCAP(R,ALLYEAR,PRC %SWD%)
+  %VAR%_CCOST(R,ALLYEAR,PRC %SWD%)
+  %VAR%_IC(R,ALLYEAR,PRC %SWD%)
+
+BINARY VARIABLES
+  %VAR%_DELTA(R,ALLYEAR,PRC,KP %SWD%)
+
+*-----------------------------------------------------------------------------
+*  EQUATIONS
+*-----------------------------------------------------------------------------
+EQUATIONS
+  %EQ%_CUINV(R,ALLYEAR, PRC %SWTD%)     Cumulative Capacity Definition
+  %EQ%_CC(R,ALLYEAR, PRC %SWTD%)        Cumulative Capacity Interpolation
+  %EQ%_DEL(R,ALLYEAR, PRC %SWTD%)       Delta to 1
+  %EQ%_COS(R,ALLYEAR, PRC %SWTD%)       Cumulative Cost
+  %EQ%_LA1(R,ALLYEAR, PRC, KP %SWTD%)   Constraints on lambda 1
+  %EQ%_LA2(R,ALLYEAR, PRC, KP %SWTD%)   Constraints on lambda 2
+  %EQ%_EXPE1(R,ALLYEAR, PRC, KP %SWTD%) Experience grows 1
+  %EQ%_EXPE2(R,ALLYEAR, PRC, KP %SWTD%) Experience grows 2
+  %EQ%_IC1(R,ALLYEAR, PRC %SWTD%)       Investments tech. change 1st period
+  %EQ%_IC2(R,ALLYEAR, PRC %SWTD%)       Investments tech. change other periods
+* cluster
+  %EQ%_CLU(R,ALLYEAR, PRC %SWTD%)       Cluster
+  %EQ%_MRCLU(R,ALLYEAR, PRC %SWTD%)     Multi-regional Cluster
+;
+

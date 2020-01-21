@@ -1,0 +1,39 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* BND_IRE.VDA bounds IRE flows and set prices from previous run if requested
+*=============================================================================*
+$IF NOT DEFINED PREMILE $EXIT
+ RPC_IREIN(RPC_IREIO) = NO;
+ PAR_IRE(R,V,T,P,C,TS,IE)$(NOT RPC_IREIN(R,P,C,IE,'IN')) = 0;
+ PAR_IPRIC(R,T,P,C,TS,IE)$(NOT RPC_IREIN(R,P,C,IE,'IN')) = 0;
+ PARAMETER FLO_IRE(R,LL,P,C,S,IE);
+ IF(CARD(PAR_IRE),
+  %VAR%_IRE.FX(RTP_VINTYR(R,V,PREMILE(T),P),C,TS,IE%SWD%)$(((NOT RPC_AIRE(R,P,C))*RPCS_VAR(R,P,C,TS))$RPC_IREIN(R,P,C,IE,'IN')) = 
+     EPS+PAR_IRE(R,V,T,P,C,TS,IE);
+  LOOP(IE,FLO_BND(R,PREMILE(T),P,C,TS,'FX')$((RPC_AIRE(R,P,C)*RTPCS_VARF(R,T,P,C,TS))$RPC_IREIN(R,P,C,IE,'IN')) = 
+           EPS+SUM(RTP_VINTYR(R,V,T,P),PAR_IRE(R,V,T,P,C,TS,IE)));
+ );
+* Set target milestone years into FIL
+ OPTION CLEAR=FIL; LOOP(T$(NOT PREMILE(T)),FIL(TT)$YK(TT,T) = YES);
+* Calculate total flows at milestone years
+ FLO_IRE(R,PREMILE,P,C,TS,IE)$(RPCS_VAR(R,P,C,TS)$RPC_IREIN(R,P,C,IE,'IN')) =
+    SUM(YK(PREMILE,LL)$PAR_IRE(R,LL,PREMILE,P,C,TS,IE),PAR_IRE(R,LL,PREMILE,P,C,TS,IE))+EPS;
+ DM_YEAR(PREMILE) = YES;
+$BATINCLUDE fillcost FLO_IRE R 'P,C,TS,IE' ",'0'" FIL CARD(FIL) '' '' FLO_IRE X_IREFLO
+$BATINCLUDE fillcost PAR_IPRIC R 'P,C,TS,IE' ",'0'" FIL CARD(FIL) '' '' PAR_IPRIC X_IREFLO
+* Set bounds for T not in sync with PREMILE
+ LOOP(IE$CARD(FIL),TRACKPC(R,P,C)$((RPC_AIRE(R,P,C)+PRC_VINT(R,P))$RPC_IREIN(R,P,C,IE,'IN')) = YES);
+ %VAR%_IRE.FX(RTP_VINTYR(R,FIL(T),T,P),C,TS,IE%SWD%)$(((NOT TRACKPC(R,P,C))*RPCS_VAR(R,P,C,TS))$RPC_IREIN(R,P,C,IE,'IN')) = 
+     EPS+FLO_IRE(R,T,P,C,TS,IE);
+* Remove TRACKPC with either IMP or EXP internal, as FLO_BND will be applied to the SUM
+ LOOP(IE,TRACKPC(R,P,C)$((NOT RPC_IREIN(R,P,C,IE,'IN'))$RPC_IRE(R,P,C,IE)) = NO);
+ FLO_BND(R,FIL(T),P,C,TS,'FX')$((RPC_AIRE(R,P,C)*RTPCS_VARF(R,T,P,C,TS))$TRACKPC(R,P,C)) =
+      EPS+SUM(RPC_IREIN(R,P,C,IE,'IN'),FLO_IRE(R,T,P,C,TS,IE));
+ OPTION CLEAR=TRACKPC,CLEAR=FLO_IRE;
+* Set the IRE prices
+ LOOP(T$CARD(PAR_IPRIC),
+   OBJ_IPRIC(R,Y_EOH,P,C,TS,IE,CUR)$(PERIODYR(T,Y_EOH)$RPCS_VAR(R,P,C,TS)$RPC_IREIN(R,P,C,IE,'IN')) =
+     PAR_IPRIC(R,T,P,C,TS,IE));

@@ -1,0 +1,123 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* INITMTY.MSA has all the EMPTY declarations for system & user data           *
+*=============================================================================*
+*  Basic Sets
+
+         SET NITER /1*18/;
+         SET MITER /1*16/;
+         ALIAS(ALLYEAR,YEAR);
+
+*  Initialized Scalar Defaults *
+   SCALARS
+         TM_ARBM       / 1 /
+         TM_SCALE_CST  / 0.001 /
+         TM_SCALE_NRG  / 1 /
+         TM_SCALE_UTIL / 0.001 /
+      ;
+   PARAMETER TM_DEFVAL /
+         DEPR     5
+         ESUB    0.25
+         KGDP    2.5
+         KPVS    0.25
+         DMTOL   0.1
+         IVETOL  0.5
+         REFTEMP 2.5
+         REFLOSS 0.02
+         ESC     1.028
+      /;
+
+*===========*  Declare/Initialize User Defined Sets *
+
+    SET TB(T), PP(T), TLAST(T);
+    ALIAS (T,TP);
+    ALIAS(*,ITEM);
+
+    SET MR(REG) //;
+    SET MSAREG(REG) //;
+    SET DM(COM);
+    SET MRTC(REG,YEAR,COM);
+    SET TRD / NMR, IRE /;
+    SET TM_DAM(R,ITEM) //;
+
+*==============
+*  Declare/Initialize Input Parameters
+
+    PARAMETER  TM_GR(REG,YEAR) 'Growth rate'                 //;
+    PARAMETER  TM_GDP0(REG) 'Initial GDP'                    //;
+    PARAMETER  TM_DEPR(R)   'Depreciation rate'              //;
+    PARAMETER  TM_DMTOL(R)  'Demand lower bound factor'      //;
+    PARAMETER  TM_IVETOL(R) 'Investment and enery tolerance' //;
+    PARAMETER  TM_KGDP(R)   'Initial capital to GDP ratio'   //;
+    PARAMETER  TM_KPVS(R)   'Capital value share'            //;
+    PARAMETER  TM_ESUB(R)   'Elasticity of substitution'     //;
+    PARAMETER  TM_MDTL(R)   'Market damage linear coeff.'    //;
+    PARAMETER  TM_MDTQ(R)   'Market damage quadratic coeff.' //;
+    PARAMETER  TM_HSX(R,YEAR) 'Hockey-stick exponent'        //;
+
+*=============*  Intermediate parameters for MACRO *
+
+* MACRO Sectoral Demands, marginals and AEEIs
+    PARAMETER  TM_DDATPREF(REG,COM) //;
+    PARAMETER  TM_DDF(REG,YEAR,COM) //;
+    PARAMETER  TM_DEM(REG,YEAR,COM);
+    PARAMETER  TM_DMC(REG,YEAR,COM);
+
+  PARAMETERS
+    NYPER(T)     number of years until next milestone
+    TM_EC0(REG)  initial energy system cost //
+    TM_C0(REG)   initial consumption
+    TM_Y0(REG)   initial gross output
+    TM_IV0(REG)  initial investment
+    TM_K0(REG)   initial capital
+    TM_RHO(R)    exponent derived from esub
+    TM_ASRV(R)   annual capital survival factor
+    TM_TSRV(R,T) yearly capital survival factor according to number of years per period
+    TM_AKL(REG)  prod function constant for k-l index;
+
+*=============*  Intermediate Parameters for MACRO
+
+  PARAMETERS
+    TM_AEEIV(R,YEAR,C)  Annual AEEI and demand decoupling factor
+    TM_AEEIFAC(R,LL,C)  Periodwise AEEI and demand decoupling factor
+    TM_B(REG,COM)       Prod function constant for demand of useful energy
+    TM_D0(REG,COM)      Base year useful demand - from TIMES
+    TM_DFACTCURR(R,LL)  Current annual utility discount factor
+    TM_DFACT(R,ALLYEAR) Utility discount factor
+    TM_PWT(YEAR)        Periodic utility weight
+    TM_L(REG,YEAR)      Current labor force index (efficiency units)
+    TM_ANNC(REG,YEAR)   Estimate of annual energy system cost
+    TM_AMP(REG,YEAR)    Amortisation of past investments //
+    TM_GDPGOAL(REG,TP)  Projected Baseline GDP
+    TM_GROWV(REG,YEAR)  Potential Labor Growth Rates //;
+
+  PARAMETERS
+    TM_QSFA(REG,TP)     Quadratic supply function A
+    TM_QSFB(REG,TP,COM) Quadratic supply function B
+    TM_CATT(R)          Catastrophic temperature
+    TM_UDF(R,ALLYEAR)   Utility discount factor
+    TM_NWT(REG)         Negishi weights
+    TM_NWTIT(NITER,REG) Negishi weights by iteration
+    TM_PVPI(ITEM,TP)    Present value prices of tradeables;
+
+  PARAMETERS
+    PAR_Y(R,T)	   Production parameter      //
+    PAR_IV(R,YEAR)   Investment parameter      //
+    PAR_GRGDP(R,T)   Growth rate of GDP        //
+    PAR_MC(R,T,C)    Marginal costs of demands //
+  ;
+
+  PARAMETER TM_DDF_Y(R,T);
+  PARAMETER TM_DDF_DM(R,T,C);
+  PARAMETER TM_DDF_SP(R,T,C);
+  PARAMETER TM_F2(R,T,C);
+  PARAMETER TM_YCHECK(R);
+
+*==================*  Results Parameters for MACRO
+
+  PARAMETER TM_DD(R,C,T)       Demand ratio MSA estimates to TED demand levels;
+  PARAMETER TM_GDP(REG,YEAR)   Actualized gross domestic product;
+  PARAMETER TM_RESULT(ITEM,R,YEAR) MACRO Summary result parameters //;

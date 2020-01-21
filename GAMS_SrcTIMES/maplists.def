@@ -1,0 +1,121 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==============================================================================*
+* MAPLISTS.DEF has all the (fixed for now) MAPPING set group declarations
+*   For the most part the primary purpose of these lists is to group reporting
+*   table information, however some set members are explicitly tested for in
+*   the code and should not be removed/re-defined.
+*==============================================================================*
+* commodities
+  SET COM_TYPE(COM_GRP)  'List of main commodity types groups'
+* This list should NOT be adjusted as these group names are explicitly referenced in the code!
+    / DEM        'Demands'
+      NRG        'Energy'
+      MAT        'Material'
+      ENV        'Environmental Indicators'
+      FIN        'Financial' /;
+  SET PG_SMAP(CG,J,CG) 'Map from PG to SPG' /
+      DEM.(1.NRG,2.MAT,3.ENV)
+      NRG.(1.MAT,2.DEM,3.ENV)
+      MAT.(1.NRG,2.DEM,3.ENV)
+      ENV.(1.NRG,2.MAT,3.DEM) /;
+
+* currency
+  SET CUR_GRP    'List of currency groups'
+    / DOMESTIC   'Domestic'
+      FOREIGN    'Foreign'
+      INTLAID    'International Aid'
+      RDD        'Research & Development' /;
+
+* demands
+  SET DEM_SECT   'List of demand sectors'
+    / RES        'Residential'
+      COM        'Commercial'
+      IND        'Industrial'
+      TRN        'Transportation'
+      AGR        'Agriculture'
+      NE         'Non-energy'
+      OTH        'Other' /;
+
+* environmental
+  SET ENV_GRP    'List of emission groups'
+    / GHG        'Greenhouse Gases'
+      PEM        'Particulate emissions'
+      OEM        'Other emissions'
+      OTHENV     'Other indicators' /;
+
+* financial
+  SET FIN_GRP    'List of financial groups'
+    / DOMESTIC   'Domestic'
+      FOREIGN    'Foreign'
+      INTLAID    'International Aid' /;
+
+* materials
+  SET MAT_GRP    'List of material groups'
+    / PRIMARY    'Primary'
+      PRODUCT    'Product'
+      WASTE      'Waste' /;
+  SET MAT_TYPE   'List of material types'
+    / DURABLE    'Durables'
+      CONSUMED   'Consumed'
+      FINITE     'Finite'
+      RECYCLED   'Recycled'
+      RNEWABLE   'Renewable' /;
+
+* energy
+  SET NRG_FORM   'List of energy forms'
+    / SOLID      'Solids'
+      LIQUID     'Liquids'
+      GAS        'Gaseous' /;
+  SET NRG_GRID   'List of grid types'
+    / ELC        'Electricity'
+      LTHEAT     'Low-temperature Heat'
+      HTHEAT     'High-temperature Heat'
+      GAS        'Natural Gas'/;
+  SET NRG_TYPE   'List of energy types'
+    / FOSSIL     'Fossil'
+      NUCLR      'Nuclear'
+      SYNTH      'Synthetic'
+      RATE       'Rate of doing work or transferring heat (dW/dt)'
+      LIMRENEW   'Limited Renewables'
+* these values are explicitly referenced in the code to release the balance EQ
+      FRERENEW   'Unlimited Renewables'
+      CONSRV     'Conservation'
+* these values are explicitly referenced in the code, e.g. part of CHP modeling
+      ELC        'Electricity'
+      HTHEAT     'High-temperature Heat'
+      LTHEAT     'Low-temperture Heat' /;
+
+* processes
+  SET PRC_GRP    'List of process groups'
+    / XTRACT     'Extraction'
+      RENEW      'Renewables (limited)'
+      PRE        'Energy'
+      PRW        'Material (by weight)'
+      PRV        'Material (by volume)'
+      REF        'Refined Products'
+      ELE        'Electric Generation'
+      HPL        'Heat Generation'
+* this value is explicitly referenced in the code to ensure CHP attributes appropriate
+      CHP        'Combined Heat+Power'
+      DMD        'Demand Devices'
+      DISTR      'Distribution Systems'
+      CORR       'Corridor Device'
+      STG        'Storage'
+      NST        'Night (Off-peak) Storage'
+      IRE        'Inter-region exchange (IMPort/EXPort)'
+      STK        'Stockpiling'
+      MISC       'Miscellaneous'
+      STS        'Time-slice storage (excluding night storages)'
+      SGS        'General process with storage capability' /;
+
+  SET PRC_RSOURC 'List of domestic resource supply groups'
+    / UNDRGRD    'Underground'
+      STRIP      'Strip Mine'
+      OFFSHR     'Offshore'
+      ONSHR      'Onshore'
+      ENHANCED   'Enhanced Recovery'
+      BYPRD      'By-product'
+      HARVST     'Harvest & Gathering' /;

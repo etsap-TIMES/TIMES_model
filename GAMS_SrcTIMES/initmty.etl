@@ -1,0 +1,66 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+******************************************************************************
+* INITMTY.ETL - declarations for technological change                        *
+******************************************************************************
+* OPTCR from default 0.1 to 0.000001, may want to adjust in *.RUN file
+  OPTION OPTCR = 0.000001;
+
+* - Input Data
+$ SET ETL YES
+  SET TEG(PRC)                //;
+  PARAMETER TL_SC0(R,PRC)     //;
+  PARAMETER TL_PRAT(R,PRC)    //;
+  PARAMETER TL_SEG(R,PRC)     //;
+  PARAMETER TL_CCAP0(R,PRC)   //;
+  PARAMETER TL_CCAPM(R,PRC)   //;
+* Cluster technologies: TEG plus PRC coupled to TEG, mapping and coupling factors
+  PARAMETER TL_CLUSTER(R,P,P) //;
+  PARAMETER TL_MRCLUST(R,P,R,P) //;
+* Input aliases
+  PARAMETER SC0(R,PRC)        //;
+  PARAMETER PRAT(R,PRC)       //;
+  PARAMETER SEG(R,PRC)        //;
+  PARAMETER CCAP0(R,PRC)      //;
+  PARAMETER CCAPM(R,PRC)      //;
+  PARAMETER CLUSTER(R,P,P)    //;
+
+* - Internal parameters
+* KP up to 6 as default, can be re-assigned in *.RUN file if desired
+  SET KP / 1*6 /;
+  ALIAS(KP,KP2);
+  PARAMETER PAT(R,PRC)        //;
+  PARAMETER PBT(R,PRC)        //;
+  PARAMETER CCOST0(R,PRC)     //;
+  PARAMETER CCOSTM(R,PRC)     //;
+  PARAMETER WEIG(R,KP,PRC)    //;
+  PARAMETER CCOSTK(R,KP,PRC)  //;
+  PARAMETER CCAPK(R,KP,PRC)   //;
+  PARAMETER BETA(R,KP,PRC)    //;
+  PARAMETER ALPH(R,KP,PRC)    //;
+  PARAMETER NTCHTEG(R,PRC) Number of technologies in cluster //;
+* report specific
+  PARAMETER INVC_UNIT(R,T,P)  //;
+  PARAMETER PREV(R,PRC)       //;
+
+* Starting periods for learning technologies
+  SET TL_START(R,T,P)   //;
+* sets of cluster2 technologies and key components
+  SET TL_RP_CT(REG,PRC) //;
+  SET TL_RP_KC(REG,PRC) //;
+
+* SET and parameter Declarations for LIC Reporting Module
+  PARAMETER TL_CT_COST(R,ALLYEAR,PRC,CUR) //;
+
+*=====================================================*
+* ETL Iteration parameters used during TESTing        *
+*=====================================================*
+* new SET MLITER (1*1 default) to enable iterative SOLVE, can be re-assigned in RUN
+SET MLITER /1*1/;
+* default MLITERM in RUN
+SCALAR MLITERM /10.0/;
+* CCDIFCRIT is termination criterion for average difference in CCAPM - CCAP(TLAST)
+*   or for CCAPM values in two subsequent iterations, now set to 0.1
+SCALAR CCDIFCRIT /0.1/;

@@ -1,0 +1,117 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*============================================================================*
+* EQU_EXT.MSA Equation definitions for MACRO Stand-Alone
+*============================================================================*
+$ SET VAR_CLIBOX CM_RESULT
+$ IFI %CLI%==YES $SET VAR_CLIBOX VAR_CLIBOX
+* Prepare annualized coefficients and enable adjusted PV factors
+$ BATINCLUDE eqobjann.tm N *0
+$ IFI %OBJANN%%MSA%==YESMSA COEF_PVT(R,T) $= TM_UDF(R,T); OBJ_PVT(R,T,CUR)$RDCUR(R,CUR) $= TM_UDF(R,T);
+******************************************************************************
+* Declare the MACRO Equations
+******************************************************************************
+
+EQUATIONS
+   EQ_UTIL                  Utility equation - objective function for MKMC
+   EQ_CONSO(REG,TP)         Computation of C (economy consumption)
+   EQ_PROD_Y(REG,TP)        Computation of Y (economy output)
+   EQ_DD(REG,TP,COM)        Demand decoupling
+   EQ_MCAP(REG,TP)          Capital - trillion dollars
+   EQ_TMC(REG,TP)           Terminal condition  - trillion dollars
+   EQ_IVECBND(REG,T)        Bound on the sum of investment and energy costs
+   EQ_ESCOST(REG,TP)        Energy system cost
+   EQ_TRDBAL(TP,ITEM)       Trade balance
+   EQ_CCDM(REG,MDM,YEAR)    Damage from climate change
+;
+*=======================================================================
+*  Utility Production Function, the Objective Function
+* ======================================================================
+
+ EQ_UTIL.. SUM(MR(R), SUM(T, TM_NWT(R) * TM_PWT(T) * TM_DFACT(R,T) * LOG(VAR_C(R,T))) + 
+      SUM((TM_DAM(R,L),XTP), TM_NWT(R) * TM_PWT(XTP)*TM_UDF(R,XTP) * LOG(VAR_CDM(R,L,XTP))))
+
+  =E=  VAR_UTIL * MAX(1,LOG(TM_SCALE_UTIL*1000))/1000;
+
+*=======================================================================
+*  Consumption Constraint
+*=======================================================================
+
+ EQ_CONSO(MR(R),T)..  VAR_Y(R,T)  =E=  VAR_C(R,T) + VAR_INV(R,T) + VAR_EC(R,T) +
+                      (SUM(TM_DAM(R,IO),VAR_CDM(R,IO,T)) + VAR_NTX(R,T,'NMR'))$PP(T);
+
+
+*=======================================================================
+*  Production Constraint
+*=======================================================================
+
+ EQ_PROD_Y(MR(R),T)..  VAR_Y(R,T) =L= 
+
+ (TM_AKL(R) * (VAR_K(R,T) ** (TM_KPVS(R) * TM_RHO(R))) * TM_L(R,T) ** ((1 - TM_KPVS(R)) * TM_RHO(R))
+
+ +  SUM(DEM(R,DM)$TM_DEM(R,T,DM), TM_B(R,DM) * VAR_D(R,T,DM) ** TM_RHO(R))) ** (1 / TM_RHO(R));
+
+
+*=======================================================================
+*  Demand Decoupling  Constraint:
+*  The energy service demands D are reduced by the DDF factors
+*  while as production function factors increase ECONOMIC OUTPUT
+*=======================================================================
+
+  EQ_DD(MR(R),TP,DM) ..
+
+  VAR_DEM(R,TP,DM) =E= ((1/TM_SCALE_NRG) * (TM_AEEIFAC(R,TP,DM) * VAR_D(R,TP,DM) + VAR_SP(R,TP,DM)))$(TM_DEM(R,TP,DM) GT 0);
+
+
+*=======================================================================
+*  Capital Constraint
+*=======================================================================
+
+  EQ_MCAP(MR(R),PP(T+1)).. 	
+
+  VAR_K(R,PP)  =L=
+
+  VAR_K(R,T) * TM_TSRV(R,T) + (D(PP)*VAR_INV(R,PP) + D(T)*VAR_INV(R,T)*TM_TSRV(R,T))/2;
+
+*=======================================================================
+*  Terminal Condition
+*=======================================================================
+
+  EQ_TMC(MR(R),TLAST)..
+
+  VAR_K(R,TLAST) * (TM_GROWV(R,TLAST) + TM_DEPR(R))/100 =L= VAR_INV(R,TLAST);
+
+
+*=======================================================================
+*  Bound on Sum of Investment and Energy
+*=======================================================================
+  EQ_IVECBND(MR(R),PP(T)) ..
+
+  VAR_INV(R,T) + VAR_EC(R,T)  =L=  TM_Y0(R) * TM_L(R,T) ** TM_IVETOL(R);
+
+*=======================================================================
+*  Cost of Energy
+*=======================================================================
+  EQ_ESCOST(MR(R),PP)..
+
+  TM_QSFA(R,PP) + SUM(DM, TM_QSFB(R,PP,DM)*VAR_DEM(R,PP,DM)**2) + TM_AMP(R,PP)
+
+  =L=
+
+  VAR_EC(R,PP);
+
+*=======================================================================
+* Trades and damage
+*=======================================================================
+  EQ_TRDBAL(PP,TRD)..  SUM(MR(R), VAR_NTX(R,PP,TRD)) =E= 0;
+
+  EQ_CCDM(TM_DAM(MR(R),MDM),XTP)..  VAR_CDM(R,MDM,XTP)  =E=
+   
+   ((1-(%VAR_CLIBOX%('DELTA-ATM',XTP)/TM_CATT(R))**2)**TM_HSX(R,XTP))$L(MDM) +
+
+   SUM(SUPERYR(T(XTP),LL)$XTP(LL),TM_GDPGOAL(MR,T)*TM_XWT(R,LL)*
+   (TM_MDTL(R)*%VAR_CLIBOX%('DELTA-ATM',LL)/MAX(1,TM_DEFVAL('REFTEMP')) +
+    TM_MDTQ(R)*POWER(%VAR_CLIBOX%('DELTA-ATM',LL)/MAX(1,TM_DEFVAL('REFTEMP')),2)))$IO(MDM);
+

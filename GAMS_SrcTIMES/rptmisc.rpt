@@ -1,0 +1,266 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* RPTMISC.rpt: Miscellaneous shared reportings
+*  %1 - Prefix for parameter names (optional)
+*  %2 - SOW, (optional)
+*  %3 - %SOW%
+*=============================================================================*
+  R_DF(R,T) = 1/MAX(1E-9,COEF_PVT(R,T));
+*-----------------------------------------------------------------------------
+* Activity
+*-----------------------------------------------------------------------------
+  %1PAR_ACTL(%2RTP_VINTYR(R,V,T,P),S)$PRC_TS(R,P,S) $= VAR_ACT.L(R,V,T,P,S);
+  Z = (RPT_OPT('ACT','2') GE 0);
+  %1PAR_ACTM(%2R,V,T,P,S)$VAR_ACT.M(R,V,T,P,S) = ROUND(VAR_ACT.M(R,V,T,P,S)*R_DF(R,T),7)$Z;
+  %1PAR_ACTM(%2R,'0',T,P,S) $= EQL_ACTBND.M(R,T,P,S)*R_DF(R,T);
+  %1PAR_ACTM(%2R,'0',T,P,S) $= EQG_ACTBND.M(R,T,P,S)*R_DF(R,T);
+  %1PAR_ACTM(%2R,'0',T,P,S) $= EQE_ACTBND.M(R,T,P,S)*R_DF(R,T);
+
+*-----------------------------------------------------------------------------
+* Capacity
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=RTP_CAPYR,CLEAR=COEF_CAP;
+  RTP_CAPYR(RTP_CPTYR(R,TT,T,P))$VAR_NCAP.L(R,TT,P) = YES;
+  VAR_CAP.M(RTP)$(NOT VAR_CAP.M(RTP)) $= EQE_CPT.M(RTP);
+
+  %1PAR_CAPL(%2RTP(R,T,P))  = SUM(RTP_CAPYR(R,TT,T,P), COEF_CPT(R,TT,T,P)*VAR_NCAP.L(R,TT,P));
+  %1PAR_PASTI(%2RTP(R,T,P),'0') = SUM(PYR(K)$COEF_CPT(R,K,T,P),COEF_CPT(R,K,T,P)*NCAP_PASTI(R,K,P)-RTFORC(R,K,T,P)$PYR_S(K));
+
+$IF DEFINED PRC_RCAP COEF_CAP(R,V,T,P)$=VAR_SCAP.L(R,V,T,P); %1PAR_PASTI(%2RTP_VARP(R,T,P),'¤')$PRC_RCAP(R,P) = -SUM(VNRET(V,T),COEF_CAP(R,V,T,P)*COEF_CPT(R,V,T,P)-RTFORC(R,V,T,P));
+  %1PAR_CAPM(%2RTP(R,T,P))   $= VAR_CAP.M(RTP)*R_DF(R,T);
+  %1PAR_CAPLO(%2RTP)         $= CAP_BND(RTP,'LO');
+  %1PAR_CAPUP(%2RTP_OFF(RTP))$RCAP_BND(RTP,'N') $= PRC_RESID(RTP);
+  %1PAR_CAPUP(%2RTP)$(CAP_BND(RTP,'UP') NE INF) $= CAP_BND(RTP,'UP');
+
+  %1PAR_NCAPL(%2RTP(R,V,P))  $= VAR_NCAP.L(RTP);
+  %1PAR_NCAPM(%2RTP)$(VAR_NCAP.M(RTP)*COEF_OBJINV(RTP)) = VAR_NCAP.M(RTP)/COEF_OBJINV(RTP);
+
+*-----------------------------------------------------------------------------
+* Commodities
+*-----------------------------------------------------------------------------
+* Variables
+  %1PAR_COMPRDL(%2R,T,C,S) $= VAR_COMPRD.L(R,T,C,S);
+  %1PAR_COMPRDM(%2R,T,C,S) $= VAR_COMPRD.M(R,T,C,S)*R_DF(R,T);
+  %1PAR_COMNETL(%2R,T,C,S) $= VAR_COMNET.L(R,T,C,S);
+  %1PAR_COMNETM(%2R,T,C,S) $= VAR_COMNET.M(R,T,C,S)*R_DF(R,T);
+  OPTION AGR < COM_AGG;
+  %1AGG_OUT(%2R,T,C,S)$(RTCS_VARC(R,T,C,S)$AGR(R,C)) =
+    SUM(RTC(R,T,COM)$COM_AGG(RTC,C),COM_AGG(RTC,C) *
+       SUM(RTCS_VARC(RTC,TS)$RS_FR(R,S,TS),RS_FR(R,S,TS)*(1+RTCS_FR(R,T,COM,S,TS)) *
+         (VAR_COMNET.L(RTC,TS)$RC_AGP(R,COM,'LO') + VAR_COMPRD.L(RTC,TS)$RC_AGP(R,COM,'FX'))));
+  OPTION CLEAR=AGR;
+
+* Equations
+  %1PAR_COMBALEM(%2R,T,C,S) $= EQG_COMBAL.M(R,T,C,S)*R_DF(R,T);
+  %1PAR_COMBALEM(%2R,T,C,S) $= EQE_COMBAL.M(R,T,C,S)*R_DF(R,T);
+  %1PAR_PEAKM(%2R,T,CG,S)   $= EQ_PEAK.M(R,T,CG,S)*R_DF(R,T);
+$IF %1==S %1PAR_COMBALGM(%2RTC,S) $= EQG_COMBAL.L(RTC,S);
+
+*-----------------------------------------------------------------------------
+* Process flows
+*-----------------------------------------------------------------------------
+OPTION CLEAR=UNCD1,CLEAR=F_INOUT;
+F_INOUT(R,V,T,P,C,'IN')$COEF_ICOM(R,V,T,P,C) = COEF_ICOM(R,V,T,P,C) * RTP_CAPVL(R,V,P);
+F_INOUT(R,V,T,P,C,'OUT')$COEF_OCOM(R,V,T,P,C) = COEF_OCOM(R,V,T,P,C) * RTP_CAPVL(R,V,P);
+F_INOUT(RTP_CPTYR(R,V,T,P),C,IO)$NCAP_COM(R,V,P,C,IO) = F_INOUT(R,V,T,P,C,IO) +
+  (RTP_CAPVL(R,V,P)-COEF_CAP(R,V,T,P)) * COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,IO);
+F_INOUTS(R,V,T,P,C,ANNUAL,IO)$F_INOUT(R,V,T,P,C,IO) = F_INOUTS(R,V,T,P,C,ANNUAL,IO)+F_INOUT(R,V,T,P,C,IO);
+
+* inputs: main flows & emissions, aux flows & emissions
+  %1F_IN(%2R,V,T,P,C,S)$TOP(R,P,C,'IN')   $= PAR_FLO(R,V,T,P,C,S);
+  %1F_IN(%2R,V,T,P,C,S)                   $= PAR_IRE(R,V,T,P,C,S,'EXP');
+  %1F_IN(%2R,V,T,P,C,S)$RC(R,C)           $= VAR_SIN.L(R,V,T,P,C,S);
+  %1F_IN(%2R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'IN') = %1F_IN(%2R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'IN');
+* outputs: main flows & emissions, aux flows & emissions
+  %1F_OUT(%2R,V,T,P,C,S)$TOP(R,P,C,'OUT') $= PAR_FLO(R,V,T,P,C,S);
+  %1F_OUT(%2R,V,T,P,C,S)                  $= PAR_IRE(R,V,T,P,C,S,'IMP');
+  %1F_OUT(%2R,V,T,P,C,S)$RC(R,C)          $= VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P);
+  %1F_OUT(%2R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'OUT') = %1F_OUT(%2R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'OUT');
+*-----------------------------------------------------------------------------
+* Filter out small values if requested
+  IF(SUM(UC_GRPTYPE$RPT_OPT(UC_GRPTYPE,'9'),1),RPT_OPT(UC_GRPTYPE,'9')$(RPT_OPT(UC_GRPTYPE,'9')>.1)=0;
+    Z=RPT_OPT('ACT','9'); IF(Z>0,%1PAR_ACTL(%2R,V,T,P,S)$((%1PAR_ACTL(%2R,V,T,P,S)<Z)$%1PAR_ACTL(%2R,V,T,P,S))=0);
+    Z=RPT_OPT('CAP','9'); IF(Z>0,%1PAR_CAPL(%2RTP)$((%1PAR_CAPL(%2RTP)<Z)$%1PAR_CAPL(%2RTP))=0);
+    Z=RPT_OPT('NCAP','9');IF(Z>0,%1PAR_NCAPL(%2RTP)$((%1PAR_NCAPL(%2RTP)<Z)$%1PAR_NCAPL(%2RTP))=0);
+    Z=RPT_OPT('FLO','9');
+    IF(Z>0,%1F_OUT(%2R,V,T,P,C,S)$((ABS(%1F_OUT(%2R,V,T,P,C,S))<Z)$%1F_OUT(%2R,V,T,P,C,S)) = 0;
+           %1F_IN(%2R,V,T,P,C,S)$((ABS(%1F_IN(%2R,V,T,P,C,S))<Z)$%1F_IN(%2R,V,T,P,C,S)) = 0));
+*-----------------------------------------------------------------------------
+* If power levels or fall-back to ANNUAL is requested, set reporting at com_TS
+  UNCD1(U2(COM_TYPE))$RPT_OPT(U2,'3')=YES;
+  UNCD1(U2(NRG_TYPE))$RPT_OPT(U2,'1')=YES;
+  UNCD1(U2(NRG_TYPE))$RPT_OPT(U2,'3')=YES;
+  RPT_OPT('FLO','1')$CARD(UNCD1)=YES;
+  MY_TS(S) = ORD(S) EQ CARD(S);
+  OPTION CLEAR=RTP_CAPVL,CLEAR=RVTPC,CLEAR=F_INOUTS,CLEAR=RCS;
+* Check for unused COM variables
+  RTTC(RTC)$(NOT SUM(RHS_COMPRD(RTC,S),1)) = YES;
+  OPTION CLEAR=RXX; RXX(RTC)$(NOT SUM(RCS_COMBAL(RTC,S,BD),1))=YES;
+  Z = (RPT_OPT('COMPRD','1') LE 0); IF(Z,RTTC(RTC)$(NOT RXX(RTC))=NO);
+  IF(RPT_OPT('FLO','1')<1,
+$ IFI %RPT_FLOTS%==ANNUAL RCS(RC,ANNUAL)=YES;
+  ELSE RCS(COM_TS)=YES);
+  IF(CARD(RCS),
+* Represent all process flows at requested timeslices
+    F_IOS(R,V,T,P,C,S)$(NOT RCS(R,C,S)) $= %1F_IN(%2R,V,T,P,C,S); OPTION RVTPC<F_IOS;
+    %1F_IN(%2RVTPC,S)$F_IOS(RVTPC,S)=0;
+    %1F_IN(%2RVTPC(R,V,T,P,C),TS)$RCS(R,C,TS) = %1F_IN(%2RVTPC,TS) +
+      SUM(RS_TREE(R,TS,S)$F_IOS(RVTPC,S),RS_FR(R,TS,S)*(1+RTCS_FR(R,T,C,TS,S))*F_IOS(RVTPC,S));
+    OPTION CLEAR=RVTPC,CLEAR=F_IOS;
+    F_IOS(R,V,T,P,C,S)$(NOT RCS(R,C,S)) $= %1F_OUT(%2R,V,T,P,C,S); OPTION RVTPC<F_IOS;
+    %1F_OUT(%2RVTPC,S)$F_IOS(RVTPC,S)=0;
+    %1F_OUT(%2RVTPC(R,V,T,P,C),TS)$RCS(R,C,TS) = %1F_OUT(%2RVTPC,TS) +
+      SUM(RS_TREE(R,TS,S)$F_IOS(RVTPC,S),RS_FR(R,TS,S)*(1+RTCS_FR(R,T,C,TS,S))*F_IOS(RVTPC,S));
+    OPTION CLEAR=RCS,CLEAR=RVTPC,CLEAR=F_IOS;
+    %1PAR_COMPRDL(%2RTCS_VARC(RTTC(R,T,C),S)) = SUM((VNT(V,T),P)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S));
+    LOOP(NRG_TYPE(U2)$RPT_OPT(U2,'1'),
+     %1P_OUT(%2RTPC(R,T,P,C),S)$(COM_TS(R,C,S)$NRG_TMAP(R,NRG_TYPE,C))=SUM(VNT(V,T)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S)/G_YRFR(R,S)/RPT_OPT(U2,'1')));
+  ELSE %1PAR_COMPRDL(%2RTTC(R,T,C),ANNUAL)=SUM((VNT(V,T),P,S)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S));
+ );
+$IFI %STAGES%==YES RPT_OPT('FLO','3')=0;
+ IF(RPT_OPT('FLO','3'),
+   VAL_FLO(R,V,T,P,C) $= SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S)*%1PAR_COMBALEM(%2R,T,C,S));
+   F_INOUTS(R,V,T,P,C,ANNUAL,'OUT') $= SUM(S$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S)*%1PAR_COMBALEM(%2R,T,C,S));
+   VAL_FLO(R,V,T,P,C)$F_INOUTS(R,V,T,P,C,'ANNUAL','OUT') = VAL_FLO(R,V,T,P,C)-F_INOUTS(R,V,T,P,C,'ANNUAL','OUT');
+   OPTION CLEAR=F_INOUTS;
+ );
+* Complete COMPRDL & COMNETL reporting
+  %1PAR_COMPRDL(%2RTTC(R,T,C),S)$%1AGG_OUT(%2RTTC,S) = %1PAR_COMPRDL(%2RTTC,S)+%1AGG_OUT(%2RTTC,S);
+  %1PAR_COMNETL(%2RTC(RXX(R,T,C)),S) $= %1PAR_COMPRDL(%2RTC,S);
+  %1PAR_COMNETL(%2RTCS_VARC(RXX(R,T,C),ANNUAL(S))) = %1PAR_COMPRDL(%2R,T,C,S)*PROD(RTTC(R,T,C),COM_IE(RTTC,S))-SUM(RPC_CAPFLO(R,V,P,C)$VNT(V,T),F_INOUT(R,V,T,P,C,'IN'));
+  %1PAR_COMPRDL(%2RXX(RTTC(R,T,C)),S)=0;
+  %VAR%_COMNET.L(RTC(RXX(R,T,C)),S%3) $= %1PAR_COMNETL(%2RTC,S);
+*-----------------------------------------------------------------------------
+* Cumflo results (unscaling)
+  %1PAR_CUMFLOL(%2R,P,C,YEAR,LL) $= %VAR%_CUMFLO.L(R,P,C,YEAR,LL%3)*%CUFSCAL%;
+  %1PAR_CUMFLOM(%2R,P,C,YEAR,LL) $= %VAR%_CUMFLO.M(R,P,C,YEAR,LL%5)*(1/%CUFSCAL%);
+  %1PAR_CUMCST(%2R,YEAR,LL,COSTAGG,CUR) $= %VAR%_CUMCST.L(R,YEAR,LL,COSTAGG,CUR%3);
+* Marginals of Dynamic process bounds
+$IF DEFINED EQE_UCRTP
+  EQN_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD('FX')) $= EQE_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD);
+  %1PAR_UCRTP(%2UC_N,R,T,P,UC_GRPTYPE) $= SUM(BD$PRC_DYNUC(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD),EQN_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD)*(1/COEF_OBJINV(R,T,P))$COEF_OBJINV(R,T,P));
+  %1PAR_UCRTP(%2UC_N,R,T,P,'ACT') $= SUM(BD$PRC_DYNUC(UC_N,'RHS',R,T,P,'ACT',BD),EQN_UCRTP.M(UC_N,R,T,P,'ACT',BD)*R_DF(R,T));
+  IF(RPT_OPT('COMPRD','4'), %1PAR_UCMRK(%2R,T,ITEM,C,S) $= EQL_FLOMRK.M(R,T,ITEM,C,S);
+    %1PAR_UCMRK(%2R,T,ITEM,C,S) $= EQG_FLOMRK.M(R,T,ITEM,C,S);
+    %1PAR_UCMRK(%2R,T,ITEM,C,S) $= EQE_FLOMRK.M(R,T,ITEM,C,S);
+    %1PAR_UCMRK(%2R,T,ITEM,C,S)$%1PAR_UCMRK(%2R,T,ITEM,C,S)=(%1PAR_UCMRK(%2R,T,ITEM,C,S)/COEF_PVT(R,T))$(NOT SUM(RX_MARK(R,LL,ITEM,C,BD),1)));
+*-----------------------------------------------------------------------------
+* User constraints
+*-----------------------------------------------------------------------------
+$IF NOT %VAR_UC%==YES $GOTO UC_DONE
+* Levels
+  %VAR%_UC.L('%SYSPREFIX%SOLVE_STATUS'%3) $= %MODEL_NAME%.MODELSTAT;
+  %1PAR_UCSL(%2UC_N,'NONE','NONE','NONE') $= %VAR%_UC.L(UC_N%3);
+  %1PAR_UCSL(%2UC_N,R,'NONE','NONE')      $= %VAR%_UCR.L(UC_N,R%3);
+  %1PAR_UCSL(%2UC_N,'NONE',T,'NONE')      $= %VART%_UCT.L(UC_N,T%SWS%);
+  %1PAR_UCSL(%2UC_N,R,T,'NONE')           $= %VART%_UCRT.L(UC_N,R,T%SWS%);
+  %1PAR_UCSL(%2UC_N,'NONE',T,S)           $= %VART%_UCTS.L(UC_N,T,S%SWS%);
+  %1PAR_UCSL(%2UC_N,R,T,S)                $= %VART%_UCRTS.L(UC_N,R,T,S%SWS%);
+* Marginals
+  %1PAR_UCSM(%2UC_N,'NONE','NONE','NONE') $= %VAR%_UC.M(UC_N%5);
+  %1PAR_UCSM(%2UC_N,R,'NONE','NONE')      $= %VAR%_UCR.M(UC_N,R%5);
+  %1PAR_UCSM(%2UC_N,'NONE',T,'NONE')      $= %VART%_UCT.M(UC_N,T%4);
+  %1PAR_UCSM(%2UC_N,R,T,'NONE')           $= %VART%_UCRT.M(UC_N,R,T%4)*R_DF(R,T);
+  %1PAR_UCSM(%2UC_N,'NONE',T,S)           $= %VART%_UCTS.M(UC_N,T,S%4);
+  %1PAR_UCSM(%2UC_N,R,T,S)                $= %VART%_UCRTS.M(UC_N,R,T,S%4)*R_DF(R,T);
+
+* UCMAX equations
+$IF NOT DEFINED %EQ%G_UCMAX $GOTO UC_DONE
+  %1PAR_UCMAX(%2UC_N,ALL_R,'-',C)$UC_GMAX(UC_N,ALL_R,'N',C,'N') = %VAR%_UC.L(UC_N%3)-%EQ%G_UCMAX.L(UC_N,ALL_R,'N',C,'N'%3);
+  %1PAR_UCMAX(%2UC_N,ALL_R,P,C)$UC_GMAX(UC_N,ALL_R,P,C,'EACH')  = %VAR%_UC.L(UC_N%3)-%EQ%G_UCMAX.L(UC_N,ALL_R,P,C,'EACH'%3);
+  %1PAR_UCMAX(%2UC_N,R,'-',C)$(UC_R_EACH(R,UC_N)$UC_GMAX(UC_N,R,'N',C,'N')) = %VAR%_UCR.L(UC_N,R%3)-%EQ%G_UCMAX.L(UC_N,R,'N',C,'N'%3);
+  %1PAR_UCMAX(%2UC_N,R,P,C)$(UC_R_EACH(R,UC_N)$UC_GMAX(UC_N,R,P,C,'EACH'))  = %VAR%_UCR.L(UC_N,R%3)-%EQ%G_UCMAX.L(UC_N,R,P,C,'EACH'%3);
+$LABEL UC_DONE
+*-----------------------------------------------------------------------------
+* Prepare ELC supply by energy source
+$IF %SOLANS%==YES RPT_OPT('FLO','5')=1;
+  IF(RPT_OPT('FLO','5'),
+  TRACKP(R,P)$SUM(TOP(RPC_SPG(R,P,C),'IN')$NRGELC(R,C),1) = YES;
+  TRACKPC(RPC(RP_FLO(R,P),C))$(TOP(RPC,'OUT')$NRGELC(R,C)) = YES;
+  TRACKPC(TRACKP,C) = NO; OPTION TRACKP < TRACKPC;
+  OPTION CLEAR=F_VIO,CLEAR=KEEP_FLOP;
+  TRACKPG(TRACKP(R,P),C)$((NOT NRGELC(R,C))$NRG(R,C)$TOP(R,P,C,'IN'))=YES;
+  F_VIO(RTP_VINTYR(R,V,T,P),IO)$TRACKP(R,P) =
+    SUM((TRACKPC(R,P,C),S)$(NOT IPS(IO)),%1F_OUT(%2R,V,T,P,C,S))+SUM((TRACKPG(R,P,C),IPS(IO),S),%1F_IN(%2R,V,T,P,C,S))+1-1;
+  %1PAR_EOUT(%2RTP_VINTYR(R,V,T,P),C)$(F_VIO(R,V,T,P,'IN')$TRACKPG(R,P,C)) =
+    F_VIO(R,V,T,P,'OUT') / F_VIO(R,V,T,P,'IN') * SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S));
+  OPTION CLEAR=UNCD7;UNCD7(TOP_IRE(ALL_R,C,ALL_REG,COM,P),'','')$(NRGELC(ALL_R,C)+NRGELC(ALL_REG,COM))=YES;
+  UNCD7(R,COM,R,C,P,'','')=NO;
+  LOOP(UNCD7(ALL_R,C,ALL_REG,COM,P,'',''),KEEP_FLOP(R(ALL_R),P,C)=YES;KEEP_FLOP(R(ALL_REG),P,COM)=YES);
+  %1PAR_EOUT(%2RTP_VINTYR(R,V,T,P),C)$(KEEP_FLOP(R,P,C)$RP_IRE(R,P)) =
+   SUM(S$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'IMP') -
+   SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'EXP');
+  KEEP_FLOP(RPC_SPG(TRACKP,C))=YES;
+  OPTION CLEAR=F_VIO,CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=TRACKPG);
+
+*-----------------------------------------------------------------------------
+* Levelized cost calculation
+*-----------------------------------------------------------------------------
+ F=RPT_OPT('NCAP','1');
+ LOOP((SYSUC('%SYSPREFIX%LEVCOST'),ANNUAL(SL))$F, Z=F<0; F=1-Z+(F>1);
+  NCAP_YES(R,T,P)$(VAR_NCAP.L(R,T,P)*COEF_RTP(R,T,P)$RP_INOUT(R,P,'OUT')=0)=NO;
+  PASTSUM(R,T,P)$%1PAR_CAPL(%2R,T,P) = %1PAR_CAPL(%2R,T,P)+SUM(PASTCV,%1PAR_PASTI(%2R,T,P,PASTCV))+1-1;
+* Calculate ENV credit
+  LOOP(COM_LIM(ENV(R,C),'LO')$Z,TRACKC(R,C)=YES;TRACKP(R,P)$(PRC_MAP(R,'PRE',P)$TOP(R,P,C,'OUT'))=YES);
+  TRACKPC(TRACKP(R,P),C)$(NRG(R,C)$TOP(R,P,C,'OUT'))=YES; TRACKC(R,C)$SUM(TRACKPC(R,P,C),1)=YES;
+  VDA_EMCB(R,T,C,C)$(NRG(R,C)$TRACKC(R,C)) =
+   MIN(SUM(TRACKC(ENV(R,COM)),MIN(0,COM_AGG(R,T,C,COM)*%1PAR_COMBALEM(%2R,T,COM,SL))),
+    SUM(P$TRACKPC(R,P,C),
+     SUM((VNT(V,T),S)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S))/MAX(MICRO,SUM((TRACKPC(R,P,COM2),VNT(V,T),S)$%1F_OUT(%2R,V,T,P,COM2,S),%1F_OUT(%2R,V,T,P,COM2,S))) *
+     SUM((VNT(V,T),TRACKC(ENV(R,COM)))$%1F_OUT(%2R,V,T,P,COM,SL),%1F_OUT(%2R,V,T,P,COM,SL)*MIN(0,%1PAR_COMBALEM(%2R,T,COM,SL)))) /
+    MAX(MICRO,SUM((VNT(V,T),P,S)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S))+SUM(S$%1AGG_OUT(%2R,T,C,S),%1AGG_OUT(%2R,T,C,S))));
+  OPTION CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=COEF_CAP; TRACKC(NRG)=NO;
+* Credit for aux energy ouputs (ELE+CHP+HPL)
+  OPTION RP_PRC < NCAP_YES; TRACKP(RP_PRC(RP))=ELE(RP)+CHP(RP)+HPL(RP);
+  TRACKPC(TRACKP(R,P),C)$(TOP(R,P,C,'OUT')$(NOT RPC_PG(R,P,C)*(NRGELC(R,C)+(NOT CHP(R,P))))$NRG(R,C))=YES;
+  OPTION TRACKP < TRACKPC;
+  IF(Z,COEF_CAP(RTP_VINTYR(R,V,T,P))$TRACKP(R,P)=1-1/(1+SUM(RPCS_VAR(TRACKPC(R,P,C),S),PAR_FLO(R,V,T,P,C,S))/MAX(MICRO,SUM(RPCS_VAR(RPC_PG(R,P,C),S)$(NOT TRACKPC(R,P,C)),PAR_FLO(R,V,T,P,C,S)))));
+  IF(F=1,RP_GRP(RPC_PG(RP_PRC,C))$(NOT TRACKPC(RPC_PG))=YES);
+* Credit for peak capacity
+  LOOP((COM_PEAK(R,CG),COM_GMAP(R,CG,C)),TRACKPG(RP_PRC(R,P),C)$TOP(R,P,C,'OUT')=YES;
+    PAR_RTCS(RTCS_VARC(R,T,C,S))=SUM(COM_PKTS(R,CG,TS)$RS_TREE(R,S,TS),%1PAR_PEAKM(%2R,T,CG,TS)/(1+MAX(COM_PKRSV(R,T,C),SUM(COM(CG),COM_PKRSV(R,T,COM))))*RS_FR(R,TS,S))*COM_IE(R,T,C,S));
+  OPTION RP_PRC < RPC_PKC; RP_PRC(RP)$(F<2)=NO; TRACKPG(RPC_PG(RP_PRC,C))=NO;
+* Cost ratio for vintaged
+ %1PAR_NCAPR(%2NCAP_YES(R,TT(V),P),SYSUC)$PRC_VINT(R,P) =
+   (COEF_RTP(R,V,P)*VAR_NCAP.L(R,V,P) +
+    SUM(RTP_VINTYR(R,V,T,P),COEF_PVT(R,T) *
+        (SUM(RPM,%1CST_ACTC(%2R,V,T,P,RPM)) +
+         SUM(TOP(R,P,C,'IN'),(1-COEF_CAP(R,V,T,P)) * (%1CST_FLOC(%2R,V,T,P,C)+%1CST_FLOX(%2R,V,T,P,C) +
+            SUM((COM_TS(R,C,S),RS_TREE(R,S,TS))$%1F_IN(%2R,V,T,P,C,TS),
+                (%1PAR_COMBALEM(%2R,T,C,S)+VDA_EMCB(R,T,C,C))*%1F_IN(%2R,V,T,P,C,TS)*RS_FR(R,S,TS))$(NOT TRACKC(R,C)))) +
+         SUM(TOP(R,P,C,'OUT')$(NOT TRACKPC(R,P,C)$Z),%1CST_FLOC(%2R,V,T,P,C)+%1CST_FLOX(%2R,V,T,P,C) -
+            SUM((COM_TS(R,C,S),RS_TREE(R,S,TS))$%1F_OUT(%2R,V,T,P,C,TS),
+                (%1PAR_COMBALEM(%2R,T,C,S)*COM_IE(R,T,C,S)+(NCAP_PKCNT(R,V,P,S)**RP_PKF(R,P))*PAR_RTCS(R,T,C,S)$TRACKPG(R,P,C))*%1F_OUT(%2R,V,T,P,C,TS)*RS_FR(R,S,TS))$(NOT RP_GRP(R,P,C))$F) -
+         SUM((RPC_PG(RP_PRC(R,P),C),COM_TS(R,C,S)),NCAP_PKCNT(R,V,P,S)*PAR_RTCS(R,T,C,S)*VAR_NCAP.L(R,V,P)*G_YRFR(R,S)*PRC_CAPACT(R,P)*PRC_ACTFLO(R,V,P,C))))) /
+    MAX(MICRO,SUM(RTP_CPTYR(R,V,T,P),COEF_PVT(R,T)*SUM((RPC_PG(R,P,C),PRC_TS(R,P,S))$(NOT TRACKPC(R,P,C)),PAR_FLO(R,V,T,P,C,S))));
+* Cost ratio for non-vintaged
+ %1PAR_NCAPR(%2NCAP_YES(R,TT(V),P),SYSUC)$(NOT PRC_VINT(R,P)) =
+   (COEF_RTP(R,V,P) +
+    SUM(RTP_CPTYR(R,V,T,P)$PASTSUM(R,T,P),COEF_PVT(R,T)*COEF_CPT(R,V,T,P)/PASTSUM(R,T,P) *
+        (SUM(RPM,%1CST_ACTC(%2R,T,T,P,RPM)) +
+         SUM(TOP(R,P,C,'IN'),(1-COEF_CAP(R,T,T,P)) * (%1CST_FLOC(%2R,T,T,P,C)+%1CST_FLOX(%2R,T,T,P,C) +
+            SUM((COM_TS(R,C,S),RS_TREE(R,S,TS))$%1F_IN(%2R,T,T,P,C,TS),
+                (%1PAR_COMBALEM(%2R,T,C,S)+VDA_EMCB(R,T,C,C))*%1F_IN(%2R,T,T,P,C,TS)*RS_FR(R,S,TS))$(NOT TRACKC(R,C)))) +
+         SUM(TOP(R,P,C,'OUT')$(NOT TRACKPC(R,P,C)$Z),%1CST_FLOC(%2R,T,T,P,C)+%1CST_FLOX(%2R,T,T,P,C) -
+            SUM((COM_TS(R,C,S),RS_TREE(R,S,TS))$%1F_OUT(%2R,T,T,P,C,TS),
+                (%1PAR_COMBALEM(%2R,T,C,S)*COM_IE(R,T,C,S)+(NCAP_PKCNT(R,V,P,S)**RP_PKF(R,P))*PAR_RTCS(R,T,C,S)$TRACKPG(R,P,C))*%1F_OUT(%2R,T,T,P,C,TS)*RS_FR(R,S,TS))$(NOT RP_GRP(R,P,C))$F) -
+         SUM((RPC_PG(RP_PRC(R,P),C),COM_TS(R,C,S)),NCAP_PKCNT(R,V,P,S)*PAR_RTCS(R,T,C,S)*PASTSUM(R,T,P)*G_YRFR(R,S)*PRC_CAPACT(R,P)*PRC_ACTFLO(R,V,P,C))))) /
+    MAX(MICRO,SUM(RTP_CPTYR(R,V,T,P)$PASTSUM(R,T,P),COEF_PVT(R,T)*COEF_CPT(R,V,T,P)/PASTSUM(R,T,P)*SUM((RPC_PG(R,P,C),PRC_TS(R,P,S))$(NOT TRACKPC(R,P,C)),PAR_FLO(R,T,T,P,C,S))));
+ OPTION CLEAR=TRACKP,CLEAR=TRACKC,CLEAR=TRACKPC,CLEAR=TRACKPG,CLEAR=VDA_EMCB,CLEAR=PASTSUM,CLEAR=PAR_RTCS,CLEAR=COEF_CAP;
+ );
+* Fallback of flows to ANNUAL level
+ LOOP(ANNUAL(TS)$CARD(UNCD1),
+   LOOP(UNCD1(COM_TYPE(CG)),TRACKC(R,C)$COM_TMAP(R,COM_TYPE,C)=RPT_OPT(CG,'3')<0);
+   LOOP(UNCD1(NRG_TYPE(U2))$RPT_OPT(U2,'3'),TRACKC(R,C)$NRG_TMAP(R,NRG_TYPE,C)=RPT_OPT(U2,'3')<0);
+   RVTPC(R,V,T,P,C)$TRACKC(R,C) $= SUM(S$%1F_IN(%2R,V,T,P,C,S),STOA(S));
+   F_IOS(RVTPC,TS) = SUM(S$%1F_IN(%2RVTPC,S),%1F_IN(%2RVTPC,S));
+   %1F_IN(%2RVTPC,S) = 0;  %1F_IN(%2RVTPC,S) $= F_IOS(RVTPC,S);
+   OPTION CLEAR=RVTPC,CLEAR=F_IOS;
+   RVTPC(R,V,T,P,C)$TRACKC(R,C) $= SUM(S$%1F_OUT(%2R,V,T,P,C,S),STOA(S));
+   F_IOS(RVTPC,TS) = SUM(S$%1F_OUT(%2RVTPC,S),%1F_OUT(%2RVTPC,S));
+   %1F_OUT(%2RVTPC,S) = 0; %1F_OUT(%2RVTPC,S) $= F_IOS(RVTPC,S);
+   OPTION CLEAR=TRACKC,CLEAR=RVTPC,CLEAR=F_IOS;
+ );

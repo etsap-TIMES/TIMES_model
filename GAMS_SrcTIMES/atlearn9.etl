@@ -1,0 +1,79 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* File      : ATLEARN9.ETL
+* Language  : GAMS
+* Programmer: Ad Seebregts, adaped by Gary Goldstein for TIMES
+* Origin    : 04-02-00
+* Last edit : 07-27-01
+*=============================================================================*
+* %1 = k or c
+* %2 = VAR_NCAP or VAR_CAP
+* %3 = TEG or PRC
+* %4 = 0 1 2 3 4
+*      0 is for variable INV or CAP
+*      1 CAM; 2 GRP; 3 GRA; 4 GRF;
+* %5 = INV or CAP or CAM or GRP or GRA or GRF;
+
+
+     PUT "%1",".%5.",%3.TL:0, '/r.', REG.TL:0, @30;
+     PUT PRC.TE(%3):30 @74;
+     LOOP(T,
+          IF (%4 EQ 0,
+              PUT %2.L(REG,T,%3):10:2;
+             );
+
+* maximum capacity based on growth factors
+*          IF (%4 EQ 1,
+*
+*                  IF ((PRC_TGR(%3,T) + PRC_GRTI(%3)) GT 0,
+*                      PUT ((PRC_TGR(%3,T)**NYRSPER)*CAP.L(T-1,%3) +
+*                           PRC_GRTI(%3)
+*                          ):10:2;
+*                  ELSE PUT "         -";
+*                     );
+*
+*             );
+
+* period growth factor CAP(T)/CAP(T-1)
+          IF (%4 EQ 2,
+
+              IF (VAR_CAP.L(REG,T-1,%3) GT 0,
+                  PUT (VAR_CAP.L(REG,T,%3)/(VAR_CAP.L(REG,T-1,%3))):10:2;
+              ELSE PUT "         -";
+                 );
+             );
+
+* average annual growth factor in period T compared to T-1
+          IF (%4 EQ 3,
+             IF (VAR_CAP.L(REG,T-1,%3) GT 0,
+                 PUT ((VAR_CAP.L(REG,T,%3)/VAR_CAP.L(REG,T-1,%3))**(1/D(T))):10:2;
+             ELSE PUT "         -";
+                 );
+
+             );
+* user-provided maximum growth factors: for the first T, the TID
+* growth factor is given, if provided
+*          IF (%4 EQ 4,
+*
+*             IF (ORD(T) EQ 1,
+*                 IF (PRC_GRTI(%3) GT 0,
+*                     PUT  TCH_GRTI(%3):10:2;
+*                 ELSE PUT "         -";
+*                    );
+*             ELSE
+*                 IF (PRC_TGR(%3,T) GT 0,
+*                      PUT (TCH_TGR(%3,T)):10:2;
+*                 ELSE PUT "         -";
+*                    );
+*                );
+*             );
+*
+*
+         );
+
+     PUT /;
+
+

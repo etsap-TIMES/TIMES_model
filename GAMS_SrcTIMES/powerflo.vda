@@ -1,0 +1,334 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* Powerflo - define powerflo equations and nodal balance costs
+*=============================================================================*
+$SET MX %3
+$IF NOT '%1'=='' $GOTO %1%2%3
+*-----------------------------------------------------------------------------
+* Declarations
+  SET RP_GRID(R,P);
+  SET RC_GRID(R,T,C);
+  SET GR_TOP(ALL_R,C,ALL_R,C,P);
+  SET GR_ARC(ALL_REG,C,ALL_REG,C);
+  SET GR_GRID(J,R,C);
+  SET GR_ALLMAP(R,CG,COM);
+  SET GR_PRCMAP(R,P,C,ITEM);
+  SET GR_DEMMAP(R,C,COM);
+  SET GR_ALGMAP(R,CG,CG);
+  SET GR_ENDC(R,CG);
+  SET GR_GENP(R,P);
+  PARAMETER GR_SUS(ALL_REG,T,C,ALL_REG,C);
+  PARAMETER GR_FLOW(R,P,C);
+  PARAMETER GR_GID(R,C);
+  PARAMETER GR_ADMIT(ALL_REG,T,C,ALL_REG,C);
+  PARAMETER GR_UNITS(R,T,ITEM);
+
+* Define grid and default line directions
+  OPTION TRACKP < PRC_REACT; TRACKC(R,C) $= NRG_TMAP(R,'ELC',C);
+  GR_TOP(TOP_IRE(R,C,TRACKC(REG,COM),P))$(TRACKC(R,C)$TRACKP(R,P)) = YES;
+  GR_TOP(TOP_IRE(TRACKC(REG,COM),R,C,P))$(TRACKC(R,C)$TRACKP(R,P)) = YES;
+  LOOP(GR_TOP(R,C,REG,COM,P),GR_FLOW(R,P,C)=1; GR_FLOW(REG,P,COM)=-1);
+  OPTION CLEAR=TRACKP;
+  GR_TOP(R,C,REG,COM,P)$(GR_FLOW(R,P,C) GT 0) = NO;
+  GR_TOP(R,C,R,C,P) = NO;
+  LOOP(GR_TOP(R,C,R,COM,P)$(SUM(RPC_IRE(R,P,C,IE)$RPC_IRE(R,P,COM,IE),1)=2),PRC_MAP(R,'DISTR',P)=YES);
+
+* Synchronize and check for zero line reactances
+  LOOP(GR_TOP(R,C,REG,COM,P)$(NOT SAMEAS(R,REG)),
+    RTP_VARA(RTP(R,T,P))$(NOT RTP_VARA(REG,T,P)) = NO;
+    PRC_REACT(R,T,P) = MAX(PRC_REACT(R,T,P),PRC_REACT(REG,T,P)));
+  PRC_REACT(R,T,P)$((PRC_REACT(R,T,P) LE 0)$PRC_REACT(R,T,P)) = 0;
+  LOOP(GR_TOP(R,C,REG,COM,P), GR_ARC(R,C,REG,COM) = YES);
+  OPTION RP_GRID < GR_FLOW; OPTION RREG <= GR_ARC; OPTION TRACKC < GR_FLOW;
+
+* Internodal admittance
+  GR_ADMIT(R,T,C,REG,COM)$GR_ARC(R,C,REG,COM) = SUM(GR_TOP(R,C,REG,COM,P)$(PRC_REACT(R,T,P)$RTP_VARA(R,T,P)),1/PRC_REACT(R,T,P));
+  OPTION GR_ARC <= GR_ADMIT;
+
+* Construct all disjoint grids
+  CNT = EPS; OPTION CLEAR=GR_GID;
+  LOOP(GR_ARC(R,C,REG,COM), F = GR_GID(R,C); Z = GR_GID(REG,COM);
+   IF(NOT F+Z, GR_GID(R,C)=CNT; GR_GID(REG,COM)=CNT; CNT=CNT+1;
+   ELSEIF NOT F, GR_GID(R,C)=Z;
+   ELSEIF NOT Z, GR_GID(REG,COM)=F;
+   ELSEIF F NE Z, MY_F=MIN(F,Z); DONE=MAX(F,Z); IF(CNT=DONE+1,CNT=DONE);
+     GR_GID(TRACKC)$(GR_GID(TRACKC)=DONE) = MY_F));
+* Assign each node with unique grid ID
+  LOOP(SAMEAS('1',J),GR_GRID(J+GR_GID(R,C),TRACKC(R,C)) = YES);
+
+* QA checks
+  LOOP((R,TSLVL('DAYNITE')), Z=0;
+   IF(SUM(RP_GRID(R,P)$(NOT PRC_TSL(R,P,TSLVL)),1), Z=1);
+   IF(SUM(TRACKC(R,C)$(NOT COM_TSL(R,C,TSLVL)),1), Z=1);
+   LOOP(RREG(R,REG),
+     IF(SUM(S$(TS_GROUP(R,TSLVL,S) XOR TS_GROUP(REG,TSLVL,S)),1),
+         RP_GRID(REG,P)=NO; TRACKC(REG,C)=NO; Z = 1));
+   IF(Z, RP_GRID(R,P) = NO; TRACKC(R,C) = NO));
+  RC_GRID(RTC(R,T,C))$TRACKC(R,C) = YES;
+
+* Admittance / susceptance matrix
+  option gr_sus < gr_admit;
+  gr_sus(rc_grid,rc) $= gr_admit(rc_grid,rc)*(-1);
+  gr_sus(rc_grid(r,t,c),r,c) = -sum(trackc(rc),gr_sus(rc_grid,rc));
+
+* Check nodal commodity balances
+  COM_BNDNET(RTCS_VARC(RC_GRID(R,T,C),S),'LO') = EPS;
+  COM_LIM(TRACKC(RC),'FX')$(NOT SUM(COM_LIM(RC,L),1)) = YES;
+
+*------------------------------------------------------------------------
+* levelization
+$ BATINCLUDE pp_lvlfc.mod GR_DEMFR C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C)
+* Grid allocations
+  GR_ENDFR(R,T,COM,C)$TRACKC(R,C) = 0;
+  OPTION GR_ENDC < GR_ENDFR;
+  GR_GENLEV(TRACKC) = 0;
+  GR_GENLEV(R,C)$GR_GENLEV(R,C) = ROUND(GR_GENLEV(R,C));
+  GR_ALGMAP(R,'NRG',C)$((GR_GENLEV(R,C)=1)$GR_GENLEV(R,C))=YES;
+  GR_ALGMAP(R,C,C)$((GR_GENLEV(R,C)=2)$GR_GENLEV(R,C))=YES;
+  GR_ALGMAP(R,COM_TYPE(CG),CG)$(SUM(TRACKC(R,C),1)>1) $= SUM(GR_ALGMAP(R,CG,C),1);
+  GR_ALLMAP(TRACKC(R,C),COM)$GR_GENLEV(R,COM) = YES;
+  GR_DEMMAP(GR_ALLMAP(R,C,COM))$(GR_GENLEV(R,COM) < 3) = YES;
+  IF(CARD(GR_DEMFR),GR_DEMFR(RTCS_VARC(RC_GRID(R,T,C),S)) = GR_DEMFR(R,T,C,S)+EPS);
+  OPTION GR_GENP < GR_GENMAP;
+  GR_ENDC(R,'DEM')$SUM(GR_ENDC(R,C),1) = YES;
+* Process regions with sectoral demand fractions
+  LOOP(R$GR_ENDC(R,'DEM'),
+    GR_DEMFR(RTCS_VARC(RC_GRID(R,T,C),S)) = SUM(GR_ENDC(R,COM),MIN(0.33,GR_ENDFR(R,T,C,COM)));
+    GR_UNITS(RTC(R,T,COM))$GR_ENDC(R,COM) = SUM(RC_GRID(R,T,C),GR_ENDFR(R,T,C,COM))+1-1;
+    GR_ENDFR(RC_GRID(R,T,C),COM)$GR_UNITS(R,T,COM) = GR_ENDFR(R,T,C,COM)/GR_UNITS(R,T,COM);
+    OPTION CLEAR=GR_UNITS;
+  );
+  GR_ENDC(R,C)$((GR_GENLEV(R,C)>2)$GR_GENLEV(R,C)) = YES;
+  GR_ENDC(R,'NRG')$(NOT GR_ENDC(R,'DEM')) = YES;
+* Genmap normalization
+  PRC_YMAX(GR_GENP(R,P)) = SUM(ITEM$GR_GENMAP(R,P,ITEM),GR_GENMAP(R,P,ITEM))+1-1;
+  GR_GENMAP(GR_GENP(R,P),ITEM)$(PRC_YMAX(R,P)$GR_GENMAP(R,P,ITEM)) = GR_GENMAP(R,P,ITEM)/PRC_YMAX(R,P);
+* GENFR normalization
+  LOOP(RC_GRID(R,T,C),GR_UNITS(R,T,ITEM)$GR_GENFR(R,T,C,ITEM)=1);
+  GR_UNITS(R,T,ITEM)$GR_UNITS(R,T,ITEM) = SUM(TRACKC(R,C),GR_GENFR(R,T,C,ITEM))+1-1;
+  GR_GENFR(RC_GRID(R,T,C),ITEM)$GR_UNITS(R,T,ITEM) = GR_GENFR(R,T,C,ITEM)/GR_UNITS(R,T,ITEM);
+  OPTION CLEAR=PRC_YMAX,CLEAR=GR_UNITS;
+* DEMFR normalization
+  LOOP(RC_GRID(R,T,C),GR_UNITS(R,T,S)$GR_DEMFR(R,T,C,S)=1);
+  GR_UNITS(R,T,S)$GR_UNITS(R,T,S) = SUM(TRACKC(R,C),GR_DEMFR(R,T,C,S))+1-1;
+  GR_DEMFR(RC_GRID(R,T,C),S)$GR_UNITS(R,T,S) = GR_DEMFR(R,T,C,S)/GR_UNITS(R,T,S)+EPS;
+  OPTION CLEAR=GR_UNITS,CLEAR=RXX;
+* Find and remove node with max demand fraction from GR_DEMFR
+  GR_UNITS(RC_GRID(R,T,C)) = SUM(COM_TS(R,C,S),GR_DEMFR(R,T,C,S));
+  LOOP((R,T), Z=MAX(EPS,SMAX(TRACKC(R,C),GR_UNITS(R,T,C)));
+    LOOP(TRACKC(R,C)$Z,IF(GR_UNITS(R,T,C)=Z,RXX(R,T,C)=YES;Z=0)));
+  GR_DEMFR(RXX(R,T,C),S)=0;
+  TRACKPC(RPC(GR_GENP(R,P),C))$GR_GENLEV(R,C)=YES;
+  GR_PRCMAP(TRACKPC(R,P,C),ITEM)$(TOP(R,P,C,'OUT')$GR_GENMAP(R,P,ITEM))=YES;
+  GR_PRCMAP(TRACKPC(RP_IRE(R,P),C),ITEM)$GR_GENMAP(R,P,ITEM)=YES;
+
+  OPTION CLEAR=TRACKC,CLEAR=TRACKPC;
+$EXIT
+*------------------------------------------------------------------------
+$LABEL PREP
+$ BATINCLUDE fillparm PRC_REACT R P ",'0','0','0','0','0'" T 1 'GE 0'
+$ BATINCLUDE fillparm GR_DEMFR R 'C,S' ",'0','0','0','0'" T 1 'GE 0'
+$ BATINCLUDE fillparm GR_ENDFR R 'C,COM' ",'0','0','0','0'" T 1 'GE 0'
+$ BATINCLUDE fillparm GR_GENFR R 'C,ITEM' ",'0','0','0','0'" T 1 'GE 0'
+$ BATINCLUDE filparam GR_XBND 'R,' '' ",'0','0','0','0','0'" DATAYEAR T
+$EXIT
+*------------------------------------------------------------------------
+$LABEL DECL
+* Declare variables and equations
+ POSITIVE VARIABLES %VAR%_GRIDELC(R,YEAR,C,C,S,IO%SWD%);
+ VARIABLES %VAR%_COMAUX(R,T,C,S%SWD%);
+ EQUATIONS
+  %EQ%_GR_POWFLO(R,T,C,S,REG,COM%SWTD%)
+  %EQ%_GR_GENALL(R,T,C,S,CG %SWTD%)
+  %EQ%_GR_DEMALL(R,T,C,S %SWTD%)
+  %EQ%_GR_XBND(R,T,S,IE %SWTD%)
+ ;
+$ SETGLOBAL IREAUXBAL $BATINCLUDE powerflo.vda IREAUX
+* For each disjoint grid, set phase angle to zero for the node with most connected lines
+  LOOP(J$SUM(GR_GRID(J,R,C),1), Z = SMAX(GR_GRID(J,R,C),SUM(P$GR_FLOW(R,P,C),1));
+    LOOP(GR_GRID(J,R,C)$Z,IF(SUM(P$GR_FLOW(R,P,C),1)=Z, Z=0; %VAR%_COMAUX.FX(R,T,C,S%SOW%)=EPS)));
+$ EXIT
+*------------------------------------------------------------------------
+$LABEL POWFLO
+* Standard DC power flow equations
+  %EQ%_GR_POWFLO(RTCS_VARC(%R_T%,C,RTS(S)),REG,COM%SWT%)$GR_ADMIT(R,T,C,REG,COM)..
+
+  SUM((GR_TOP(R,C,REG,COM,P),RTP_VINTYR(REG,V,T,P))$RTPCS_VARF(REG,T,P,COM,S),
+    SUM(RPC_IRE(REG,P,COM,IE)$PRC_REACT(R,T,P),%VAR%_IRE(REG,V,T,P,COM,S,IE%SOW%)*(1-2*XPT(IE))))
+
+  =E=
+
+  (%VAR%_COMAUX(R,T,C,S%SOW%)-%VAR%_COMAUX(REG,T,COM,S%SOW%)) * GR_ADMIT(R,T,C,REG,COM);
+*----------
+* Generation fractions for all grid nodes C
+  %EQ%_GR_GENALL(RTCS_VARC(RC_GRID(%R_T%,C),RTS(S)),CG %SWT%)$GR_ALGMAP(R,CG,CG)..
+
+* Normal processes
+  SUM((GR_PRCMAP(RP_STD(R,P),COM,ITEM),GR_ALGMAP(R,CG,COM)), GR_GENMAP(R,P,ITEM)*GR_GENFR(R,T,C,ITEM) *
+    SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,COM,TS))$RS_FR(R,S,TS),
+$        BATINCLUDE %cal_red% COM COM1 TS P T
+         * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,COM,S,TS)))) +
+* Imports
+  SUM((GR_PRCMAP(RP_IRE(R,P),COM,ITEM),RPC_IRE(R,P,COM,IE('IMP')))$GR_ALGMAP(R,CG,COM), GR_GENMAP(R,P,ITEM)*GR_GENFR(R,T,C,ITEM) *
+    SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,COM,TS))$RS_FR(R,S,TS),
+       (1+IRE_FLOSUM(R,T,P,COM,TS,IE,COM,'OUT')) *
+       (%VAR%_IRE(R,V,T,P,COM,TS,IE%SOW%)$(NOT RPC_AIRE(R,P,COM))+
+        (%VAR%_ACT(R,V,T,P,TS%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM))*RS_FR(R,S,TS))) +
+* Net storage output
+  SUM((GR_PRCMAP(RPC_STG(R,P,COM),ITEM),GR_ALGMAP(R,CG,COM)), GR_GENMAP(R,P,ITEM)*GR_GENFR(R,T,C,ITEM) *
+    SUM((RTP_VINTYR(R,V,T,P),RPCS_VAR(R,P,COM,TS)),(%VAR%_SOUT(R,V,T,P,COM,TS %SOW%)-%VAR%_SIN(R,V,T,P,COM,TS %SOW%)$TOP(R,P,COM,'IN'))*RS_FR(R,S,TS)))
+
+* Net balance
+  +SUM(GR_ALLMAP(R,CG,C),%VAR%_GRIDELC(R,T,C,C,S,'OUT'%SOW%)-%VAR%_GRIDELC(R,T,C,C,S,'IN'%SOW%) -
+    SUM(GR_DEMMAP(R,C,COM),%VAR%_GRIDELC(R,T,COM,C,S,'OUT'%SOW%)-%VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%)$GR_ALGMAP(R,'NRG',COM)))
+
+  =E=
+  SUM(GR_ALGMAP(R,CG,COM)$RTC(R,T,COM),%VAR%_GRIDELC(R,T,COM,C,S,'OUT'%SOW%)+%VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%)$GR_ALGMAP(R,COM,COM));
+*----------
+* Demand fractions for all but the largest fraction
+  %EQ%_GR_DEMALL(RTCS_VARC(RC_GRID(%R_T%,C),RTS(S)) %SWT%)$GR_DEMFR(R,T,C,S)..
+
+* Net injection
+  SUM(GR_ENDC(R,COM),
+    SUM(TOP(RP_STD(R,P),COM,'OUT')$(NOT GR_GENP(R,P)*GR_DEMMAP(R,C,COM)),
+      SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,COM,TS))$RS_FR(R,S,TS),
+$        BATINCLUDE %cal_red% COM COM1 TS P T
+         * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,COM,S,TS))) *
+      (SUM(GR_PRCMAP(R,P,COM,ITEM),GR_GENMAP(R,P,ITEM)*GR_GENFR(R,T,C,ITEM))-GR_ENDFR(R,T,C,COM)*(1+GR_ENDFR(R,T,COM,COM))-GR_DEMFR(R,T,C,S)$GR_GENP(R,P)$GR_ENDC(R,'NRG')))) +
+* Exports
+  SUM((GR_PRCMAP(RP_IRE(R,P),COM,ITEM),RPC_IRE(R,P,COM,IE('EXP')))$GR_ALGMAP(R,'NRG',COM), GR_GENMAP(R,P,ITEM) *
+    (GR_ENDFR(R,T,C,COM) + GR_DEMFR(R,T,C,S)$GR_ENDC(R,'NRG') - GR_GENFR(R,T,C,ITEM)) *
+    SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,COM,TS))$RS_FR(R,S,TS),
+       (1+IRE_FLOSUM(R,T,P,COM,TS,IE,COM,'IN')) *
+       (%VAR%_IRE(R,V,T,P,COM,TS,IE%SOW%)$(NOT RPC_AIRE(R,P,COM))+
+        (%VAR%_ACT(R,V,T,P,TS%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM))*RS_FR(R,S,TS))) +
+* Net demand shares
+  SUM(GR_DEMMAP(R,C,COM)$RTC(R,T,COM), %VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%) -
+    (GR_ENDFR(R,T,C,COM)+GR_DEMFR(R,T,C,S)$GR_ENDC(R,'NRG')) *
+    SUM(RTC(R,T,COM2)$GR_DEMMAP(R,COM2,COM),%VAR%_GRIDELC(R,T,COM,COM2,S,'IN'%SOW%)))
+
+  =E= 0;
+*----------
+* Bound on net imports/exports from grid
+  %EQ%_GR_XBND(%R_T%,RTS(S),IE %SWT%)$(TS_GROUP(R,'DAYNITE',S)$GR_XBND(R,T))..
+
+  SUM(GR_DEMMAP(R,C,COM)$(RTC(R,T,COM)$RC_GRID(R,T,C)), PROD(XPT(IE),-1) *
+    (%VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%)$GR_ALGMAP(R,'NRG',COM)-%VAR%_GRIDELC(R,T,COM,C,S,'OUT'%SOW%)))
+
+  =L=
+  SUM(TOP_IRE(R,C,ALL_R,COM,P)$((NOT SAMEAS(R,ALL_R))$RC_GRID(R,T,C)),
+    SUM(V$COEF_CPT(R,V,T,P), COEF_CPT(R,V,T,P) * PRC_CAPACT(R,P) * GR_XBND(R,T) * G_YRFR(R,S) *
+      (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(R,V,P)$PASTYEAR(V)))$PRC_CAP(R,P) +
+    SUM((REG(ALL_R),V)$COEF_CPT(REG,V,T,P), COEF_CPT(REG,V,T,P) * PRC_CAPACT(REG,P) * GR_XBND(R,T) * G_YRFR(R,S) *
+      (%VARV%_NCAP(REG,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(REG,V,P)$PASTYEAR(V))$PRC_CAP(REG,P))$(NOT PRC_CAP(R,P)))$XPT(IE) +
+  SUM(TOP_IRE(ALL_R,COM,R,C,P)$((NOT SAMEAS(R,ALL_R))$RC_GRID(R,T,C)),
+    SUM(V$COEF_CPT(R,V,T,P), COEF_CPT(R,V,T,P) * PRC_CAPACT(R,P) * GR_XBND(R,T) * G_YRFR(R,S) *
+      (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(R,V,P)$PASTYEAR(V)))$PRC_CAP(R,P) +
+    SUM((REG(ALL_R),V)$COEF_CPT(REG,V,T,P), COEF_CPT(REG,V,T,P) * PRC_CAPACT(REG,P) * GR_XBND(R,T) * G_YRFR(R,S) *
+      (%VARV%_NCAP(REG,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(REG,V,P)$PASTYEAR(V))$PRC_CAP(REG,P))$(NOT PRC_CAP(R,P)))$IMP(IE)
+;
+$EXIT
+*------------------------------------------------------------------------
+$LABEL IREAUXIN
+$SET MX COM_IE(R,T,C,S)*
+$LABEL IREAUXOUT-
+* For balance of C (and grid nodes COM)
+  SUM(GR_DEMMAP(R,COM,C),%MX%(%VAR%_GRIDELC(R,T,C,COM,S,'OUT'%SOW%)-%VAR%_GRIDELC(R,T,C,COM,S,'IN'%SOW%)$GR_ALGMAP(R,'NRG',C))) +
+* For balance of grid node C
+  SUM(GR_DEMMAP(R,C,COM),%MX%(%VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%)$GR_ALGMAP(R,'NRG',COM)-%VAR%_GRIDELC(R,T,COM,C,S,'OUT'%SOW%))) +
+$GOTO IREAUXOUT
+*------------------------------------------------------------------------
+$ LABEL CSTBAL
+* Preprocess nodal balance costs
+  SET OBV / OBJBAL /;
+  SET ITEM / CON, NTX, NPG /;
+  SETS RC_GRID(R,T,C), GR_ALLMAP(R,CG,COM), GR_PRCMAP(R,P,C,ITEM);
+  SETS GR_DEMMAP(R,C,COM), GR_ALGMAP(R,CG,CG), GR_ENDC(R,CG);
+  PARAMETER OBJ_COMBAL(R,T,C,S,ITEM,CUR);
+$IF NOT DEFINED RC_GRID OPTION CLEAR=RC_GRID,CLEAR=GR_ALLMAP,CLEAR=GR_ALGMAP,CLEAR=GR_DEMMAP,CLEAR=GR_PRCMAP,CLEAR=GR_ENDC;
+* levelization
+$ BATINCLUDE pp_lvlfc.mod COM_CSTBAL C COM_TS ',ITEM,CUR' ",'0','0'" ALL_TS T RTC(R,T,C) '' '' N
+  OPTION TRACKC < COM_CSTBAL;
+  TRACKC(R,C)$SUM(GR_ALLMAP(R,C,COM),1)=NO;
+  OBJ_COMBAL(RTCS_VARC(RTC(R,T,C),TS),'PRD',CUR)$TRACKC(R,C) = SUM(TS_ANN(TS,S),COM_CSTBAL(RTC,S,'PRD',CUR)+COM_CSTBAL(RTC,S,'CON',CUR)+COM_CSTBAL(RTC,S,'OUT',CUR));
+  OBJ_COMBAL(RTCS_VARC(RTC(R,T,C),TS),'IMP',CUR)$TRACKC(R,C) = SUM(TS_ANN(TS,S),COM_CSTBAL(RTC,S,'IMP',CUR)+COM_CSTBAL(RTC,S,'NTX',CUR)-COM_CSTBAL(RTC,S,'PRD',CUR));
+  OBJ_COMBAL(RTCS_VARC(RTC(R,T,C),TS),'EXP',CUR)$TRACKC(R,C) = SUM(TS_ANN(TS,S),COM_CSTBAL(RTC,S,'EXP',CUR)-COM_CSTBAL(RTC,S,'NTX',CUR)-COM_CSTBAL(RTC,S,'CON',CUR));
+  LOOP(RDCUR(R,CUR),RHS_COMPRD(RTCS_VARC(R,T,C,S))$OBJ_COMBAL(R,T,C,S,'PRD',CUR)=YES); RCS_COMPRD(RHS_COMPRD(R,T,C,S),'FX')$TRACKC(R,C) = YES;
+  OBJ_COMBAL(RTCS_VARC(RTC(RC_GRID),TS),'GEN',CUR) = SUM(TS_ANN(TS,S),COM_CSTBAL(RTC,S,'PRD',CUR)+COM_CSTBAL(RTC,S,'CON',CUR));
+  OBJ_COMBAL(RTCS_VARC(RTC(RC_GRID),TS),'NTX',CUR) = SUM(TS_ANN(TS,S),COM_CSTBAL(RTC,S,'NTX',CUR)+COM_CSTBAL(RTC,S,'CON',CUR));
+  OBJ_COMBAL(RTCS_VARC(RTC(RC_GRID),TS),IE,CUR)    = SUM(TS_ANN(TS,S),COM_CSTBAL(RTC,S,IE,CUR));
+* Add balancer variables if penalty costs on excess
+  OPTION CLEAR=UNCD7; UNCD7(R,T--ORD(T),C,S--ORD(S),CUR,'','')$RC_GRID(R,T,C) $= COM_CSTBAL(R,T,C,S,'NPG',CUR);
+  LOOP(UNCD7(R,TT,C,SL,CUR,'',''), GR_ALLMAP(R,'FIN',C) = YES; GR_ALGMAP(R,CG('FIN'),CG) = YES;
+    OBJ_COMBAL(RC_GRID(R,T,C),TS,'NPG',CUR) $= SUM(TS_ANN(TS,S),COM_CSTBAL(R,T,C,S,'NPG',CUR)));
+  OPTION CLEAR=TRACKC;
+$EXIT
+*------------------------------------------------------------------------
+$ LABEL OBJBAL
+$ SET TPULSE TT$OBJ_LINT(R,T,TT,CUR),OBJ_LINT(R,T,TT,CUR)
+
+  POSITIVE VARIABLES %VAR%_GRIDELC(R,YEAR,C,C,S,IO%SWD%);
+  EQUATION EQ_OBJBAL(R,CUR,ALLSOW);
+  EQ_OBJBAL(RDCUR(R,CUR)%SWX%)..
+
+   %VAR%_OBJ(R,'OBJBAL',CUR %SOW%) =E=
+
+$IF %STAGES%==YES $SET SOW ,WW
+$IF %STAGES%==YES SUM(%SWSW%
+* Costs on commodity production
+   SUM(RHS_COMPRD(R,T,C,S),%VAR%_COMPRD(R,T,C,S %SOW%) * SUM(%TPULSE% * OBJ_COMBAL(R,TT,C,S,'PRD',CUR))) +
+   SUM(RTCS_VARC(RC_GRID(R,T,C),S)$OBJ_COMBAL(R,T,C,S,'GEN',CUR),
+     (SUM(GR_ALGMAP(R,CG,COM),%VAR%_GRIDELC(R,T,COM,C,S,'OUT' %SOW%)+%VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%)$GR_ALGMAP(R,COM,COM))+
+      SUM((GR_PRCMAP(RP_STD(R,P),COM,ITEM),GR_ENDC(R,COM)), GR_GENMAP(R,P,ITEM)*GR_GENFR(R,T,C,ITEM) *
+        SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,COM,TS))$RS_FR(R,S,TS),
+$        BATINCLUDE %cal_red% COM COM1 TS P T
+         * RS_FR(R,S,TS)))) * SUM(%TPULSE% * OBJ_COMBAL(R,TT,C,S,'GEN',CUR))) +
+
+* Costs on net imports to grid node
+   SUM(RTCS_VARC(RC_GRID(R,T,C),S)$OBJ_COMBAL(R,T,C,S,'NTX',CUR),
+     SUM(GR_DEMMAP(R,C,COM),%VAR%_GRIDELC(R,T,COM,C,S,'IN'%SOW%)$GR_ALGMAP(R,'NRG',COM)-%VAR%_GRIDELC(R,T,COM,C,S,'OUT'%SOW%)) *
+     SUM(%TPULSE% * OBJ_COMBAL(R,TT,C,S,'NTX',CUR))) +
+
+* Costs on Net Positive Generation (NPG)
+   SUM(RTCS_VARC(RC_GRID(R,T,C),S)$OBJ_COMBAL(R,T,C,S,'NPG',CUR),
+     %VAR%_GRIDELC(R,T,C,C,S,'OUT' %SOW%) * SUM(%TPULSE% * MAX(0,OBJ_COMBAL(R,TT,C,S,'NPG',CUR)))) +
+
+* Costs on commodity imports / exports
+   SUM((RTPCS_VARF(R,T,P,C,S),RPC_IRE(R,P,C,IE))$OBJ_COMBAL(R,T,C,S,IE,CUR),
+     SUM(RTP_VINTYR(R,V,T,P),
+       (%VAR%_IRE(R,V,T,P,C,S,IE %SOW%)$(NOT RPC_AIRE(R,P,C))+(%VAR%_ACT(R,V,T,P,S %SOW%)*PRC_ACTFLO(R,V,P,C))$RPC_AIRE(R,P,C))) *
+     SUM(%TPULSE% * OBJ_COMBAL(R,TT,C,S,IE,CUR)))
+
+$IF %STAGES%==YES )
+   ;
+$EXIT
+*------------------------------------------------------------------------
+$LABEL RPTB
+ %4REG_WOBJ(%5R,'VAR',CUR) = %4REG_WOBJ(%5R,'VAR',CUR) + %VAR%_OBJ.L(R,'OBJBAL',CUR%6);
+ OPTION TRACKC < COM_CSTBAL;
+ %4CST_COMC(%5RTC(R,T,C))$TRACKC(R,C) = %4CST_COMC(%5RTC) +
+   SUM((RTCS_VARC(RTC,S),RDCUR(R,CUR))$OBJ_COMBAL(RTC,S,'PRD',CUR),OBJ_COMBAL(RTC,S,'PRD',CUR)*VAR_COMPRD.L(RTC,S)) +
+   SUM((RPCS_VAR(R,P,C,S),RPC_IRE(R,P,C,IE),RDCUR(R,CUR))$OBJ_COMBAL(RTC,S,IE,CUR),
+     SUM(RTP_VINTYR(R,V,T,P),OBJ_COMBAL(RTC,S,IE,CUR)*PAR_IRE(R,V,T,P,C,S,IE))) +
+* Cost on generation to grid
+   SUM((RTCS_VARC(RC_GRID(RTC),S),RDCUR(R,CUR))$OBJ_COMBAL(RTC,S,'GEN',CUR),
+     OBJ_COMBAL(RTC,S,'GEN',CUR) *
+     (SUM(GR_ALGMAP(R,CG,COM),%VART%_GRIDELC.L(R,T,COM,C,S,'OUT' %SWS%)+%VART%_GRIDELC.L(R,T,COM,C,S,'IN'%SWS%)$GR_ALGMAP(R,COM,COM))+
+      SUM((GR_PRCMAP(RP_STD(R,P),COM,ITEM),GR_ENDC(R,COM)), GR_GENMAP(R,P,ITEM)*GR_GENFR(RTC,ITEM) *
+        SUM((RTP_VINTYR(R,V,T,P),RPCS_VAR(R,P,C,TS))$RS_FR(R,S,TS),
+          PAR_FLO(R,V,T,P,C,TS)*RS_FR(R,S,TS))))) +
+* Costs on net imports to grid node
+   SUM((RTCS_VARC(RC_GRID(RTC),S),RDCUR(R,CUR))$OBJ_COMBAL(RTC,S,'NTX',CUR),
+     SUM(GR_DEMMAP(R,C,COM),%VART%_GRIDELC.L(R,T,COM,C,S,'IN'%SWS%)$GR_ALGMAP(R,'NRG',COM)-%VART%_GRIDELC.L(R,T,COM,C,S,'OUT'%SWS%)) *
+     OBJ_COMBAL(RTC,S,'NTX',CUR)) +
+* Costs on Net Positive Generation (NPG)
+   SUM((RTCS_VARC(RC_GRID(RTC),S),RDCUR(R,CUR))$OBJ_COMBAL(RTC,S,'NPG',CUR),
+     %VART%_GRIDELC.L(RTC,C,S,'OUT'%SWS%) * OBJ_COMBAL(RTC,S,'NPG',CUR));
+
+ OPTION CLEAR=TRACKC;
+*------------------------------------------------------------------------
+$LABEL IREAUXIN-
+$LABEL IREAUXOUT

@@ -1,0 +1,20 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*====================================================================
+* Par_uc.rpt : reporting parameters for UC (no STAGES/SENSIS)
+* %1 - parameter suffix
+* %2 - equation prefix
+*--------------------------------------------------------------------
+  LOOP(UC_TSL(R,UC_N,'LHS',TSL),%2_UCRTS.M(UC_N,R,T,S) $= %2_UCRS.M(R,UC_N,T,TSL,S));
+  %3PAR_UC%1(%4UC_N,'NONE','NONE','NONE') $= %2_UC.M(UC_N);
+  %3PAR_UC%1(%4UC_N,R,'NONE','NONE')      $= %2_UCR.M(UC_N,R);
+  %3PAR_UC%1(%4UC_N,'NONE',T,'NONE')      $= %2_UCT.M(UC_N,T);
+  %3PAR_UC%1(%4UC_N,R,T,'NONE')           $= %2_UCRT.M(UC_N,R,T)*(1/COEF_PVT(R,T));
+  %3PAR_UC%1(%4UC_N,'NONE',T,S)           $= %2_UCTS.M(UC_N,T,S);
+  %3PAR_UC%1(%4UC_N,R,T,S)                $= %2_UCRTS.M(UC_N,R,T,S)*(1/COEF_PVT(R,T));
+  %3PAR_UC%1(%4UC_N,'NONE',T,'NONE')      $= %2_UCSU.M(UC_N,T);
+  %3PAR_UC%1(%4UC_N,'NONE',T,S)           $= %2_UCSUS.M(UC_N,T,S);
+  %3PAR_UC%1(%4UC_N,R,T,'NONE')           $= %2_UCRSU.M(UC_N,R,T)*(1/COEF_PVT(R,T));
+  %3PAR_UC%1(%4UC_N,R,T,S)                $= %2_UCRSUS.M(UC_N,R,T,S)*(1/COEF_PVT(R,T));

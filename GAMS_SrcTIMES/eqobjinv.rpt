@@ -1,0 +1,69 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQOBJINV the objective functions on investments
+*   - Investment Costs
+*   - Investment Tax/Subsidies
+*   - Decommissioning
+*=============================================================================*
+
+ SCALAR VDISC / 0 /;
+ SET NCAP_YES(R,ALLYEAR,P);
+ PARAMETER OBJ_SUMIK(REG,ALLYEAR,PRC,CUR);
+ PARAMETER YKAGEP(ALLYEAR,ALLYEAR,AGE);
+*------------------------------------------------------------------------------
+* Identify new capacities
+ NCAP_YES(RTP(R,V,P))$(VAR_NCAP.L(R,V,P)$T(V)+NCAP_PASTI(R,V,P)$PYR(V)) = YES;
+ NCAP_YES(R,LL--ORD(LL),P)$NCAP_YES(R,LL,P) = YES;
+*------------------------------------------------------------------------------
+* Cases I - Investment Cost and II - Taxes/Subsidies
+*------------------------------------------------------------------------------
+OBJ_SUMIK(R,K,P,CUR)$((OBJ_ICOST(R,K,P,CUR)+OBJ_ITAX(R,K,P,CUR)+OBJ_ISUB(R,K,P,CUR))$NCAP_YES(R,'0',P)) =
+   OBJ_ICOST(R,K,P,CUR) + OBJ_ITAX(R,K,P,CUR) - OBJ_ISUB(R,K,P,CUR);
+
+* Calculate Annual discounted investment costs PAR_OBJINV
+* VDISC is the constant discount rate used to discount annual payments to the investment year LL
+LOOP(OBJ_ICUR(NCAP_YES(R,V,P),CUR),
+  F = (VAR_NCAP.L(R,V,P)$T(V)+NCAP_PASTI(R,V,P)$PYR(V)) * OBJ_CRF(R,V,P,CUR)/OBJ_DIVI(R,V,P); 
+  VDISC = 1+G_DRATE(R,V,CUR); OPTION CLEAR = YKAGEP;
+  LOOP((OBJ_SUMII(R,V,P,LIFE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL,K)),
+    MY_F=F*OBJ_DISC(R,LL,CUR)*OBJ_SUMIK(R,K,P,CUR); YKAGEP(LL+(ORD(AGE)-1),LL,AGE)$OPYEAR(LIFE,AGE) = MY_F);
+  PAR_OBJINV(R,V,Y,P,CUR) = SUM((LL,AGE)$YKAGEP(Y,LL,AGE),YKAGEP(Y,LL,AGE)*VDISC**(1-ORD(AGE)));
+);
+
+* Handle ETL
+$IF NOT %ETL% == 'YES' $GOTO ETLDONE
+LOOP(OBJ_ICUR(R,T,TEG(P),CUR)$VAR_IC.L(R,T,P),
+  F = OBJ_CRF(R,T,P,CUR)*VAR_IC.L(R,T,P)/OBJ_DIVI(R,T,P); VDISC = 1+G_DRATE(R,T,CUR); OPTION CLEAR = YKAGEP;
+  LOOP((OBJ_SUMII(R,T,P,LIFE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL,K)),
+    MY_F = F*OBJ_DISC(R,LL,CUR); YKAGEP(LL+(ORD(AGE)-1),LL,AGE)$OPYEAR(LIFE,AGE) = MY_F);
+  PAR_OBJINV(R,T,Y,P,CUR) = PAR_OBJINV(R,T,Y,P,CUR) + SUM((LL,AGE)$YKAGEP(Y,LL,AGE),YKAGEP(Y,LL,AGE)*VDISC**(1-ORD(AGE)));
+);
+$LABEL ETLDONE
+
+*------------------------------------------------------------------------------
+* Check that total OBJINV value is the same in all calculation methods:
+* PAST Investments cannot be accurately matched in case 2a; therefore check with OBJ_PASTI
+ OBJ_C = SUM((R,T,Y,P,CUR)$PAR_OBJINV(R,T,Y,P,CUR),PAR_OBJINV(R,T,Y,P,CUR)) +
+         SUM((OBJ_SUMII(R,PASTMILE(V),P,AGE,K_EOH,JOT),CUR),COR_SALVI(R,V,P,CUR)/OBJ_DIVI(R,V,P)*
+             SUM(INVSPRED(K_EOH,JOT,YEAR,K),OBJ_DISC(R,YEAR,CUR)*OBJ_SUMIK(R,K,P,CUR)*OBJ_PASTI(R,V,P,CUR)));
+ OBJ_D = SUM(RDCUR(R,CUR),SUM(OBV,SUM_OBJ('OBJINV',OBV)*VAR_OBJ.L(R,OBV,CUR)));
+
+ DISPLAY OBJ_C,OBJ_D;
+ OPTION CLEAR=OBJ_SUMIK;
+
+*------------------------------------------------------------------------------
+* Cases III - Decommissioning
+*------------------------------------------------------------------------------
+
+* Calculate Annual discounted decommissioning costs PAR_OBJDEC
+* VDISC is the constant discount rate used to discount annual payments to the investment year LL
+LOOP((NCAP_YES(R,V,P),CUR)$OBJ_DCOST(R,V,P,CUR), 
+  F = (VAR_NCAP.L(R,V,P)$T(V)+NCAP_PASTI(R,V,P)$PYR(V)) * OBJ_CRFD(R,V,P,CUR)/OBJ_DIVIII(R,V,P);
+  VDISC = 1+G_DRATE(R,V,CUR); Z = ROUND(NCAP_%DECLIF%(R,V,P))-1;
+  PAR_OBJDEC(R,V,Y,P,CUR) = 
+    SUM((OBJ_SUMIII(R,V,P,K_EOH,K,LL),YK(LL+Z,Y))$YK(Y,LL), 
+        F * OBJ_DCOST(R,K,P,CUR) * OBJ_DISC(R,LL,CUR) * VDISC**(YEARVAL(LL)-YEARVAL(Y)));
+);

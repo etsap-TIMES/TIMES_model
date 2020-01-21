@@ -1,0 +1,37 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQOBJELS the objective function flexible demand costs reporting
+*=============================================================================*
+* %1 - assigned parameter(..%2..)
+* %2 - year index (Y_EOH/TT)
+* %3 - mult or ''
+*-----------------------------------------------------------------------------
+*V0.5a 980729 control the inner sums according to the years in the periods
+
+  %1$SUM(RCJ(R,C,'1',BDNEQ),1) = %3
+
+    SUM((RDCUR(R,CUR),BDNEQ(BD)), BDSIG(BD) *
+*V0.5b 980824 - correct ORD adjustment
+      SUM((PERIODYR(T,%2),COM_TS(R,C,S))$COM_ELAST(R,T,C,S,BD), COM_BPRICE(R,T,C,S,CUR) *
+        (SUM(RCJ(R,C,J,BD), VAR_ELAST.L(R,T,C,S,J,BD) *
+          ((1-BDSIG(BD)*(ORD(J)-.5)*COM_VOC(R,T,C,BD)/COM_STEP(R,C,BD))**(1/COM_ELAST(R,T,C,S,BD))))$(NOT COM_ELASTX(R,T,C,BD)) +
+         SUM(RTC_SHED(R,T,C,BD,JJ(AGE)),
+           SUM((RCJ(R,C,J,BD),SPAN(AGE+CEIL((ORD(J)-.5)*COM_VOC(R,T,C,BD)/COM_STEP(R,C,BD)*100-ORD(AGE)))),
+             (SHAPED(BD,JJ,SPAN) *
+              ((1-BDSIG(BD)*(ORD(J)-.5)*COM_VOC(R,T,C,BD)/COM_STEP(R,C,BD))/SHAPED(BD,'1',SPAN))**(1/MAX(1E-3,SHAPE(JJ,SPAN)))
+             )**(1/COM_ELAST(R,T,C,S,BD)) * VAR_ELAST.L(R,T,C,S,J,BD)))
+$IF DEFINED MI_AGC +SUM(MI_DMAS(R,COM,C)$MI_DOPE(R,T,C),SUM(RCJ(R,C,J,BD),VAR_ELAST.L(R,T,C,S,J,BD)*MI_AGC(R,T,COM,C,J,BD)))
+        ))
+    );
+$IFI NOT %MICRO%==YES $EXIT
+* NLP utility loss
+  %1$RD_NLP(R,C) = %3
+    SUM(RDCUR(R,CUR),
+      SUM((PERIODYR(T,%2),COM_TS(R,C,S))$(COM_BPRICE(R,T,C,S,CUR)$MI_ELASP(R,T,C)), -COM_FR(R,T,C,S) * MI_CCONS(R,T,C) *
+          ((VAR_DEM.L(R,T,C)**MI_ELASP(R,T,C))$(RD_NLP(R,C)=1) +
+           ((SUM(MI_DMAS(R,C,COM),RD_SHAR(R,T,C,COM)**(1/MI_ESUB(R,T,C))*(COM_AGG(R,T,COM,C)*VAR_DEM.L(R,T,COM))**MI_RHO(R,T,C))**(1/MI_RHO(R,T,C)))**MI_ELASP(R,T,C))$(RD_NLP(R,C)>2) -
+           DDF_QREF(R,T,C)**MI_ELASP(R,T,C))$(RD_NLP(R,C)>0))
+    );

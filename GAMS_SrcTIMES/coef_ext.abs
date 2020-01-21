@@ -1,0 +1,111 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* COEF_EXT.vda oversees extended preprocessor activities after COEF_MAIN
+*   %1 - extension name
+*=============================================================================*
+* Get storage, end-use and supply processes
+  BS_BSC(RP,C)$(NOT PRC_CAP(RP))=NO;
+  OPTION TRACKP < BS_STIME, RP_PRC < COEF_AFUPS;
+  RP_PRC(RP_PRC)=TRACKP(RP_PRC); OPTION TRACKP < BS_BSC;
+  TRACKPC(RPC(R,P,C)) $= NRG_TMAP(R,'ELC',C);
+* Storage with inflow
+  BS_ENDP(RP_STG(RP))$SUM(TOP(TRACKPC(RPC_STG(RP,C)),'IN'),1)=YES;
+* Qualify as power storage
+  BS_STGP(RP_PRC(RP))$SUM(TOP(RPC_STG(TRACKPC(RP,C)),'OUT'),1)=YES;
+  BS_STGP(RP_PRC(RP))$SUM(TOP(RPC_STG(RP,C),'OUT'),NOT TRACKPC(RP,C))=NO;
+  BS_STGP(RP_PRC(RP))$(((NOT BS_ENDP(RP))+TRACKP(RP))$PRC_SC(RP))=NO;
+  BS_STIME(BS_STGP(R,P),C,'UP')$BS_RTYPE(R,C)=SMAX(BD,BS_STIME(R,P,C,BD));
+  BS_BSC(BS_STGP,C)=NO;
+* Qualify as power supply
+  OPTION RP_GRP<NCAP_AFCS;
+  BS_SUPP(TRACKP(RP_STD(RP)))$SUM(TOP(RPC_PG(TRACKPC(RP,C)),'OUT'),1)=YES;
+  BS_SUPP(TRACKP(RP_STG(RP)))$SUM(TOP(TRACKPC(RP_GRP(RP,C)),'OUT'),1)=YES;
+  BS_SUPP(BS_ENDP(RP))$SUM(TOP(RPC_STG(RP,C),'OUT'),NOT TRACKPC(RP,C))=NO;
+  BS_SUPP(BS_SUPP(RP_STD(RP)))$PROD(RPC_SPG(RP,C),TRACKPC(RP,C))=NO;
+  BS_SUPP(BS_STGP)=NO;
+* Qualify as end-user process
+  TRACKP(RP_STG)=YES;
+  BS_ENDP(TRACKP(RP_FLO(RP)))=(NOT BS_SUPP(RP)+BS_STGP(RP));
+  BS_BSC(BS_ENDP(R,P),C)$((NOT RP_PGACT(R,P))$BS_ANEG(R,C))=NO;
+  BS_NEGP(TRACKP(R,P))=SUM(BS_BSC(R,P,C)$BS_ANEG(R,C),1);
+  BS_NEGP(BS_SUPP(RP))$RP_UPL(RP,'FX')=YES;
+*-----------------------------------------------------------------------------
+* Levelization
+  BS_PRS(PRC_TS(TRACKP(RP),S))$(RP_STD(RP)+RPS_STG(RP,S))=YES;
+* Hold RMAX processes to be levelized
+  VDA_FLOP(R,LL--ORD(LL),P,C,S+STOA(S))$STOA(S) $=BS_RMAX(R,LL,P,C,S);
+  OPTION PRC_YMAX<VDA_FLOP,CLEAR=VDA_FLOP; PRC_YMAX(RP)$BS_PRS(RP,'ANNUAL')=NO;
+
+* Reserve Commodity attributes
+  LOOP(COM_TSL(R,C,TSLVL)$BS_RTYPE(R,C),F=ORD(TSLVL)-1;
+    LOOP(RJLVL(J,R,TSL)$(F>=ORD(TSL)),
+      LOOP(TS_GROUP(R,TSL,TS),BS_RTCS(RSP,R,T,C,S)$(NOT BS_RTCS(RSP,R,T,C,S)) $= BS_RTCS(RSP,R,T,C,TS)$(STOAL(R,S)=F)$RS_BELOW(R,TS,S))));
+* Put-back
+  BS_OMEGA(RTC,S)$= BS_RTCS('OMEGA',RTC,S);
+  BS_DELTA(RTC,S)$= BS_RTCS('DELTA',RTC,S);
+* Reserve Process attributes
+  OPTION RP_PRC<BS_MAINT; RP_PRC(RP_PRC(RP))=PRC_CAP(RP)$RP_STD(RP)+SUM(RPS_CAFLAC(PRC_TS(RP_STG(RP),S),BD),YES);
+  BS_MAINT(R,V,P,S)$(NOT RP_PRC(R,P))=0; RP_UPL(RP_PRC,'FX')=YES;
+  ACT_UPS(RTP(R,T,P),S,'N')$BS_MAINT(RTP,S)=BS_MAINT(RTP,S)*MAX(1$(BS_MAINT(RTP,S)<=1),(1/G_YRFR(R,S)/8760)$(NOT COEF_AF(R,T,T,P,S,'UP')))$TS_CYCLE(R,S);
+  LOOP((RLUP(R,TSLVL,TSL),TS_GROUP(R,TSL,TS)),BS_MAINT(RTP(R,V,P),TS)$((NOT BS_MAINT(RTP,TS))$PRC_TSL(R,P,TSLVL)$RP_PRC(R,P))=-MAX(0,SMAX(RS_BELOW1(R,TS,S),BS_MAINT(RTP,S))));
+  LOOP((RJLVL(J,R,TSL),RLUP(R,TSLVL,TSL)),
+    LOOP(TS_GROUP(R,TSL,TS),
+      BS_MAINT(RTP(R,V,P),S)$((NOT BS_MAINT(RTP,S))$BS_MAINT(RTP,TS)) = -ABS(BS_MAINT(RTP,TS))$RS_BELOW(R,TS,S);
+      BS_RMAX(RTP(R,V,P),C,S)$((NOT BS_RMAX(RTP,C,S))$BS_PRS(R,P,S)$PRC_YMAX(R,P)) $= BS_RMAX(RTP,C,TS)$RS_BELOW(R,TS,S)));
+* Generation & load Variances
+  LOOP(RJLVL(J,R,TSL)$(ORD(TSL)<4),
+    LOOP(TS_GROUP(R,TSL,TS),BS_SIGMA(R,T,C,BS_K,S)$((NOT BS_SIGMA(R,T,C,BS_K,S))$FINEST(R,S)) $= BS_SIGMA(R,T,C,BS_K,TS)$RS_BELOW(R,TS,S)));
+
+* Default values
+  BS_SHARE(RTC,BDNEQ,'N') $= BS_LAMBDA(RTC);
+  OPTION CLEAR=RXX; RXX(BS_APOS(R,C),COM)$((BS_RTYPE(R,C)+BS_RTYPE(R,COM)=0)$BS_ANEG(R,COM)) = YES;
+  LOOP(RXX(R,C,COM),
+    BS_SIGMA(R,T,C,BS_K,S)$(NOT BS_SIGMA(R,T,C,BS_K,S)) $=BS_SIGMA(R,T,COM,BS_K,S);
+    BS_SIGMA(R,T,COM,BS_K,S)$(NOT BS_SIGMA(R,T,COM,BS_K,S)) $=BS_SIGMA(R,T,C,BS_K,S);
+    BS_DELTA(R,T,C,S)$(NOT BS_DELTA(R,T,C,S)) $=BS_DELTA(R,T,COM,S);
+    BS_DELTA(R,T,COM,S)$(NOT BS_DELTA(R,T,COM,S)) $=BS_DELTA(R,T,C,S));
+
+* Imbalance topology
+  LOOP((TRACKPC(RP_FLO(R,P),C),BS_K)$GR_GENMAP(R,P,BS_K),
+    IF(GR_GENMAP(R,P,BS_K)>0,BS_TOP(TOP(R,P,C,IO))$TOP(R,P,C,'OUT')=YES;
+    ELSE BS_TOP(TOP(R,P,C,IO))$(IPS(IO)+PRC_MAP(R,'STG',P))=YES));
+  GR_GENMAP(R,P(BS_K),P)$PROD(PRC$GR_GENMAP(R,PRC,P),0)=1;
+  OPTION CLEAR=RXX,CLEAR=TRACKP,CLEAR=RP_PRC,CLEAR=RP_GRP,CLEAR=TRACKPC;
+
+* Timeslices
+  OPTION RCS < BS_OMEGA;
+  LOOP(COM_TS(RCS(R,C,S)),BS_COMTS(R,C,TS)$RS_TREE(R,S,TS)=YES);
+  BS_DELTA(RTCS_VARC(RTC,S))$((NOT BS_DELTA(RTC,S))$BS_OMEGA(RTC,S)) = 1;
+  BS_SIGMA(RTC(R,T,C),BS_K,S)$((BS_LAMBDA(RTC)$BS_COMTS(R,C,S)=0)$BS_SIGMA(RTC,BS_K,S))=0;
+  LOOP((R,T,C,BS_K,S)$BS_SIGMA(R,T,C,BS_K,S),BS_RTK(R,T,BS_K)=YES);
+  LOOP(COM_LIM(R,C,L)$BS_RTYPE(R,C),BS_OMEGA(R,'0',C,S)$BS_COMTS(R,C,S)=FINEST(R,S)$IPS(L)+COM_TS(R,C,S)$BD(L));
+* Activate COMNET, disable COMPRD
+  RHS_COMBAL(RTCS_VARC(R,T,C,S))$BS_RTYPE(R,C)=BS_COMTS(R,C,S);
+  RCS_COMBAL(RTCS_VARC(R,T,C,S),'FX') $= BS_RTYPE(R,C);
+  RHS_COMPRD(RTCS_VARC(R,T,C,S))$BS_RTYPE(R,C) = NO;
+  RCS_COMPRD(RTCS_VARC(R,T,C,S),'FX')$BS_RTYPE(R,C) = NO;
+  COM_BNDPRD(RTCS_VARC(R,T,C,S),'UP')$((NOT BS_COMTS(R,C,S)$BS_LAMBDA(R,T,C))$BS_RTYPE(R,C)) = EPS;
+  COM_AGG(R,T,C,C)$BS_RTYPE(R,C)=1;
+  RC_AGP(RC,'FX')$=BS_RTYPE(RC);
+* Post-process RMAX; no reserve supply from multi-output AFC processes
+  BS_RMAX(R,V,P,C,S)$(BS_SUPP(R,P)$RP_STD(R,P)$RPS_CAFLAC(R,P,S,'UP'))=0;
+  LOOP((RC(R,C),BD)$BS_ABD(RC,BD),
+    VDA_FLOP(RTP(R,V,P),C,S)$((BS_PRS(R,P,S)$PRC_YMAX(R,P)+ANNUAL(S))$BS_BSC(R,P,C)) =
+      SMAX(BS_ABD(R,COM,BD)$((BS_RTYPE(RC)-BS_RTYPE(R,COM))*BDSIG(BD)<=0),BS_RMAX(RTP,COM,S)));
+  VDA_FLOP(RTP,C,S)$((BS_RMAX(RTP,C,S)=VDA_FLOP(RTP,C,S))$BS_RMAX(RTP,C,S))=0;
+  BS_RMAX(RTP,C,S) $= VDA_FLOP(RTP,C,S); OPTION NCAP_AFAC < VDA_FLOP;
+  LOOP((RTP(R,V,P),C)$NCAP_AFAC(RTP,C),
+$   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'BS_RMAX decreasing at slower reserve types - reset'
+    PUT QLOG ' WARNING       - Kept at preceding value,  R=',%RL%,' P=',%PL%,' V=',V.TL, ' C=',C.TL);
+  BS_RMAX(RTP(R,V,P),C,ANNUAL(S))$BS_BSC(R,P,C) = BS_RMAX(RTP,C,S)$(NOT PRC_YMAX(R,P));
+* Controls for reserve limits
+  RPC_CONLY(RTP(R,V,P),C)$((BS_RMAX(RTP,C,'ANNUAL')$BS_SUPP(R,P)<1-ACT_MINLD(RTP)$BS_ABD(R,C,'UP'))$BS_BSC(R,P,C))=YES;
+  LOOP((BS_ABD(RC(R,COM),BD),C,ANNUAL(S))$BS_ABD(R,C,BD),
+    IF((BS_RTYPE(RC)-BS_RTYPE(R,C))*BDSIG(BD)<0,RPC_CONLY(RTP(R,V,P),C)$((BS_RMAX(RTP,C,S)>=BS_RMAX(RTP,COM,S))$BS_RMAX(RTP,COM,S))=NO));
+  LOOP((BS_COMTS(R,C,S),BS_ABD(R,C,L)),BS_SBD(R,S,L)=YES);
+  OPTION CLEAR=PRC_YMAX,CLEAR=VDA_FLOP,CLEAR=NCAP_AFAC,CLEAR=RCS;
+* Build UC map
+  BS_UCMAP(UC_MAP_FLO(UC_N,SIDE,R,P,C))$(BS_BSC(R,P,C)+BS_STGP(R,P)$BS_STIME(R,P,C,'UP'))$=BS_RTYPE(R,C);

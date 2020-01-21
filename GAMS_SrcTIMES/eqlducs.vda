@@ -1,0 +1,175 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQLDUCS - implements linear and discrete unit commitment
+*   %1 - Section
+*=============================================================================*
+$IF NOT %OBMAC%==YES $EXIT
+$IF %1==EQU $GOTO EQU
+* Internal attributes for equation control
+  PARAMETER DP_NON(R,LL,P,UPT,TSL,BD) 'Bounds on non-operational time between shut-down and next start-up';
+*------------------------------------
+* Assume valid UPTs must have a cost or SD-time; reset simplified UC options
+  OPTION RP_UPT<ACT_CSTSD, TRACKP<RP_UPT;
+  RP_DP(TRACKP(RP))$=RP_UPL(RP,'FX');
+  RP_DP(RP)$SUM(RPS_CAFLAC(PRC_TS(RP,S),BD),1)=NO;
+  RP_DPL(PRC_TSL(RP_DP,TSL)) = YES;
+  RP_DPL(RP_DP(R,P),TSL)$(RLUP(R,'DAYNITE',TSL)$PRC_TSL(R,P,'DAYNITE')) = ORD(TSL)>1;
+  ACT_CSTUP(RTP(R,V,P),TSL,CUR)$RP_DP(R,P) = 0;
+  ACT_CSTSD(RTP(R,V,P),UPT,'FX',CUR)$(RDCUR(R,CUR)$RP_DP(R,P)) = ACT_CSTSD(RTP,UPT,'UP',CUR)+ACT_CSTSD(RTP,'HOT','LO',CUR);
+  ACT_CSTUP(RTP(R,V,P),TSL,CUR)$RP_DPL(R,P,TSL) $=SUM(UPT$ACT_CSTSD(RTP,UPT,'FX',CUR),EPS);
+  RP_UPT(RP_DP,UPT,'LO')=DIAG('HOT',UPT); LOOP(V,RP_UPT(R,P,UPT,BD('UP'))$ACT_SDTIME(R,V,P,UPT,BD)=YES);
+*------------------------------------
+* Max. non-op. time processing
+  ACT_MAXNON(R,V,P,UPT)$((NOT ACT_MAXNON(R,V,P,UPT))$RP_DP(R,P)) = EPS;
+  DP_NON(RTP(R,V,P),UPT,TSL,'UP')$((ACT_MAXNON(RTP,UPT)<8760/G_CYCLE(TSL))$RP_DPL(R,P,TSL)) = ACT_MAXNON(RTP,UPT)/8760;
+  DP_NON(RTP(R,V,P),'WARM',TSL,'LO')$RP_DP(R,P) = DP_NON(RTP,'HOT',TSL,'UP');
+  DP_NON(RTP(R,V,P),UPT,TSL,'LO')$RP_DP(R,P) = MAX(DP_NON(RTP,UPT,TSL,'LO'),ACT_TIME(RTP,'LO')/8760);
+  DP_NON(RTP(R,V,P),UPT,TSL,BDNEQ(BD))$RP_DP(R,P) = DP_NON(RTP,UPT,TSL,BD)+(ACT_SDTIME(RTP,UPT,'UP')+ACT_SDTIME(RTP,'HOT','LO'))/8760;
+  DP_NON(RTP(R,V,P),UPT,TSL,'UP')$(DP_NON(RTP,UPT,TSL,'UP')$RP_DP(R,P)) = DP_NON(RTP,UPT,TSL,'UP')-DP_NON(RTP,UPT,TSL,'LO');
+  DP_NON(RTP,'COLD',TSL,'UP') = 0;
+*------------------------------------
+* Partial loss processing
+  ACT_SDTIME(RTP(R,V,P),UPT,BD)$(NOT RP_UPT(R,P,UPT,BD)) = 0;
+  DP_PSUD(RTP,UPT,BDNEQ(BD))$((ACT_SDTIME(RTP,UPT,BD)>0)$ACT_SDTIME(RTP,UPT,BD)) = ACT_MINLD(RTP)/ACT_SDTIME(RTP,UPT,BD);
+  ACT_LOSSD(RTP,UPT,BD)$(ACT_MINLD(RTP)$DP_PSUD(RTP,UPT,BD)<=DP_PSUD(RTP,UPT,BD)) = 0;
+  OPTION CLEAR=TRACKP,DP_LOSD<ACT_LOSSD; DP_LOSD(RTP(R,V,P))$RP_PL(R,P,'N')$=RP_PL(R,P,'FX');
+  ACT_LOSPL(DP_LOSD(RTP(R,V,P)),'FX')$(ACT_LOSPL(RTP,'FX')=0) = .01**(1$RP_PL(R,P,'N'));
+  ACT_LOSSD(RTP,UPT,BD)$((ACT_LOSSD(RTP,UPT,BD)<ACT_LOSPL(RTP,'FX'))$ACT_LOSSD(RTP,UPT,BD)) = 0;
+  DP_PSUD(DP_LOSD(RTP(R,V,P)),UPT,BDNEQ(BD)) = (DP_PSUD(RTP,UPT,BD)*(ACT_LOSSD(RTP,UPT,BD)/ACT_LOSPL(RTP,'FX')-1$RP_PL(R,P,'N'))/(ACT_MINLD(RTP)-DP_PSUD(RTP,UPT,BD)))$ACT_LOSSD(RTP,UPT,BD);
+$EXIT
+*-----------------------------------------------------------------------------
+$LABEL EQU
+* Disable inconsistent linear dispatch features, add UX control for CAP
+  RP_UPS(RP_DP,TSL,L)=NO;
+  RP_UPC(RP_DP,TSL,BD)=NO;
+  AFUPS(R,T,P,S)$RP_DP(R,P)=NO;
+  RPS_UPS(PRC_TS(RP_DP,S))=YES;
+  RP_UX(RP)$(NOT PRC_VINT(RP))$=RP_DP(RP); RTP_VARP(RTP(R,T,P))$RP_UX(R,P)=YES;
+  RP_UPS(RP_DP(R,P),TSL,'FX')$=SUM(RLUP(R,TSLVL,TSL)$PRC_TSL(R,P,TSLVL),1);
+*-----------------------------------------------------------------------------
+$ macro sdtol .001
+$ macro var_on(r,v,t,p,s) %var%_udp(r,v,t,p,s,'N'%SOW%)
+$ macro var_off(r,v,t,p,s) %var%_ups(r,v,t,p,s,'N'%SOW%)
+$ macro var_load(r,v,t,p,s) %var%_act(r,v,t,p,s%SOW%)/g_yrfr(r,s)/prc_capact(r,p)
+$ macro var_gap(r,v,t,p,s) %var%_udp(r,v,t,p,s,'FX'%SOW%)
+$ macro v_u(x,r,v,t,p,s,l) %var%_&x(r,v,t,p,s,l%SOW%)
+$ macro SUDHFR(r,s,x,sl) (G_YRFR(r,s) x G_YRFR(r,sl))/2/RS_STGPRD(r,s)
+$ macro SPRSV \
+$IFI %ABS%==YES -sum(bs_comts(bs_apos(r,c),s)$bs_bsc(r,p,c),%var%_bsprs(r,v,t,p,c,s,'N'%SOW%))$bs_supp(r,p)
+*-----------------------------------------------------------------------------
+$SET CAPON (COEF_CPT(R,V,T,P)*(%VARV%_NCAP(R,V,P%SWS%)$T(V)+NCAP_PASTI(R,V,P)%RCAPSUB%))$PRC_VINT(R,P)+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)
+$macro CAPUPS (%CAPON%-SUM(rs_below(r,all_ts,s)$rps_ups(r,p,all_ts),var_off(r,v,t,p,all_ts)))
+*-----------------------------------------------------------------------------
+
+  eq_sdlogic(rtp_vintyr(%R_V_T%,p),tsl,RTS(s),lnx(l)%SWX%)$(%SWTX%ts_group(r,tsl,s)$rp_dpl(r,p,tsl))..
+
+     (sum(ts(s--rs_stg(r,s)),var_on(r,v,t,p,ts)-var_on(r,v,t,p,s)) - SUM(bd,v_u(ups,r,v,t,p,s,bd)*BDSIG(bd)))$ips(l) +
+     (v_u(ups,r,v,t,p,s,'UP') - SUM(rp_upt(r,p,upt,'UP'),v_u(upt,r,v,t,p,s,upt)))$bd(l) =E= 0;
+
+*-----------------------------------------------------------------------------
+
+  eq_sudupt(rtp_vintyr(%R_V_T%,p),tsl,RTS(s),upt%SWX%)$(%SWTX%DP_NON(r,v,p,upt,tsl,'UP')$ts_group(r,tsl,s)$rp_dpl(r,p,tsl))..
+
+     v_u(upt,r,v,t,p,s,upt) =L= sum((rs_up(r,s,js),rj_sl(r,js,sl))$(ORD(s)<>ORD(sl)),
+       v_u(ups,r,v,t,p,sl,'LO')$(MOD(RS_HR(r,s)-RS_HR(r,sl)-DP_NON(r,v,p,upt,tsl,'LO')+(G_YRFR(r,sl)/4+G_YRFR(r,s))/RS_STGPRD(r,s)+2/JS_CCL(r,js),1/JS_CCL(r,js))<DP_NON(r,v,p,upt,tsl,'UP')*(1+sdtol)+G_YRFR(r,s)/RS_STGPRD(r,s)/2));
+
+*-----------------------------------------------------------------------------
+
+  eq_sdslant(rtp_vintyr(%R_V_T%,p),tsl,RTS(s)%SWX%)$(%SWTX%ts_group(r,tsl,s)$rp_dpl(r,p,tsl))..
+
+     var_on(r,v,t,p,s) =E= sum(rs_below1(r,ts,s),v_u(ups,r,v,t,p,ts,'FX')-CAPUPS)$PRC_TS(R,P,S) + (CAPUPS) - var_off(r,v,t,p,s) -
+     sum(rp_upt(r,p,upt,bd),
+      sum((rs_up(r,s,js),rj_sl(r,js,sl))$(MOD(RS_HR(r,sl)-RS_HR(r,s)+G_YRFR(r,sl)/RS_STGPRD(r,s)/2+2/JS_CCL(r,js),1/JS_CCL(r,js))<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
+         v_u(upt,r,v,t,p,sl,upt)*(0$DIAG(S,SL) +
+                                  MAX(0,1-MOD(RS_HR(r,sl)-RS_HR(r,s)+SUDHFR(r,sl,-,s)+2/JS_CCL(r,js),1/JS_CCL(r,js))/(ACT_SDTIME(r,v,p,upt,bd)/8760))*(1-DIAG(S,SL))))$bdupx(bd) +
+      sum((rs_up(r,s,js),rj_sl(r,js,sl))$(MOD(RS_HR(r,s)-RS_HR(r,sl)+G_YRFR(r,sl)/RS_STGPRD(r,s)/2+2/JS_CCL(r,js),1/JS_CCL(r,js))<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
+          v_u(ups,r,v,t,p,sl,bd)*(1$DIAG(S,SL) +
+                                  MAX(0,1-MOD(RS_HR(r,s)-RS_HR(r,sl)+SUDHFR(r,sl,-,s)+2/JS_CCL(r,js),1/JS_CCL(r,js))/(ACT_SDTIME(r,v,p,upt,bd)/8760))*(1-DIAG(S,SL))))$bdlox(bd));
+
+*-----------------------------------------------------------------------------
+
+  eq_sdminon(rtp_vintyr(%R_V_T%,p),RTS(s)%SWX%)$(%SWTX%prc_ts(r,p,s)$rp_dp(r,p))..
+
+     var_on(r,v,t,p,s)+sum(rs_below1(r,ts,s),var_gap(r,v,t,p,ts)) =G= var_gap(r,v,t,p,s)+v_u(ups,r,v,t,p,s,'UP')+
+     (SUM(rp_upt(r,p,upt,'UP')$(G_YRFR(r,s)/RS_STGPRD(r,s)/2<=ACT_SDTIME(R,V,P,upt,'UP')/8760),v_u(upt,r,v,t,p,s,upt))-v_u(ups,r,v,t,p,s,'UP'))$(SMIN(rp_upt(r,p,upt,'UP'),ACT_SDTIME(r,v,p,upt,'UP')/8760)<G_YRFR(r,s)/RS_STGPRD(r,s)/2);
+
+*-----------------------------------------------------------------------------
+
+  eq_sudload(rtp_vintyr(%R_V_T%,p),RTS(s)%SWX%)$(%SWTX%prc_ts(r,p,s)$rp_dp(r,p))..
+
+     var_load(r,v,t,p,s) =E= (%CAPON%%UPSCAPS%)*ACT_MINLD(R,V,P) + var_gap(r,v,t,p,s)*(COEF_AF(r,v,t,p,s,'UP')-ACT_MINLD(r,v,p)) SPRSV;
+
+*-----------------------------------------------------------------------------
+
+  eq_sudtime(rtp_vintyr(%R_V_T%,p),tsl,RTS(s),bd%SWX%)$(%SWTX%prc_tsl(r,p,tsl)$ts_group(r,tsl,s)$act_time(r,v,p,bd)$rp_dp(r,p))..
+
+     sum(bdlox(bd), var_off(r,v,t,p,s) -
+       sum((rs_up(r,s,js),rj_sl(r,js,sl)),v_u(ups,r,v,t,p,sl,bd)$(MOD(RS_HR(r,s)-RS_HR(r,sl)-ACT_SDTIME(r,v,p,'HOT','LO')/8760+G_YRFR(r,s)/RS_STGPRD(r,s)/2+2/JS_CCL(r,js),1/JS_CCL(r,js))<ACT_TIME(r,v,p,bd)/8760))) +
+     sum(bdupx(bd), var_on(r,v,t,p,s) -
+       sum((rs_up(r,s,js),rj_sl(r,js,sl)),
+        sum(rp_upt(r,p,upt,bd),v_u(upt,r,v,t,p,sl,upt)$(MOD(RS_HR(r,s)-RS_HR(r,sl)+1/JS_CCL(r,js),1/JS_CCL(r,js))<(ACT_TIME(r,v,p,bd)-ACT_SDTIME(r,v,p,'HOT','LO')-ACT_SDTIME(r,v,p,upt,bd))/8760+G_YRFR(r,sl)/RS_STGPRD(r,s)/2))))
+      =G= 0;
+
+*-----------------------------------------------------------------------------
+
+  eq_sudpll(rtp_vintyr(%R_V_T%,p),tsl,RTS(s)%SWX%)$(%SWTX%ts_group(r,tsl,s)$prc_tsl(r,p,tsl)$DP_LOSD(r,v,p)$rp_dp(r,p))..
+
+     v_u(ups,r,v,t,p,s,'FX') =G=
+     sum(rp_upt(r,p,upt,bd),
+       sum((rs_up(r,s,js),rj_sl(r,js,sl))$(MOD((RS_HR(r,s)-RS_HR(r,sl))*BDSIG(bd)+G_YRFR(r,sl)/RS_STGPRD(r,s)/2+2/JS_CCL(r,js),1/JS_CCL(r,js))<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
+         (1+MIN(1,MOD((RS_HR(r,s)-RS_HR(r,sl))*BDSIG(bd)+SUDHFR(r,sl,-,s)+2/JS_CCL(r,js),1/JS_CCL(r,js))/(ACT_SDTIME(r,v,p,upt,bd)/8760))*(DP_PSUD(r,v,p,upt,bd)-1)) *
+         (v_u(upt,r,v,t,p,sl,upt)$bdupx(bd) + v_u(ups,r,v,t,p,sl,bd)$bdlox(bd)))) * PRC_CAPACT(r,p)*G_YRFR(r,s)*ACT_MINLD(r,v,p);
+
+*=============================================================================
+* Discrete Unit Commitment
+$IFI NOT %DUC%==YES $EXIT
+$ SETGLOBAL SOLMIP YES
+* Prepare min. unit sizes for semi-continuous modeling
+  NCAP_SEMI(RVP)$=0; TRACKP(RP_DP(RP))$(PRC_SEMI(RP)<10)=YES;
+  COEF_CAP(RTP_VINTYR(R,T,T,P))$TRACKP(R,P)=MIN(NCAP_SEMI(R,T,P),SUM(RTP_CPTYR(R,PYR(V),T,P),NCAP_PASTI(R,V,P)*COEF_CPT(R,V,T,P)));
+  COEF_CAP(RTP_VINTYR(R,PYR(V),T,P))$(PRC_VINT(R,P)$TRACKP(R,P))=MIN(NCAP_SEMI(R,V,P),NCAP_PASTI(R,V,P)*COEF_CPT(R,V,T,P));
+  COEF_CAP(RTP_VINTYR(R,TT,T,P))$((COEF_CAP(R,TT,T,P)=0)$TRACKP(R,P)) = NCAP_SEMI(R,TT,P);
+  DP_UNS(RTP_VINTYR(R,V,T,P),TSL,'IN',LNX)$RP_DPL(R,P,TSL) $= COEF_CAP(R,V,T,P);
+  DP_UNS(RTP_VINTYR(R,V,T,P),TSL,'IN',L)$(RP_UPS(R,P,TSL,'FX')$RP_DP(R,P)) $= COEF_CAP(R,V,T,P);
+  DP_UNS(RTP_VINTYR(R,V,T,P),TSL,IPS(L),L)$((NOT DP_UNS(R,V,T,P,TSL,'IN',L))$RP_DPL(R,P,TSL))=1;
+$IF DEFINED PRC_DSCNCAP PRC_DSCNCAP(TRACKP)=0;
+  OPTION CLEAR=TRACKP,CLEAR=COEF_CAP;
+$IF %STAGES%==YES OPTION CLEAR=DP_UNS;
+*-----------------------------------------------------------------------------
+* Variables, Equations and Indicators
+  BINARY VARIABLES var_onind(r,ll,t,p,s,l) 'on-line status of unit in timeslice s';
+  EQUATIONS eq_sdind_1, eq_sdind_0;
+  SET INDIC(J) /
+  1 "eq_sdind_0(r,v,t,p,tsl,s,ips,l)$var_onind(r,v,t,p,s,l) 0"
+  2 "eq_sdind_1(r,v,t,p,tsl,s,ips,l)$var_onind(r,v,t,p,s,l) 1"
+  /;
+*--------------------------------------
+  FILE INDFILE / INDIC.TXT /;
+  IF(SUM(RP_DP,1),PUT INDFILE; LOOP(INDIC(J)$(ORD(J)<3), put "indic ",INDIC.TE(J) /);
+   PUTCLOSE INDFILE; OPTFILEID=2;
+$  if exist cplex.opt execute "cat cplex.opt indic.txt > cplex.op2";
+$  if exist xpress.opt execute "cat xpress.opt indic.txt > xpress.op2";
+  );
+*-----------------------------------------------------------------------------
+
+  eq_sdind_1(rtp_vintyr(%R_V_T%,p),tsl,ts(s--rs_stg(r,s)),ips,L)$(ts_group(r,tsl,s)$DP_UNS(r,v,t,p,tsl,ips,l))..
+
+     var_onind(r,v,t,p,ts,l)*EPS +
+     (var_on(r,v,t,p,ts)-sum(rs_below1(r,sl,s)$prc_ts(r,p,s),var_ups(r,v,t,p,sl,'FX')-CAPUPS) - ((CAPUPS)+var_ups(r,v,t,p,ts,'LO')+var_ups(r,v,t,p,s,'UP')))$L(ips) +
+     ((var_on(r,v,t,p,ts) - var_gap(r,v,t,p,ts)$(NOT PRC_TSL(r,p,tsl)) - MAX(DP_UNS(r,v,t,p,tsl,ips,l),NCAP_SEMI(r,v,p)$PRC_TSL(r,p,tsl)/2))$ips(L) +
+      (var_ups(r,v,t,p,ts,'UP') + var_ups(r,v,t,p,ts,'LO') - MAX(DP_UNS(r,v,t,p,tsl,ips,l),NCAP_SEMI(r,v,p)$PRC_TSL(r,p,tsl)/2))$diag('FX',L) +
+      (%CAPON%-var_on(r,v,t,p,ts) - DP_UNS(r,v,t,p,tsl,ips,l))$diag('LO',L) +
+      (var_gap(r,v,t,p,ts) - DP_UNS(r,v,t,p,tsl,ips,l))$diag('UP',L))$io(ips) =G= 0;
+
+*-----------------------------------------------------------------------------
+
+  eq_sdind_0(rtp_vintyr(%R_V_T%,p),tsl,ts(s--rs_stg(r,s)),ips,l)$(ts_group(r,tsl,s)$DP_UNS(r,v,t,p,tsl,ips,l))..
+
+     (var_on(r,v,t,p,ts)+sum(rs_below1(r,sl,s),var_gap(r,v,t,p,sl)+var_ups(r,v,t,p,ts,'UP'))$prc_ts(r,p,s))$L(ips) +
+     ((var_on(r,v,t,p,ts) - var_gap(r,v,t,p,ts)$(NOT PRC_TSL(r,p,tsl)) + var_ups(r,v,t,p,ts,'UP'))$ips(L) +
+      (var_ups(r,v,t,p,ts,'UP') + var_ups(r,v,t,p,ts,'LO'))$diag('FX',L) +
+      (%CAPON%-var_on(r,v,t,p,ts)+var_ups(r,v,t,p,ts,'LO'))$diag('LO',L) +
+      (var_gap(r,v,t,p,ts))$diag('UP',L))$io(ips) =L= 0;

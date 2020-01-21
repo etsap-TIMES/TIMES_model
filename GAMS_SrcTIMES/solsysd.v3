@@ -1,0 +1,14 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* SOLSYSD.V3 - define system label mappings
+*-----------------------------------------------------------------------------
+$SETARGS P1 P2 P3 P4 *
+$SHIFT SHIFT EOLCOM %P2% GOTO %1
+$LABEL SYSUC SHIFT
+ SET %P1% / %P3%%1 %1 /,%P1%MAP(%P1%,*) / %P3%%1.%1 /;
+$IF NOT '%2'=='' $GOTO %P1%
+$EXIT
+$LABEL %P1% SHIFT SHIFT
+$IF DEFINED %2%P1% %2%P1%(%1%P3%SYSUC%P4%)$=SUM(SYSUCMAP(SYSUC,U2),%2%P1%(%1%P3%U2%P4%));;%2%P1%(%1%P3%U2%P4%)$(NOT SYSUC(U2))=0;
+$IF NOT '%3'=='' $GOTO %P1%

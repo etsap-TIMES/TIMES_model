@@ -1,0 +1,337 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* SOLVE.stp is the code for handling stepped solution of TIMES
+*   %1 - mod
+*=============================================================================*
+$SET STEPPED YES
+$IFI NOT %SPINES%==YES
+$IFI %STAGES%==YES $SET STEPPED NO
+$IF %STEPPED%==NO
+$IF SET TIMESTEP $ABORT Stepped TIMES Not available with STAGES/SENSIS!
+$IF NOT %VAR_UC%==YES $ABORT Invalid VAR_UC setting for stepped mode.
+$IF NOT %RPOINT%==NO $SET SOLVE_NOW NO
+$IF NOT SET TIMESTEP $SET TIMESTEP '999' SET STEPPED NO
+*-----------------------------------------------------------------------------
+  SCALAR PRESOL / 1 /;
+  SET UC_RN(UC_N,ALL_R) //;
+  SET R_UCT(R,UC_N,T)   //;
+  SET RTP_IRE(R,T,P,IE) 'IRE equations with fixed regions';
+  SET IRE_RPR(R,P,R,IE) 'All regions REG linked to IRE process by equations in R';
+  SET IRE_FXT(R,T,P) 'IRE with some linked regions fixed at T';
+  PARAMETER STP_UCT(J,ALL_R,UCN,LL);
+  PARAMETER STP_DIV(J,R,T,P) //;
+  PARAMETER UC_BND(J,ALL_R,UCN,LL,S,L);
+  PARAMETER PAR_CUMFLOM(R,P,C,LL,LL), PAR_UCR(UC_N,ALL_R);
+* Copy previous marginals to preseve freezed results
+$IF NOT SET FIXBOH $GOTO MCOPIED
+$IF %STAGES%==YES  %EQ%G_COMBAL.M(R,T,C,S%SWT%) $= EQG_COMBAL.M(R,T,C,S);
+$IF %STAGES%==YES  %EQ%E_COMBAL.M(R,T,C,S%SWT%) $= EQE_COMBAL.M(R,T,C,S);
+$IF %STAGES%==YES  %EQ%_PEAK.M(R,T,C,S%SWT%) $= EQ_PEAK.M(R,T,C,S);
+$LABEL MCOPIED
+$IFI %SPINES%==YES $BATINCLUDE clearsol.stc DEF
+* Establish partitioning of T into fixed, current, and pending
+* BACKWARD(T) = fixed T
+* SUBT(T) = current T
+* FORWARD(T) = pending T
+*-----------------------------------------------------------------------------
+$SETLOCAL SW1 '' SETLOCAL SW2 ""
+$IFI %STAGES%==YES $SETLOCAL SW1 'S_' SETLOCAL SW2 ",'1',SOW"
+*-----------------------------------------------------------------------------
+  YR_V1 = 0; YR_VL = %TIMESTEP%; MY_FYEAR = 0; REG_FIXT(R)$NO = 0;
+  IF(G_OVERLAP, G_OVERLAP = MAX(EPS,G_OVERLAP); ELSE G_OVERLAP = FLOOR(YR_VL/2));
+$IF SET FIXBOH YR_V1 = ABS(%FIXBOH%); REG_FIXT(R)$(NOT REG_FIXT(R)) = YR_V1;
+$IF '%RTPX%'==X MY_FYEAR = 1;
+  F = SUM(MIYR_1(T),M(T));
+  REG_FIXT(R)$(REG_FIXT(R) LT F) = 0;
+  YR_V1 = SMIN((R,T)$(M(T) GT REG_FIXT(R)),M(T));
+  Z = YR_V1 + YR_VL;
+  SUBT(T)$(M(T) LT YR_V1) = NO;
+  SUBT(T)$(M(T) GE Z)     = NO;
+  OPTION CLEAR=BACKWARD, CLEAR=FORWARD, RTC_NET<RHS_COMBAL, RTC_PRD<RHS_COMPRD;
+  BACKWARD(T)$(M(T) LT YR_V1) = YES;
+  FORWARD(T) = TT(T)-BACKWARD(T)-SUBT(T);
+  RT_PP(R,T) = (M(T) GT REG_FIXT(R));
+  NO_RT(R,T) = NOT RT_PP(R,T);
+*-----------------------------------------------------------------------------
+* Clear previous solution for projection years & ensure VAR_ACT loadpoint
+$ INCLUDE clearsol.stp
+  VAR_ACT.M(RVT,P,S)=0;
+  IF(VAR_UC.L('%SYSPREFIX%SOLVE_STATUS')=0, OPTION TRACKP<VAR_ACT, RP_PRC<VAR_FLO; RP_PRC(TRACKP)=NO;
+   VAR_ACT.L(RTP_VINTYR(R,V,T,P),S)$RP_PRC(R,P) $= SUM(RPC_PG(RP_STD(R,P),C),VAR_FLO.L(R,V,T,P,C,S)*(1/PRC_ACTFLO(R,V,P,C)));
+   VAR_ACT.L(RTP_VINTYR(R,V,T,P),S)$(NOT TRACKP(R,P)) $= SUM(RPC_IRE(RPC_PG(R,P,C),IE)$RP_AIRE(R,P,IE),VAR_IRE.L(R,V,T,P,C,S,IE)*(1/PRC_ACTFLO(R,V,P,C)))
+   OPTION CLEAR=TRACKP,CLEAR=RP_PRC);
+  VAR_COMNET.L(RHS_COMBAL(RTC,S))$(NOT COM_PROJ(RTC)) $= EQG_COMBAL.L(RTC,S);
+*-----------------------------------------------------------------------------
+* Copy FX UC RHS, COM_CUM and CAP_BND to UP/LO to support relaxation, removing FX bounds at the same time
+   %SW1%CAP_BND(R,T,P,BD%SW2%)$%SW1%CAP_BND(R,T,P,'FX'%SW2%) = %SW1%CAP_BND(R,T,P,'FX'%SW2%)$BDNEQ(BD);
+   UC_RHS(UC_N,BD)$UC_RHS(UC_N,'FX') = UC_RHS(UC_N,'FX')$BDNEQ(BD);
+   UC_RHSR(R,UC_N,BD)$UC_RHSR(R,UC_N,'FX') = UC_RHSR(R,UC_N,'FX')$BDNEQ(BD);
+   UC_RHST(UC_N,T,BD)$UC_RHST(UC_N,T,'FX') = UC_RHST(UC_N,T,'FX')$BDNEQ(BD);
+   UC_RHSTS(UC_N,T,S,BD)$UC_RHSTS(UC_N,T,S,'FX') = UC_RHSTS(UC_N,T,S,'FX')$BDNEQ(BD);
+   UC_RHSRT(R,UC_N,T,BD)$UC_RHSRT(R,UC_N,T,'FX') = UC_RHSRT(R,UC_N,T,'FX')$BDNEQ(BD);
+   UC_RHSRTS(R,UC_N,T,S,BD)$UC_RHSRTS(R,UC_N,T,S,'FX') = UC_RHSRTS(R,UC_N,T,S,'FX')$BDNEQ(BD);
+   PRC_DYNUC(UC_N,SIDE,R,LL,P,UC_GRPTYPE,BD)$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,'FX') = PRC_DYNUC(UC_N,SIDE,R,LL,P,UC_GRPTYPE,'FX')$BDNEQ(BD);
+* Find UC equations with negative coefficients
+  LOOP((UC_N,SIDE,R,T,P)$((NOT UC_RN(UC_N,R))$UC_CAP(UC_N,SIDE,R,T,P)),
+    IF(UC_CAP(UC_N,SIDE,R,T,P)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+  LOOP((UC_N,SIDE,R,T,P)$((NOT UC_RN(UC_N,R))$UC_NCAP(UC_N,SIDE,R,T,P)),
+    IF(UC_NCAP(UC_N,SIDE,R,T,P)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+  LOOP((UC_N,SIDE,R,T,P,S)$((NOT UC_RN(UC_N,R))$UC_ACT(UC_N,SIDE,R,T,P,S)),
+    IF(UC_ACT(UC_N,SIDE,R,T,P,S)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+  LOOP((UC_N,SIDE,R,T,P,C,S)$((NOT UC_RN(UC_N,R))$UC_FLO(UC_N,SIDE,R,T,P,C,S)),
+    IF(UC_FLO(UC_N,SIDE,R,T,P,C,S)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+  LOOP((UC_N,SIDE,R,T,P,C,S,IE)$((NOT UC_RN(UC_N,R))$UC_IRE(UC_N,SIDE,R,T,P,C,S,IE)),
+    IF(UC_IRE(UC_N,SIDE,R,T,P,C,S,IE)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+  LOOP((UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)$((NOT UC_RN(UC_N,R))$UC_COM(UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)),
+    IF(UC_COM(UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+$IF DEFINED UC_CLI LOOP((UC_N,SIDE,R,T,CM_VAR)$UC_CLI(UC_N,SIDE,R,T,CM_VAR),IF(UC_CLI(UC_N,SIDE,R,T,CM_VAR)*UC_SIGN(SIDE)<0,UC_RN(UC_N,R)=YES));
+  UC_RN(UC_N,'IMPEXP') $= SUM(UC_RN(UC_N,R),1);
+* Collect all capacity-related UCs
+  LOOP((UC_N,SIDE,R,T,P)$UC_CAP(UC_N,SIDE,R,T,P),R_UC(R,UC_N) = YES);
+* Flag to use variables for all CAP_BND
+  RTP_VARP(RTP(R,T,P))$(CAP_BND(RTP,'UP')+CAP_BND(RTP,'LO')) = YES;
+  OPTION CLEAR=RTP_CAPYR; RTP_CAPYR(RTP_CPTYR(R,V,T,P))$(VAR_NCAP.L(R,V,P)+NCAP_PASTI(R,V,P)) = YES;
+  VAR_CAP.L(RTP_VARP(RT_PP(R,T),P)) = SUM(RTP_CAPYR(R,V,T,P),COEF_CPT(R,V,T,P)*(VAR_NCAP.L(R,V,P)$TT(V)+NCAP_PASTI(R,V,P)));
+*-----------------------------------------------------------------------------
+* Save some original data
+  STP_UCT('1',UC_T_SUM) = YES;
+  STP_UCT('2',UC_T_SUCC) = YES;
+  STP_UCT('3',UC_T_EACH) = YES;
+  IF(ALTOBJ > 1,
+    STP_DIV('1',R,T,P)  $= OBJ_DIVI(R,T,P);
+    STP_DIV('2',R,T,P)  $= OBJ_DIVIV(R,T,P);
+    STP_DIV('3',R,T,P)  $= OBJ_DIVIII(R,T,P));
+*-----------------------------------------------------------------------------
+$IF %STEPPED%==YES  WHILE(CARD(SUBT),
+*-----------------------------------------------------------------------------
+  BACKWARD(T) = (M(T) LT YR_V1);
+  FORWARD(SUBT) = NO;
+  NO_RT(R,T(BACKWARD)) = 1;
+  RT_PP(R,T) = SUBT(T)$(NOT NO_RT(R,T));
+  V(FORWARD) = NO;
+* Re-define End-of-Horizon
+  IF(CARD(SUBT), MIYR_VL = SMAX(SUBT(T),E(T)));
+  OPTION CLEAR=Y_EOH, CLEAR=MIYR_L;
+  Y_EOH(EOHYEARS)$((YEARVAL(EOHYEARS) <= MIYR_VL)$(YEARVAL(EOHYEARS) >= MINYR)) = YES;
+  LOOP(MIYR_1(YEAR), Z=MIYR_VL-YEARVAL(YEAR); MIYR_L(YEAR+Z) = YES);
+*-----------------------------------------------------------------------------
+* Complete adjusted model
+* Adjust divisor data when appropriate
+$IF NOT '%CTST%'=='' $BATINCLUDE coef_alt.lin STP
+* We must recompute OBJ_LIFE and salvage values
+  OBJ_LIFE(K(LL),R,JOT,LIFE,CUR)$OBJ_LIFE(K,R,JOT,LIFE,CUR) = SUM((OPYEAR(LIFE,AGE),Y_EOH(LL+(ORD(AGE)-1))),OBJ_DISC(R,Y_EOH,CUR))+EPS;
+$IF %STEPPED%==YES $BATINCLUDE eqobsalv.%1 STP EXIT
+  RVPRL(R,K,P)$RVPRL(R,K,P)=MAX(1,SMAX(RTP_CPTYR(R,VNT(K,V(T)),P),YEARVAL(V))-YEARVAL(K));
+*-----------------------------------------------------------------------------
+* Handle Dynamic constraints and Multi-regional UC relaxation
+* Remove UC_T_SUM if it does not overlap with SUBT
+  OPTION CLEAR=RXX,CLEAR=UNCD1;
+   RXX(UC_R_EACH(R,UC_N),R)$SUM(UC_T_SUM(R,UC_N,T)$RT_PP(R,T),YES) = YES;
+   UNCD1(UC_N)$SUM(UC_T_SUM(UC_R_SUM(R,UC_N),T)$RT_PP(R,T),YES) = YES;
+   UC_T_SUM(R,UC_N,T)$FORWARD(T) = NO;
+  UC_T_SUM(R,UC_N,T)$((NOT UNCD1(UC_N))$(NOT RXX(R,UC_N,R))) = NO;
+  IF(PRESOL, VAR_UC.L(UC_N(UNCD1)) = 0; VAR_UCR.L(UC_N,R)$RXX(R,UC_N,R) = 0);
+* Remove UC_T_EACH for all but SUBT
+* Remove UC_T_SUCC until not completely fixed or if even partly pending
+  OPTION CLEAR=UC_T;
+    LOOP(UC_T_EACH(UC_R_SUM(R,UC_N),T)$RT_PP(R,T), UC_T(UC_N,T) = YES);
+    LOOP(UC_T_SUCC(UC_R_SUM(R,UC_N),T)$RT_PP(R,T), UC_T(UC_N,T) = YES);
+    UC_T_EACH(UC_R_SUM(R,UC_N),T)$(NOT UC_T(UC_N,T)) = NO;
+    UC_T_SUCC(UC_R_SUM(R,UC_N),T)$(UC_DYNDIR(R,UC_N,'RHS')$(NOT UC_T(UC_N,T))) = NO;
+    UC_T_SUCC(UC_R_SUM(R,UC_N),T-1)$(UC_DYNDIR(R,UC_N,'LHS')$(NOT RT_PP(R,T))) = NO;
+    UC_T_EACH(UC_R_EACH(R,UC_N),T)$(NOT RT_PP(R,T)) = NO;
+    UC_T_SUCC(UC_R_EACH(R,UC_N),T)$(UC_DYNDIR(R,UC_N,'RHS')$(NOT RT_PP(R,T))) = NO;
+    UC_T_SUCC(UC_R_EACH(R,UC_N),T-1)$(UC_DYNDIR(R,UC_N,'LHS')$(NOT RT_PP(R,T))) = NO;
+    UC_T(UC_N,T)$(NOT SUM(R$NO_RT(R,T),1)) = NO;
+$   IFI %CLI%==YES LOOP(T$(NOT SUM(R,NOT NO_RT(R,T))),CM_MAXC(LL,CG)$SUPERYR(T,LL) = 0);
+
+  LOOP(BD,UC_T_SUCC(R,UC_N,T)$UC_DYNBND(UC_N,BD) = RT_PP(R,T));
+* RHS and Bounds Relaxation
+$ SETLOCAL TOLR '3E-6' SETLOCAL TOLA '1E-4' SETLOCAL TOLX '1E-5'
+$IF DEFINED XTP $SETLOCAL TOLR '2E-8' SETLOCAL TOLA 1E-6
+  IF(CARD(BACKWARD) OR MY_FYEAR, OPTION CLEAR=UC_BND,CLEAR=R_UCT;
+   R_UCT(R_UC(R,UC_N),T)$(UC_T_EACH(R,UC_N,T)+UC_T_SUCC(R,UC_N,T)) = YES;
+   LOOP(UC_R_SUM(R_UC(R,UC_N)),UC_T(UC_N,T)$R_UCT(R,UC_N,T) = YES);
+   R_UCT(R,UC_N,T)$(NOT REG_FIXT(R)) = NO;
+* Set into UC_BND the RHS corrected by actual slack level, if RHS already violated
+   UC_BND('1','IMPEXP',UC_N,'0','ANNUAL','UP')$UC_RHS(UC_N,'UP')  = MAX(UC_RHS(UC_N,'UP'),VAR_UC.L(UC_N)-INF$(NOT VAR_UC.L(UC_N)));
+   UC_BND('2',R,UC_N,'0','ANNUAL','UP')$UC_RHSR(R,UC_N,'UP')      = MAX(UC_RHSR(R,UC_N,'UP'),VAR_UCR.L(UC_N,R)-INF$(NOT VAR_UCR.L(UC_N,R)));
+   UC_BND('3','IMPEXP',UC_N,T,'ANNUAL','UP')$UC_RHST(UC_N,T,'UP') = MAX(UC_RHST(UC_N,T,'UP'),VAR_UCT.L(UC_N,T)-INF$(NOT VAR_UCT.L(UC_N,T)));
+   UC_BND('4','IMPEXP',UC_N,T,S,'UP')$UC_RHSTS(UC_N,T,S,'UP')     = MAX(UC_RHSTS(UC_N,T,S,'UP'),VAR_UCTS.L(UC_N,T,S)-INF$(NOT VAR_UCTS.L(UC_N,T,S)));
+   UC_BND('5',R,UC_N,T,'ANNUAL','UP')$UC_RHSRT(R,UC_N,T,'UP')     = MAX(UC_RHSRT(R,UC_N,T,'UP'),VAR_UCRT.L(UC_N,R,T)-INF$(NOT VAR_UCRT.L(UC_N,R,T)));
+   UC_BND('6',R,UC_N,T,S,'UP')$UC_RHSRTS(R,UC_N,T,S,'UP')         = MAX(UC_RHSRTS(R,UC_N,T,S,'UP'),VAR_UCRTS.L(UC_N,R,T,S)-INF$(NOT VAR_UCRTS.L(UC_N,R,T,S)));
+   UC_BND('1','IMPEXP',UC_N,'0','ANNUAL','LO')$UC_RHS(UC_N,'LO')  = MIN(UC_RHS(UC_N,'LO'),VAR_UC.L(UC_N)+INF$(NOT VAR_UC.L(UC_N)));
+   UC_BND('2',R,UC_N,'0','ANNUAL','LO')$UC_RHSR(R,UC_N,'LO')      = MIN(UC_RHSR(R,UC_N,'LO'),VAR_UCR.L(UC_N,R)+INF$(NOT VAR_UCR.L(UC_N,R)));
+   UC_BND('3','IMPEXP',UC_N,T,'ANNUAL','LO')$UC_RHST(UC_N,T,'LO') = MIN(UC_RHST(UC_N,T,'LO'),VAR_UCT.L(UC_N,T)+INF$(NOT VAR_UCT.L(UC_N,T)));
+   UC_BND('4','IMPEXP',UC_N,T,S,'LO')$UC_RHSTS(UC_N,T,S,'LO')     = MIN(UC_RHSTS(UC_N,T,S,'LO'),VAR_UCTS.L(UC_N,T,S)+INF$(NOT VAR_UCTS.L(UC_N,T,S)));
+   UC_BND('5',R,UC_N,T,'ANNUAL','LO')$UC_RHSRT(R,UC_N,T,'LO')     = MIN(UC_RHSRT(R,UC_N,T,'LO'),VAR_UCRT.L(UC_N,R,T)+INF$(NOT VAR_UCRT.L(UC_N,R,T)));
+   UC_BND('6',R,UC_N,T,S,'LO')$UC_RHSRTS(R,UC_N,T,S,'LO')         = MIN(UC_RHSRTS(R,UC_N,T,S,'LO'),VAR_UCRTS.L(UC_N,R,T,S)+INF$(NOT VAR_UCRTS.L(UC_N,R,T,S)));
+* Add relaxation tolerances; absolute only if both positive+negative coefficients
+   UC_BND(J,ALL_R,UC_N,LL,S,'UP')$UC_BND(J,ALL_R,UC_N,LL,S,'UP')  = UC_BND(J,ALL_R,UC_N,LL,S,'UP')+ABS(UC_BND(J,ALL_R,UC_N,LL,S,'UP'))*%TOLR%+%TOLA%$UC_RN(UC_N,ALL_R);
+   UC_BND(J,ALL_R,UC_N,LL,S,'LO')$UC_BND(J,ALL_R,UC_N,LL,S,'LO')  = UC_BND(J,ALL_R,UC_N,LL,S,'LO')-ABS(UC_BND(J,ALL_R,UC_N,LL,S,'LO'))*%TOLR%-%TOLA%$UC_RN(UC_N,ALL_R);
+* Copy back to RHS (VAR bounds would be cleared in sensitivity analysis)
+   UC_RHS(UC_N,BDNEQ(BD))                   $= UC_BND('1','IMPEXP',UC_N,'0','ANNUAL',BD);
+   UC_RHSR(R,UC_N,BDNEQ(BD))$REG_FIXT(R)    $= UC_BND('2',R,UC_N,'0','ANNUAL',BD);
+   UC_RHST(UC_T(UC_N,T),BDNEQ(BD))          $= UC_BND('3','IMPEXP',UC_N,T,'ANNUAL',BD);
+   UC_RHSTS(UC_T(UC_N,T),S,BDNEQ(BD))       $= UC_BND('4','IMPEXP',UC_N,T,S,BD);
+   UC_RHSRT(R_UCT(R,UC_N,T),BDNEQ(BD))      $= UC_BND('5',R,UC_N,T,'ANNUAL',BD);
+   UC_RHSRTS(R_UCT(R,UC_N,T),S,BDNEQ(BD))   $= UC_BND('6',R,UC_N,T,S,BD);
+* Handle other important dynamic constraints
+   LOOP((R,T,SAMEAS(T+1,TT))$NO_RT(R,T),
+    PRC_DYNUC(UC_N,'LHS',RTP(R,TT,P),UC_GRPTYPE,'UP')$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,'UP') = PRC_DYNUC(UC_N,'LHS',R,TT,P,UC_GRPTYPE,'UP')*(1+%TOLR%);
+    PRC_DYNUC(UC_N,'LHS',RTP(R,TT,P),UC_GRPTYPE,'LO')$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,'LO') = PRC_DYNUC(UC_N,'LHS',R,TT,P,UC_GRPTYPE,'LO')*(1-%TOLX%));
+   %SW1%COM_CUM(R,COM_VAR,YEAR,LL,C,'UP'%SW2%)$(REG_FIXT(R)$%SW1%COM_CUM(R,COM_VAR,YEAR,LL,C,'UP'%SW2%)) = MAX(%SW1%COM_CUM(R,COM_VAR,YEAR,LL,C,'UP'%SW2%),MIN(%SW1%COM_CUM(R,COM_VAR,YEAR,LL,C,'UP'%SW2%),VAR_CUMCOM.L(R,C,COM_VAR,YEAR,LL)*%CUCSCAL%)*(1+%TOLR%));
+   %SW1%COM_CUM(R,COM_VAR,YEAR,LL,C,'LO'%SW2%)$REG_FIXT(R) $= %SW1%COM_CUM(R,COM_VAR,YEAR,LL,C,'LO'%SW2%)*(1-%TOLR%);
+   %SW1%FLO_CUM(R,P,C,YEAR,LL,'UP'%SW2%)$(REG_FIXT(R)$%SW1%FLO_CUM(R,P,C,YEAR,LL,'UP'%SW2%)) = MAX(%SW1%FLO_CUM(R,P,C,YEAR,LL,'UP'%SW2%),MIN(%SW1%FLO_CUM(R,P,C,YEAR,LL,'UP'%SW2%),VAR_CUMFLO.L(R,P,C,YEAR,LL)*%CUFSCAL%)*(1+%TOLR%));
+   %SW1%FLO_CUM(R,P,C,YEAR,LL,'LO'%SW2%)$REG_FIXT(R)       $= %SW1%FLO_CUM(R,P,C,YEAR,LL,'LO'%SW2%)*(1-%TOLR%);
+   %SW1%CAP_BND(R,T,P,'UP'%SW2%)$%SW1%CAP_BND(R,T,P,'UP'%SW2%) = MAX(%SW1%CAP_BND(R,T,P,'UP'%SW2%),VAR_CAP.L(R,T,P)*(1+%TOLR%));
+   %SW1%CAP_BND(R,T,P,'LO'%SW2%)                           $= %SW1%CAP_BND(R,T,P,'LO'%SW2%)*(1-%TOLR%);
+  );
+$  BATINCLUDE bnd_ucw.%1
+* Redefine UC_RHSMAP according to current flags
+  OPTION CLEAR=UC_RHSMAP;
+  LOOP((UC_R_EACH(R,UC_N),T,LIM)$UC_RHSRT(R,UC_N,T,LIM),
+   IF(    SUM(UC_TS_SUM(R,UC_N,S),1)$UC_T_EACH(R,UC_N,T),UC_RHSMAP(UC_N,'EACH','SEVERAL',R,T,ANNUAL) = YES;
+   ELSEIF SUM(UC_TS_SUM(R,UC_N,S),1)$UC_T_SUCC(R,UC_N,T),UC_RHSMAP(UC_N,'SUCC','SEVERAL',R,T,ANNUAL) = YES;
+  ));
+  LOOP((UC_R_EACH(R,UC_N),T,S,LIM)$UC_RHSRTS(R,UC_N,T,S,LIM),
+   IF(    UC_TS_EACH(R,UC_N,S)$UC_T_EACH(R,UC_N,T),UC_RHSMAP(UC_N,'EACH','EACH',R,T,S) = YES;
+   ELSEIF UC_TS_EACH(R,UC_N,S)$UC_T_SUCC(R,UC_N,T),UC_RHSMAP(UC_N,'SUCC','EACH',R,T,S) = YES;
+  ));
+  IF(CARD(REG_CUMCST),LOOP((R,T)$NO_RT(R,T),REG_CUMCST(R,YEAR,LL,COSTCAT,CUR,'UP')$SUPERYR(T,LL) = 0));
+*-----------------------------------------------------------------------------
+* Activities and flows
+$IF '%RTPX%'==X  LOOP(R, BACKWARD(T) = NO_RT(R,T); SUBT(T) = RT_PP(R,T);
+   %VAR%_ACT.FX(RTP_VINTYR(R,V,BACKWARD(T),P),S%SOW%)$(PRC_TS(R,P,S)) =                            VAR_ACT.L(R,V,T,P,S);
+   %VAR%_FLO.FX(RTP_VINTYR(R,V,BACKWARD(T),P),C,S%SOW%)$(RPCS_VAR(R,P,C,S)*RP_FLO(R,P)) =          VAR_FLO.L(R,V,T,P,C,S);
+   %VAR%_IRE.FX(RTP_VINTYR(R,V,BACKWARD(T),P),C,S,IE%SOW%)$(RPCS_VAR(R,P,C,S)*RPC_IRE(R,P,C,IE)) = VAR_IRE.L(R,V,T,P,C,S,IE);
+   %VAR%_SIN.FX(RTP_VINTYR(R,V,BACKWARD(T),P),C,S%SOW%)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =       VAR_SIN.L(R,V,T,P,C,S);
+   %VAR%_SOUT.FX(RTP_VINTYR(R,V,BACKWARD(T),P),C,S%SOW%)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =      VAR_SOUT.L(R,V,T,P,C,S);
+   %VAR%_UPS.FX(RTP_VINTYR(R,V,BACKWARD(T),P),S,BD(L)%SOW%)$RPS_UPS(R,P,S) =                       VAR_UPS.L(R,V,T,P,S,L);
+   %VAR%_UPT.FX(RTP_VINTYR(R,V,BACKWARD(T),P),S,UPT%SOW%)$(RPS_UPS(R,P,S)$RP_DP(R,P)) =            VAR_UPT.L(R,V,T,P,S,UPT);
+   %VAR%_UDP.FX(RTP_VINTYR(R,V,BACKWARD(T),P),S,BD(L)%SOW%)$(PRC_TS(R,P,S)$RP_UPR(R,P,BD)) =       VAR_UDP.L(R,V,T,P,S,L);
+* Commodities
+   %VAR%_COMNET.FX(RTC_NET(R,BACKWARD(T),C),S%SOW%)$COM_TS(R,C,S) = VAR_COMNET.L(R,T,C,S);
+   %VAR%_COMPRD.FX(RTC_PRD(R,BACKWARD(T),C),S%SOW%)$COM_TS(R,C,S) = VAR_COMPRD.L(R,T,C,S);
+   %VAR%_ELAST.FX(RTC(R,BACKWARD(T),C),S,J,BD%SOW%)$(COM_TS(R,C,S)$RCJ(R,C,J,BD)) = VAR_ELAST.L(RTC,S,J,BD);
+$IF DEFINED %VAR%_DAM VAR_DAM.L(R,T,C,BD,J)$NO=0; %VAR%_DAM.FX(R,T(BACKWARD),C,BD,J%SOW%)$((ORD(J) LE DAM_STEP(R,C,BD))$DAM_STEP(R,C,'FX')) = VAR_DAM.L(R,T,C,BD,J);
+* Capacities
+   %VAR%_NCAP.FX(R,BACKWARD(T),P%SOW%)$RP(R,P) = MAX(EPS,VAR_NCAP.L(R,T,P));
+   %VAR%_CAP.UP(RTP(R,BACKWARD(T),P)%SOW%) =  INF;
+   %VAR%_CAP.LO(RTP(R,BACKWARD(T),P)%SOW%) =  0;
+   OPTION CLEAR=NO_RVP; NO_RVP(RTP_VARP(R,SUBT(T),P))$SUM(RTP_CPTYR(R,BACKWARD(TT),T,P),1) = YES;
+   %VAR%_CAP.UP(NO_RVP(R,T,P)%SOW%)$CAP_BND(R,T,P,'UP') = CAP_BND(R,T,P,'UP');
+   %VAR%_CAP.LO(NO_RVP(R,T,P)%SOW%)$CAP_BND(R,T,P,'LO') = CAP_BND(R,T,P,'LO');
+$IF DEFINED PRC_RCAP %VAR%_SCAP.FX(RTP_CPTYR(R,V,BACKWARD(T),P)%SOW%)$PRC_RCAP(R,P) = VAR_SCAP.L(R,V,T,P);
+* Cumulative variables
+   Z = (SMAX(T,M(T)) GT MIYR_VL);
+   FIL(LL) = Z*(MIYR_VL LT YEARVAL(LL));
+* Get new modifiers for flexible model horizon
+$IFI NOT %SENSIS%==YES $BATINCLUDE bnd_cum.mod COM_VAR
+* Remove LO bounds if years only partially in current horizon and no adjustment for shorter horizon
+   %VAR%_CUMFLO.LO(R,P,C,ALLYEAR,LL %SOW%)$((NOT FLO_CUM(R,P,C,ALLYEAR,LL,'N'))$FIL(LL)) = 0;
+   %VAR%_CUMCOM.LO(R,C,COM_VAR,ALLYEAR,LL %SOW%)$((NOT COM_CUM(R,COM_VAR,ALLYEAR,LL,C,'N'))$FIL(LL)) = 0;
+$LABEL DONECUM
+* Blending
+   VAR_BLND.L(RT_PP,BLE,OPR)=0;
+   %VAR%_BLND.FX(R,BACKWARD(T),BLE,OPR%SOW%)$BLE_OPR(R,BLE,OPR) = VAR_BLND.L(R,T,BLE,OPR);
+$IF '%RTPX%'==X ); BACKWARD(T) = M(T) LT YR_V1; SUBT(T) = TT(T)-BACKWARD(T)-FORWARD(T);
+*-----------------------------------------------------------------------------
+  IF(MY_FYEAR,
+* Find all regions REG linked to IRE equations in region R
+   TRACKPC(RPC(R,P,C))$(RPC_EQIRE(R,P,C,'EXP')+RPC_MARKET(R,P,C,'EXP')) = YES;
+   LOOP((TRACKPC(R,P,C),TOP_IRE(R,C,REG,COM,P)),IRE_RPR(R,P,REG,'EXP') = YES);
+   OPTION CLEAR=TRACKPC;
+   LOOP((TOP_IRE(R,C,REG,COM,P),RPC_EQIRE(REG,P,COM,'IMP')),IRE_RPR(REG,P,R,'IMP') = YES);
+   OPTION CLEAR=RTPX; RTPX(RTP(R,T,P))$RP_IRE(R,P) = RT_PP(R,T);
+   LOOP((REG,IE),RTPX(RTP(R,T,P))$(RT_PP(REG,T)$IRE_RPR(R,P,REG,IE)) = YES);
+   IRE_FXT(RTP(R,T,P))$(NO_RT(R,T)$RP_IRE(R,P)) = YES;
+   LOOP((REG,IE),IRE_FXT(R,T,P)$(NO_RT(REG,T)$IRE_RPR(R,P,REG,IE)) = YES);
+* Remove RTP for IRE fixed in all linked regions, and save marginals
+   IF(PRESOL,OPTION CLEAR=PAR_IPRIC; EQ_IRE.M(R,T,P,C,IE,S)$NO = 0);
+   PAR_IPRIC(IRE_FXT,C,S,IE)$(PAR_IPRIC(IRE_FXT,C,S,IE)=0) $= EQ_IRE.M(IRE_FXT,C,IE,S);
+* Relax all fixed flows in regions with IRE equations
+   OPTION CLEAR=RTP_IRE; LOOP(REG,RTP_IRE(RTPX(R,T,P),IE)$(IRE_RPR(R,P,REG,IE)$NO_RT(R,T)) = YES);
+   %VAR%_IRE.UP(RTP_VINTYR(R,V,T,P),C,S,IE%SOW%)$(RTP_IRE(R,T,P,IE)*RPCS_VAR(R,P,C,S)*RPC_IREIO(R,P,C,IE,'IN')) = VAR_IRE.L(R,V,T,P,C,S,IE)*(1+%TOLX%*POWER(8,-1$XPT(IE)));
+   %VAR%_IRE.LO(RTP_VINTYR(R,V,T,P),C,S,IE%SOW%)$(RTP_IRE(R,T,P,IE)*RPCS_VAR(R,P,C,S)*RPC_IREIO(R,P,C,IE,'IN')) = VAR_IRE.L(R,V,T,P,C,S,IE)*(1-%TOLX%*POWER(8,-1$IMP(IE)));
+   LOOP(IE,
+$IF %REDUCE%==YES %VAR%_ACT.UP(RTP_VINTYR(R,V,T,P),S%SOW%)$(RTP_IRE(R,T,P,IE)*PRC_TS(R,P,S)*RP_PGACT(R,P)) = VAR_ACT.L(R,V,T,P,S)*(1+%TOLX%*POWER(8,-1$XPT(IE)));
+$IF %REDUCE%==YES %VAR%_ACT.LO(RTP_VINTYR(R,V,T,P),S%SOW%)$(RTP_IRE(R,T,P,IE)*PRC_TS(R,P,S)*RP_PGACT(R,P)) = VAR_ACT.L(R,V,T,P,S)*(1-%TOLX%*POWER(8,-1$IMP(IE)));
+   );
+* Remove IRE_BND from fixed regions with no related IRE equation, and all IRE_XBND from fixed regions
+   OPTION CLEAR=RXX;
+   LOOP((R,T,C,S,ALL_REG,IE,BD)$(NO_RT(R,T)$IRE_BND(R,T,C,S,ALL_REG,IE,BD)),
+    IF(NOT SUM(RPC_EQIRE(R,P,C,IE)$RTPX(R,T,P),1),
+      IF(NOT SUM(RPC_MARKET(R,P,C,IE)$RTPX(R,T,P),1),RXX(R,C,IE) = YES)));
+   IRE_BND(R,T,C,S,ALL_REG,IE,BD)$(NO_RT(R,T)$RXX(R,C,IE)) = 0;
+   IRE_XBND(R,T,C,S,IE,BD)$NO_RT(R,T) = 0;
+  );
+*-----------------------------------------------------------------------------
+$IF '%RTPX%'==X FIL(T)=FORWARD(T); LOOP(R, FORWARD(T)=FIL(T)$(NOT NO_RT(R,T));
+* Activities and flows
+   VAR_ACT.FX(RTP_VINTYR(R,V,FORWARD(T),P),S)$(PRC_TS(R,P,S)) =                             0;
+   VAR_FLO.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RP_FLO(R,P)) =           0;
+   VAR_IRE.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S,IE)$(RPCS_VAR(R,P,C,S)*RPC_IRE(R,P,C,IE)) =  0;
+   VAR_SIN.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =        0;
+   VAR_SOUT.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =       0;
+* Commodities
+   VAR_COMNET.FX(RTCS_VARC(R,FORWARD(T),C,S)) = 0;
+   VAR_COMPRD.FX(RTCS_VARC(R,FORWARD(T),C,S)) = 0;
+   VAR_ELAST.FX(RTCS_VARC(R,FORWARD(T),C,S),J,BD)$RCJ(R,C,J,BD) = 0;
+* Capacities
+   VAR_CAP.LO(RTP(R,FORWARD(T),P)) = 0;
+   VAR_CAP.UP(RTP(R,FORWARD(T),P)) $= CAP_BND(RTP,'UP');
+* Blending
+   VAR_BLND.FX(R,FORWARD(T),BLE,OPR)$BLE_OPR(R,BLE,OPR) = 0;
+$IF '%RTPX%'==X ); FORWARD(T)=FIL(T);
+*-----------------------------------------------------------------------------
+* Reject starting basis if equations were removed:
+  IF(CARD(NO_RT)+CARD(FORWARD), OPTION BRATIO=1);
+  OPTION SOLVEOPT=MERGE;
+* Save last cum marginal
+  IF(PRESOL=0, PAR_CUMFLOM(R,P,C,YEAR,LL) $= VAR_CUMFLO.M(R,P,C,YEAR,LL);
+    PAR_UCR(UC_N,'IMPEXP') $= VAR_UC.M(UC_N); PAR_UCR(UC_N,R) $= VAR_UCR.M(UC_N,R));
+*-----------------------------------------------------------------------------
+$ SET EXT mod
+$ IFI %STAGES%==YES $SET EXT stc
+$ IFI %SPINES%==YES $SET EXT mod
+$ BATINCLUDE solve.%EXT%
+  PRESOL = 0;
+$IF NOT %STEPPED%==YES  $GOTO ENDSTEP
+*-----------------------------------------------------------------------------
+* Restore last cum marginal
+  VAR_UC.M(UC_N)$(VAR_UC.M(UC_N)=0) $= PAR_UCR(UC_N,'IMPEXP');
+  VAR_UCR.M(UC_N,R)$(VAR_UCR.M(UC_N,R)=0) $= PAR_UCR(UC_N,R);
+  VAR_CUMFLO.M(R,P,C,YEAR,LL)$(VAR_CUMFLO.M(R,P,C,YEAR,LL)=0) $= PAR_CUMFLOM(R,P,C,YEAR,LL);
+* Adjust SUBT
+  SUBT(T) = SUBT(T-1);
+  Z = SMIN(FORWARD(T),B(T));
+  YR_V1 = SMIN(SUBT(T)$(M(T) GE Z-G_OVERLAP),M(T));
+  Z = YR_V1 + YR_VL;
+  SUBT(T)$(M(T) LT Z) = YES;
+  SUBT(T)$(M(T) LT YR_V1) = NO;
+*-----------------------------------------------------------------------------
+* Restore some original data
+  V(T) = YES;
+  UC_T_SUM(R,UC_N,T)    $= STP_UCT('1',R,UC_N,T);
+  UC_T_SUCC(R,UC_N,T)   $= STP_UCT('2',R,UC_N,T);
+  UC_T_EACH(R,UC_N,T)   $= STP_UCT('3',R,UC_N,T);
+$IF '%RTPX%'==X LOOP(R, BACKWARD(T)=NO_RT(R,T);
+$ IFI %SPINES%==YES $BATINCLUDE pextlevs.stc "'1'" (BACKWARD)
+$IF '%RTPX%'==X );
+* Reset bounds
+$   BATINCLUDE bndmain.%1 %1 1
+*-----------------------------------------------------------------------------
+  );
+$LABEL ENDSTEP
+*-----------------------------------------------------------------------------
+* Remove superfluous values
+  %VAR%_NCAP.L(R,T,P%SOW%)$((%VAR%_NCAP.L(R,T,P%SOW%) EQ 0)$%VAR%_NCAP.L(R,T,P%SOW%)) = 0;
+  %VAR%_NCAP.M(R,T,P%SOW%)$NO_RT(R,T) = 0;
+  %VAR%_ACT.M(R,V,T,P,S%SOW%)$NO_RT(R,T) = 0;
+  %VAR%_FLO.M(R,V,T,P,C,S%SOW%)$NO_RT(R,T) = 0;
+  %VAR%_IRE.M(R,V,T,P,C,S,IE%SOW%)$NO_RT(R,T) = 0;
+  IF(MY_FYEAR,%EQ%_IRE.M(IRE_FXT(R,T,P),C,IE,S%SWT%) $= PAR_IPRIC(R,T,P,C,S,IE));

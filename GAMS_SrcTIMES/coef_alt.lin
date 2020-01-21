@@ -1,0 +1,161 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* COEF_ALT.LIN do coefficient calculations for the linearized objective       *
+*   %1 - mod or v# for the source code to be used                             *
+*=============================================================================*
+*
+*------------------------------------------------------------------------------
+$IF DEFINED TPULSE $GOTO PREPRO
+*------------------------------------------------------------------------------
+ SET PERDINV(ALLYEAR,ALLYEAR);
+ SET TPULSEYR(T,ALLYEAR);
+ PARAMETER TPULSE(ALLYEAR,ALLYEAR);
+ PARAMETER OBJ_LINT(R,T,ALLYEAR,CUR);
+ PARAMETER OBJ_ALTV(R,T);
+ PARAMETER RTP_CAPVL(R,YEAR,P) //;
+ PARAMETER RB(R,T);
+ PARAMETER R_DF(R,ALLYEAR);
+ PARAMETER OBJ_WD(REG,CUR,ALLYEAR,AGE,ALLYEAR);
+ PARAMETER OBJ_JD(REG,CUR,ALLYEAR,AGE);
+*------------------------------------------------------------------------------
+$LABEL PREPRO
+$IFI %1==FIX $GOTO DOFIX
+$IFI %1==INV $GOTO DOINV
+$IFI %1==STP OPTION CLEAR=PERDINV,CLEAR=TPULSE,CLEAR=TPULSEYR;
+$SET ILED $NCAP_ILED(R,V,P)
+*------------------------------------------------------------------------------
+* Pre-establish PERDINV (for T)
+  PERDINV(YK(T,K))$(YEARVAL(K) > M(T)-LEAD(T)) = YES;
+  OPTION CLEAR=YK1; YK1(T,Y_EOH)$(YEARVAL(T)<=YEARVAL(Y_EOH)) = YES;
+* Initialize period pulse years and triangular functions
+  TPULSEYR(PERDINV(T,Y_EOH)) = YES;
+  TPULSE(TPULSEYR(T,Y_EOH)) = 1-((M(T)-YEARVAL(Y_EOH))/LEAD(T))$(NOT MIYR_1(T));
+  TPULSEYR(YK1(T,Y_EOH))$(YEARVAL(Y_EOH) < M(T)+LAGT(T)) = YES;
+  TPULSE(TPULSEYR(YK1(T,LL))) = 1-TPULSE(T+1,LL);
+*------------------------------------------------------------------------------
+* Complete OBJ_PVT and FPD:
+$SET LINFLO '0' SET LINACC 0
+$IFI '%OBJ%'==LIN $SET LINACC 1
+$IFI '%CTST%'==**EPS $SET LINFLO 1
+$IFI '%OBLONG%%OBJ%'==YESALT $SET VARCOST 'LIN' SET LINACC 1
+$IFI '%OBLONG%%LINFLO%'==YES1 $SET ILED ''
+
+$IF %LINFLO%==1  FPD(T) = SUM(TPULSEYR(T,Y_EOH),TPULSE(T,Y_EOH));
+$IF %LINFLO%==1  OBJ_PVT(R,T,CUR)$RDCUR(R,CUR) = SUM(TPULSEYR(T,Y_EOH),TPULSE(T,Y_EOH)*OBJ_DISC(R,Y_EOH,CUR)); COEF_PVT(R,T) = SUM(G_RCUR(R,CUR),OBJ_PVT(R,T,CUR));
+
+  IF(ABS(ALTOBJ) EQ 2, LOOP(G_RCUR(R,CUR),
+* Set up variable cost correction adjustment for ALT
+$IF %LINFLO%==1  OBJ_ALTV(R,T) = COEF_PVT(R,T) / SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR));
+$IF %LINFLO%==0  OBJ_ALTV(R,T) = COEF_PVT(R,T) / SUM(TPULSEYR(T,Y_EOH),TPULSE(T,Y_EOH)*OBJ_DISC(R,Y_EOH,CUR));
+  ));
+* Prepare linearized cost coefficients
+  OBJ_LINT(R,T,TT,CUR)$RDCUR(R,CUR) =
+$IFI %OBJ%==ALT  OBJ_ALTV(R,T) *
+$IFI %LINACC%==1  SUM(TPULSEYR(T,Y_EOH)$TPULSEYR(TT,Y_EOH),TPULSE(T,Y_EOH)*TPULSE(TT,Y_EOH)*OBJ_DISC(R,Y_EOH,CUR));
+$IFI %LINACC%==0  SUM(PERIODYR(T,Y_EOH)$TPULSEYR(TT,Y_EOH),TPULSE(TT,Y_EOH)*OBJ_DISC(R,Y_EOH,CUR));
+$IFI %1==VAR $EXIT
+*------------------------------------------------------------------------------
+$ LABEL CPT
+*------------------------------------------------------------------------------
+$IFI %1==STP $GOTO STP
+* Adjustments to COEF_CPT for square objective formulation
+  PASTSUM(RTP(R,V,P))$PRC_CAP(R,P) = B(V)+NCAP_ILED(R,V,P)+COEF_RPTI(R,V,P)*NCAP_TLIFE(R,V,P);
+  OPTION CLEAR=FIL2,CLEAR=MY_ARRAY,CLEAR=YK1;
+  LOOP(G_RCUR(R,CUR), R_DF(R,V) = 1/(1+G_DRATE(R,V,CUR)));
+  IF(INT_DEFAULT('PASTI'),
+    NCAP_ILED(R,PHYR(V),P)$(NCAP_ILED(R,V,P)>COEF_ILED(R,V,P)) = LOG(1-(1-R_DF(R,V))*(NCAP_ILED(R,V,P)-COEF_ILED(R,V,P)))/LOG(R_DF(R,V)));
+  RB(R,T) = B(T);
+$IF %LINFLO%==1  YK1(T(LL),LL-FLOOR((LEAD(T)-1)/2)) = NOT MIYR_1(T);
+  LOOP(G_RCUR(R,CUR),
+    FIL2(T) = R_DF(R,T);
+$IF %LINFLO%==1  LOOP(YK1(T,YEAR), Z=OBJ_DISC(R,YEAR,CUR)/SUM(PERDINV(T,LL),OBJ_DISC(R,LL,CUR))*LEAD(T); RB(R,T)=B(T)-LOG(Z)/LOG(FIL2(T)));
+    MY_ARRAY(T) = E(T)+1; MY_ARRAY(TT(T-1)) = RB(R,T);
+    MY_ARRAY(T) = 1-FIL2(T)**(MY_ARRAY(T)-RB(R,T)-1e-8);
+    COEF_CPT(RTP_CPTYR(R,V,T,P))$PASTSUM(R,V,P) =
+      MIN(1,(1-FIL2(T)**(PASTSUM(R,V,P)-RB(R,T)))/MY_ARRAY(T)) - ((1-FIL2(T)**MAX(0,B(V)+NCAP_ILED(R,V,P)-RB(R,T))) / MY_ARRAY(T))%ILED%);
+    COEF_CPT(R,T,TT,P)$((COEF_CPT(R,T,TT,P) LT 1/512)$COEF_CPT(R,T,TT,P)) = 0;
+$IFI '%OBLONG%'==YES $GOTO DONE
+$IF SET TIMESTEP $GOTO DONE
+* Calculate additional cost due to trapezoidal periods
+  PASTSUM(R,T,P)$NCAP_ILED(R,T,P) = NO;
+  LOOP(G_RCUR(R,CUR),
+    FIL2(T) = R_DF(R,T);
+    RTP_CAPVL(R,T,P)$PASTSUM(R,T,P) = (FIL2(T)**(RB(R,T)-B(T))-1) / (1-FIL2(T)**(MIN(MIYR_VL+1,PASTSUM(R,T,P))-B(T))));
+$GOTO DONE
+*------------------------------------------------------------------------------
+$ LABEL DOINV
+*------------------------------------------------------------------------------
+$SETGLOBAL CAPJD OBJ_JD(R,CUR,K_EOH,JOT)*
+  OBJ_JD(RDCUR(R,CUR),K,JOT)$KAGE(K,JOT) = 1;
+* The equation divisors for investments:
+  OBJ_DIVI(OBJ_YES(R,V,P))$(NOT OBJ_I2(R,V,P)) = 1+MIN(IPD(V)-1,ROUND(NCAP_TLIFE(R,V,P))-1)$T(V);
+  OBJ_DIVI(OBJ_YES(OBJ_1B(R,T,P)))$(ROUND(NCAP_TLIFE(R,T,P)) EQ 1) = NCAP_TLIFE(R,T,P);
+  OBJ_DIVI(OBJ_YES(R,T,P))$RTP_CAPVL(R,T,P) = OBJ_DIVI(R,T,P) / (1+RTP_CAPVL(R,T,P));
+* The equation divisors for decommissioning :
+  OBJ_DIVIII(OBJ_SUMS3(R,V,P)) = OBJ_DIVI(R,V,P);
+  OBJ_DIVIII(OBJ_SUMS3(OBJ_I2(R,V,P))) = ROUND(NCAP_DLIFE(R,V,P));
+* Pastmile investments
+  OBJ_CRFD(R,PASTMILE(V),P,CUR)$OBJ_PASTI(R,V,P,CUR) = SUM(OBJ_SUMII(R,V,P,LIFE,K,JOT),NCAP_PASTI(R,V,P)*OBJ_CRF(R,V,P,CUR)/OBJ_DISC(R,K,CUR));
+  OBJ_PASTI(R,PASTMILE(V),P,CUR)$OBJ_CRFD(R,V,P,CUR) = SUM(VNT(V,T),COEF_CPT(R,V,T,P)*OBJ_PVT(R,T,CUR))*OBJ_CRFD(R,V,P,CUR)/COR_SALVI(R,V,P,CUR);
+  OPTION CLEAR=OBJ_CRFD;
+*------------------------------------------------------------------------------
+$ LABEL DOFIX
+*------------------------------------------------------------------------------
+$SETGLOBAL CAPWD OBJ_WD(R,CUR,K_EOH,JOT,K)*
+* Collect all JOT headers whether or not genuine spreads
+* Genuine OBJ_1A / OBJ_1B spreads (JOT>1) for period T cannot start at B(T)
+   OPTION CLEAR=FIL; FIL(LL+(B(LL)-YEARVAL(LL)))$T(LL) = YES;
+   OPTION CLEAR=KAGE; KAGE(K,JOT)$((NOT FIL(K))$INVSTEP(K,JOT,K,JOT)) = YES;
+   KAGE(FIL(LL-FLOOR(ORD(JOT)/2)),JOT)$((ORD(JOT) GT 1)$INVSTEP(FIL,JOT,FIL,JOT)$FIL(LL)) = YES;
+* Convert INVSTEP to INVSPRED
+   INVSPRED(LL,JOT,K,K)$((NOT KAGE(LL,JOT))$INVSTEP(LL,JOT,K,JOT)) = YES;
+   INVSPRED(KAGE(LL,JOT),LL+FLOOR(ORD(JOT)/2),K)$INVSTEP(LL,JOT,K,JOT) = YES;
+   OBJ_JD(RDCUR(R,CUR),KAGE(LL,JOT)) = ORD(JOT)/SUM(INVSPRED(LL,JOT,YEAR,K),OBJ_DISC(R,K,CUR)/OBJ_DISC(R,YEAR,CUR));
+%2 OPTION CLEAR=INVSTEP;
+%2$GOTO FINISH
+* Calculate JOT-based and step-based discount adjustments for genuine spreads
+   OBJ_WD(RDCUR(R,CUR),LL,JOT,K)$((NOT KAGE(LL,JOT))$INVSTEP(LL,JOT,K,JOT)) = 1;
+   OBJ_WD(RDCUR(R,CUR),KAGE(LL,JOT),K) $= SUM(INVSPRED(LL,JOT,YEAR,K),OBJ_DISC(R,K,CUR)/OBJ_DISC(R,YEAR,CUR))*OBJ_JD(R,CUR,LL,JOT);
+   OPTION CLEAR=KAGE;
+* The equation divisors for fixed costs:
+   OBJ_DIVIV(OBJ_YES(R,PASTMILE,P)) = 1;
+   OBJ_DIVIV(OBJ_YES(R,T,P)) = MAX(1,MIN(IPD(T),ROUND(NCAP_TLIFE(R,T,P)))$(OBJ_1B(R,T,P)+OBJ_1A(R,T,P)));
+   OBJ_DIVIV(OBJ_YES(R,T,P))$RTP_CAPVL(R,T,P) = OBJ_DIVIV(R,T,P) / (1+RTP_CAPVL(R,T,P));
+* Resids
+$IF NOT DEFINED PRC_RESID $GOTO FINISH
+   LOOP(PYR_S(V),
+    LOOP((OBJ_SUMIV(V,R,V,P,JOT,LIFE),G_RCUR(R,CUR))$PRC_RESID(R,'0',P),
+     OBJ_DIVIV(R,V,P) = NCAP_PASTI(R,V,P)*OBJ_LIFE(V,R,JOT,LIFE,CUR)/SUM(VNT(V,T)$PRC_RESID(R,T,P),PRC_RESID(R,T,P)*OBJ_PVT(R,T,CUR))));
+$GOTO FINISH
+*------------------------------------------------------------------------------
+$ LABEL STP
+*------------------------------------------------------------------------------
+$IF NOT %LINFLO%==1 $GOTO DONE
+* Adjustments to Divisors when trapezoidal periods
+* Calculate change in capacity value due to change in last period
+  OPTION CLEAR=RTP_CAPVL;
+  LOOP(T$(E(T) EQ MIYR_VL),
+   PASTSUM(RTP(R,TT,P))$((COEF_CPT(R,TT,T,P) GT 0)$PRC_CAP(R,P)) = B(TT)+NCAP_ILED(R,TT,P)+COEF_RPTI(R,TT,P)*NCAP_TLIFE(R,TT,P);
+   LOOP(G_RCUR(R,CUR), F = RB(R,T);
+    MY_F = R_DF(R,T); Z = 1-MY_F**(MIYR_VL-F+1);
+    RTP_CAPVL(R,TT(V),P)$PASTSUM(R,V,P) = COEF_PVT(R,T) *
+      ((MIN(Z, 1-MY_F**(PASTSUM(R,V,P)-F)) - (1-MY_F**MAX(0,B(V)+NCAP_ILED(R,V,P)-F))%ILED%) / Z - COEF_CPT(R,V,T,P))));
+  RTP_CAPVL(R,TT,P)$RTP_CAPVL(R,TT,P) = RTP_CAPVL(R,TT,P)/SUM(VNT(TT,Y_EOH(T)),COEF_PVT(R,T)*MAX(0,COEF_CPT(R,TT,T,P)));
+  OPTION CLEAR=PASTSUM;
+$IFI '%OBLONG%'==YES $GOTO UPDATE
+* Calculate additional cost due to trapezoidal periods
+  LOOP(G_RCUR(R,CUR),
+    FIL2(T) = R_DF(R,T);
+    PASTSUM(RTP(R,Y_EOH(T),P))$((NOT NCAP_ILED(R,T,P))$PRC_CAP(R,P)) = (FIL2(T)**(RB(R,T)-B(T))-1) / (1-FIL2(T)**MIN(MIYR_VL+1-B(T),COEF_RPTI(R,T,P)*NCAP_TLIFE(R,T,P))));
+  RTP_CAPVL(R,T,P)$PASTSUM(R,T,P) = (1+RTP_CAPVL(R,T,P)) / (1+PASTSUM(R,T,P)) - 1;
+$LABEL UPDATE
+  OBJ_DIVI(RTP(R,T,P)) = STP_DIV('1',R,T,P)*(1+RTP_CAPVL(R,T,P));
+  OBJ_DIVIV(RTP(R,T,P)) = STP_DIV('2',R,T,P)*(1+RTP_CAPVL(R,T,P));
+  OBJ_DIVIII(RTP(R,T,P)) = STP_DIV('3',R,T,P)*(1+RTP_CAPVL(R,T,P));
+*------------------------------------------------------------------------------
+$ LABEL DONE
+  OPTION CLEAR=PASTSUM,CLEAR=YK1;
+$ LABEL FINISH

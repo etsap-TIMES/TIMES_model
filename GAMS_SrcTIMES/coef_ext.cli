@@ -1,0 +1,199 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* COEF_EXT.cli - Coefficients for the Climate Module Extension
+*-----------------------------------------------------------------------------
+* Questions/Comments:
+*
+*-----------------------------------------------------------------------------
+$IF '%1'==SLOPE $GOTO %1
+*-----------------------------------------------------------------------------
+* Set up the history calibration values
+
+* If calibration values are not provided by user, use the defaults:
+CM_CONST(CM_HISTS) = 0;
+LOOP((LL,CM_HISTS)$CM_HISTORY(LL,CM_HISTS),CM_CONST(CM_HISTS) = EPS);
+CM_HISTORY(LL,CM_HISTS)$(NOT CM_CONST(CM_HISTS)) $= CM_DEFAULT(LL,CM_HISTS);
+
+* Pick up the appropriate calibration values for the calibration year;
+CM_CALIB=1;
+$IFI %CM_CALIB%==B  CM_CALIB = SUM(MIYR_1(T),M(T)-B(T))+1;
+$IFI %CM_CALIB%==M  CM_CALIB = EPS;
+
+* Inter-/extrapolate calibration values
+OPTION CLEAR=FIL; LOOP(MIYR_1(LL),FIL(LL-CM_CALIB) = YES);
+$BATINCLUDE filparam CM_HISTORY '' 'CM_HISTS' ",'','','','','',''" LL FIL '' ''
+* Pick the history values
+LOOP(MIYR_1(LL), CM_CONST(CM_HISTS) = CM_HISTORY(LL-CM_CALIB,CM_HISTS));
+*-----------------------------------------------------------------------------
+* Set up the 3x3 PHI matrix for emissions
+IF(NOT SUM((CM_BOX,CM_BUCK),CM_PHI('CO2-GTC',CM_BOX,CM_BUCK)),
+* Set up the 3x3 PHI matrix
+  CM_PHI('CO2-GTC','ATM','UP') = CM_CONST('PHI-UP-AT');
+  CM_PHI('CO2-GTC','UP','ATM') = CM_CONST('PHI-AT-UP');
+  CM_PHI('CO2-GTC','UP','LO') = CM_CONST('PHI-LO-UP');
+  CM_PHI('CO2-GTC','LO','UP') = CM_CONST('PHI-UP-LO');
+);
+* Default first-order decay models for CH4 and N2O
+IF(NOT SUM((CM_BOX,CM_BUCK),CM_PHI('CH4-MT',CM_BOX,CM_BUCK)),
+  CM_PHI('CH4-MT','ATM','ATM') = 1-CM_CONST('PHI-CH4');
+  CM_PHI('CH4-MT','UP','CH4-MT') = EPS$CM_CONST('CH4-UP');
+);
+IF(NOT SUM((CM_BOX,CM_BUCK),CM_PHI('N2O-MT',CM_BOX,CM_BUCK)),
+  CM_PHI('N2O-MT','ATM','ATM') = 1-CM_CONST('PHI-N2O');
+  CM_PHI('N2O-MT','UP','N2O-MT') = EPS$CM_CONST('N2O-UP');
+);
+*-----------------------------------------------------------------------------
+* Set emission kinds and FORCING to CM_KIND when active
+ CM_GHGMAP(R,COM,C)$(NOT CM_GHGMAP(R,COM,C)) $= IRE_CCVT(R,COM,R,C);
+ CM_KIND(CM_VAR(C))$(SUM((R,COM)$CM_GHGMAP(R,COM,C),1)*SUM((CM_BOX,CM_BUCK)$CM_PHI(CM_VAR,CM_BOX,CM_BUCK),1)) = YES;
+ CM_EMIS(CM_VAR) = CM_KIND(CM_VAR)$CM_PPM(CM_VAR);
+ CM_KIND('FORCING') = YES$(SUM(LL$CM_MAXC(LL,'DELTA-ATM'),1)+(CARD(CM_EMIS) GT 1));
+ IF(CARD(UC_CLI),CM_KIND('FORCING') = YES);
+ CM_TKIND(CM_KIND) = YES; LOOP(CM_FORCMAP(CM_VAR,CM_HISTS)$SUM(LL$CM_MAXC(LL,CM_VAR),1),CM_TKIND(CM_VAR)=YES);
+ CM_FORCMAP('FORC-KYO',CM_VAR)$=CM_PPM(CM_VAR); CM_FORCMAP('FORCING',CM_VAR)$=CM_PPM(CM_VAR);
+$IFI %STAGES%==YES CM_KIND('FORCING')$SUM((LL,J,W)$S_CM_MAXC(LL,'DELTA-ATM',J,W),1) = YES;
+$IF DEFINED DAM_COST CM_KIND('FORCING')$SUM(R$(DAM_BQTY(R,'FORCING')+DAM_BQTY(R,'DELTA-ATM')),1) = YES;
+*-----------------------------------------------------------------------------
+* Establish set of years beyond EOH
+* Set extended EOH (EXT-EOH) year into FIL; -1 deactivates EOH extension
+  OPTION CLEAR=FIL; YR_VL = 0; FIRST_VAL = CM_CONST('EXT-EOH');
+  IF(FIRST_VAL GT 0, FIRST_VAL = ROUND(MAX(MIYR_VL,FIRST_VAL));
+    LOOP(MIYR_1(LL), F = FIRST_VAL-YEARVAL(LL); FIL(LL+F) = YES);
+    CM_BEMI(CM_EMIS,FIL) = EPS; CM_EVAR(CM_EMIS,FIL) = 1;
+* Set all MAXC year beyond EOH into FIL
+    F = SMAX(T(LL),ORD(LL)); CM_MAXC_M(CM_VAR,LL)$CM_MAXC(LL,CM_VAR)=EPS;
+$IFI %STAGES%==YES OPTION CM_RESULT < S_CM_MAXC; CM_MAXC_M(ITEM,LL) $= CM_RESULT(ITEM,LL);
+    LOOP((LL,CM_VAR(CG))$((ORD(LL) GT F)$CM_MAXC_M(CG,LL)),
+      IF((YEARVAL(LL) GT FIRST_VAL OR NOT(CM_EMIS(CM_VAR)))$YEARVAL(LL), YR_VL = ORD(LL); FIL(LL) = YES));
+    FIL(LL)$(ORD(LL) GT YR_VL) = NO;
+* Set BEMI to MAXC emissions for years beyond EXT-EOH and zero at EXT-EOH
+    CM_BEMI(CM_EMIS(CM_HISTS(CG)),FIL(LL))$(YEARVAL(LL) GT FIRST_VAL) = CM_MAXC(LL,CG);
+    CM_EVAR(CM_EMIS,FIL(LL))$(YEARVAL(LL) GT FIRST_VAL) = EPS$CM_BEMI(CM_EMIS,LL);
+* Set EOH contribution to zero at final year (deactivated for now)
+*   LOOP(MIYR_1(YEAR), CM_EVAR(CM_EMIS,YEAR+(YR_VL-ORD(YEAR))) = EPS);
+* Set all years Modulo BEOHMOD to FIL
+    MY_F = ROUND(MAX(1,CM_CONST('BEOHMOD')));
+    FIL(LL)$((ORD(LL) LT YR_VL)$(MOD(YEARVAL(LL),MY_F) = 0)) = YES$(ORD(LL) GT F);
+  );
+  CM_MAXC(LL,CM_EMIS(CM_HISTS(CG)))$(YEARVAL(LL) GT MIYR_VL) = 0;
+* Complete CM_LED
+  LOOP(FIL(LL), Z = ORD(LL); CM_LED(LL) = Z-F; F = Z);
+  CM_LED(T) = LEAD(T); CM_LED(MIYR_1) = CM_CALIB;
+  PRET(T,T-1)=YES;
+* Interpolate BEMI and BEOH over FIL (mucks-up F, Z, MY_F, MY_FYEAR, FIRST_VAL, LAST_VAL)
+$ BATINCLUDE filparam CM_BEMI 'CM_EMIS,' '' ",'','','','',''" LL FIL '' ''
+$ BATINCLUDE filparam CM_EVAR 'CM_EMIS,' '' ",'','','','',''" LL FIL '' ''
+  CM_EVAR(CM_EMIS,T) = 1;
+*-----------------------------------------------------------------------------
+IF(CM_KIND('FORCING'),
+  CM_SIG1(SOW) = CM_CONST('SIGMA1');
+* Set up the 2x2 SIG matrix for forcing
+$ IFI %STAGES%==YES $BATINCLUDE fillsow.stc CM_CONST CM_STCC '' '' YES YES YES
+$ IFI %STAGES%==YES $BATINCLUDE fillsow.stc DAM_COST 'R,' '"DELTA-ATM",CUR' TT YES YES NO
+$ IFI %STAGES%==YES CM_SIG1(SOW)=S_CM_CONST('SIGMA1','1',SOW);
+$ IFI %STAGES%==YES     CM_SIG(SOW,'ATM','ATM') = 1-CM_SIG1(SOW)*(CM_CONST('GAMMA')/S_CM_CONST('CS','1',SOW)+CM_CONST('SIGMA2'));
+$ IFI NOT %STAGES%==YES CM_SIG('1','ATM','ATM') = 1-CM_SIG1('1')*(CM_CONST('LAMBDA')+CM_CONST('SIGMA2'));
+  CM_SIG(SOW,'ATM','LO') = CM_SIG1(SOW)*CM_CONST('SIGMA2');
+  CM_SIG(SOW,'LO','ATM') = CM_CONST('SIGMA3');
+  CM_SIG(SOW,'LO','LO') = 1-CM_CONST('SIGMA3');
+  CM_PHI('FORCING','ATM','FORCING') = 1;
+* Intialize CM_AA to the identity matrix, CM_BB to zero
+  CM_AA('FORCING',LL,SOW,CM_BUCK,CM_BOX)$CM_LED(LL) = DIAG(CM_BUCK,CM_BOX);
+  CM_BB('FORCING',LL,SOW,CM_BUCK)$CM_LED(LL) = 0; CNT=0;
+* Assume linear evolution of forcing between milestone years
+  LOOP((CM_VAR('FORCING'),LL)$CM_LED(LL),
+   IF(CNT, CNT=1; Z = CM_LED(LL); ELSE CNT=EPS; Z=CM_CALIB);
+    FOR(F = 0 TO Z-1, MY_F = F/Z*CNT;
+     CM_BB(CM_VAR,LL,SOW,CM_BOX) = CM_BB(CM_VAR,LL,SOW,CM_BOX) + CM_SIG1(SOW)*(1-MY_F)*CM_AA(CM_VAR,LL,SOW,CM_BOX,'ATM');
+     CM_CC(CM_VAR,LL,SOW,CM_BOX) = CM_CC(CM_VAR,LL,SOW,CM_BOX) + CM_SIG1(SOW)*   MY_F *CM_AA(CM_VAR,LL,SOW,CM_BOX,'ATM');
+     CM_AA(CM_VAR,LL,SOW,CM_BUCK,CM_BOX) = SUM(ITEM$CM_BOX(ITEM),CM_AA(CM_VAR,LL,SOW,CM_BUCK,ITEM)*CM_SIG(SOW,ITEM,CM_BOX));
+ )));
+*-----------------------------------------------------------------------------
+* Set up control set CM_CONC for the BOX equations; complete PHI
+  OPTION CM_CONC <= CM_BOXMAP;
+  CM_PHI(CM_KIND,CM_BOX,CM_BOX)$(NOT CM_PHI(CM_KIND,CM_BOX,CM_BOX)) = 1-SUM(CM_BUCK$(NOT SAMEAS(CM_BOX,CM_BUCK)),CM_PHI(CM_KIND,CM_BUCK,CM_BOX));
+*-----------------------------------------------------------------------------
+* Calculate the ith powers of PHI, i=1...Z, where Z = LEAD(T)
+* First intialize CM_AA to the identity matrix, and CM_BB(T,1) to 0:
+LOOP(CM_EMIS(CM_VAR),
+ CM_PHI(CM_VAR,'ATM',CM_VAR)$(NOT SUM(CM_BOX$CM_PHI(CM_VAR,'ATM',CM_VAR),1)) = 1;
+ CM_AA(CM_VAR,LL,'1',CM_BUCK,CM_BOX)$CM_LED(LL) = DIAG(CM_BUCK,CM_BOX);
+ CM_BB(CM_VAR,LL,'1',CM_BUCK)$CM_LED(LL) = 0; CNT = (ALTOBJ NE 3);
+* Loop over MILESTONYR and calculate rest of the powers of PHI
+ LOOP(T$(ALTOBJ NE 3),
+  IF(ORD(T) GT 1, MY_F = M(T)-B(T)+1; Z = LEAD(T); ELSE MY_F=CM_CALIB; Z=MY_F);
+   FOR(F = 1 TO Z,
+     IF(F LE MY_F, CM_BB(CM_VAR,T,'1',CM_BOX) = CM_BB(CM_VAR,T,'1',CM_BOX) + SUM(CM_BUCK,CM_PHI(CM_VAR,CM_BUCK,CM_VAR)*CM_AA(CM_VAR,T,'1',CM_BOX,CM_BUCK));
+     ELSE          CM_CC(CM_VAR,T,'1',CM_BOX) = CM_CC(CM_VAR,T,'1',CM_BOX) + SUM(CM_BUCK,CM_PHI(CM_VAR,CM_BUCK,CM_VAR)*CM_AA(CM_VAR,T,'1',CM_BOX,CM_BUCK)));
+     CM_AA(CM_VAR,T,'1',CM_BUCK,CM_BOX) = SUM(ITEM$CM_BOX(ITEM),CM_AA(CM_VAR,T,'1',CM_BUCK,ITEM)*CM_PHI(CM_VAR,ITEM,CM_BOX));
+ ));
+* If linear evolution formulation, assume linear evolution of emissions
+ LOOP(LL$(((ALTOBJ EQ 3) OR NOT T(LL))$CM_LED(LL)),
+  IF(CNT, CNT=1; Z = CM_LED(LL); ELSE CNT=EPS; Z=CM_CALIB);
+   FOR(F = 0 TO Z-1, MY_F = F/Z*CNT;
+     CM_BB(CM_VAR,LL,'1',CM_BOX) = CM_BB(CM_VAR,LL,'1',CM_BOX) + (1-MY_F)*SUM(CM_BUCK,CM_PHI(CM_VAR,CM_BUCK,CM_VAR)*CM_AA(CM_VAR,LL,'1',CM_BOX,CM_BUCK));
+     CM_CC(CM_VAR,LL,'1',CM_BOX) = CM_CC(CM_VAR,LL,'1',CM_BOX) +    MY_F *SUM(CM_BUCK,CM_PHI(CM_VAR,CM_BUCK,CM_VAR)*CM_AA(CM_VAR,LL,'1',CM_BOX,CM_BUCK));
+     CM_AA(CM_VAR,LL,'1',CM_BUCK,CM_BOX) = SUM(ITEM$CM_BOX(ITEM),CM_AA(CM_VAR,LL,'1',CM_BUCK,ITEM)*CM_PHI(CM_VAR,ITEM,CM_BOX));
+ ));
+);
+*-----------------------------------------------------------------------------
+* Prepare commodity variables for emissions:
+  CM_GHGMAP(R,C,'CO2-GTC') $= CM_CO2GTC(R,C);
+  LOOP((R,C,CM_KIND(CM_VAR(CG)))$CM_GHGMAP(R,C,CG),
+    RHS_COMBAL(RTCS_VARC(R,T,C,S)) = YES;
+    RCS_COMBAL(RTCS_VARC(R,T,C,S),'FX') = YES);
+*-----------------------------------------------------------------------------
+* Construct SUPERYR (needed in MAX constraints)
+  SUPERYR(PERIODYR(T,LL))$(YEARVAL(LL) LE YEARVAL(T)) = YES;
+  SUPERYR(T+1,LL)$((YEARVAL(LL) GT YEARVAL(T))$PERIODYR(T,LL)) = YES;
+  LOOP(MIYR_1(T++1),SUPERYR(T,LL)$(YEARVAL(LL) GT M(T)) = YES);
+  OPTION FIL < CM_LED, MY_FIL < Y;
+  MY_FIL(LL)$((YEARVAL(LL)>MIYR_VL)$(ORD(LL) LE YR_VL)) = YES;
+*=============================================================================
+* Prepare input parameters
+*-----------------------------------------------------------------------------
+* Interpolate parameters by default or if requested by user:
+$BATINCLUDE filparam CM_LINFOR '' 'CM_VAR,LIM' ",'','','','',''" DATAYEAR FIL '' ''
+$BATINCLUDE filparam CM_MAXCO2C '' '' ",'','','','','',''" LL T '' '' -1
+$BATINCLUDE filparam CM_MAXC '' 'CG' ",'','','','','',''" LL FIL '' '' -1
+$BATINCLUDE filparam CM_EXOFORC '' '' ",'','','','','',''" LL MY_FIL '' ''
+$BATINCLUDE filparam UC_CLI 'UC_N,SIDE,R,' 'CM_VAR' ",'','',''" DATAYEAR T
+$IFI %STAGES%==YES $BATINCLUDE filparam S_CM_MAXCO2C '' 'J,WW' ",'','','','',''" DATAYEAR T SW_TSTG(T,J)$ '' -1
+$IFI %STAGES%==YES $BATINCLUDE filparam S_CM_MAXC '' 'CG,J,WW' ",'','','',''" DATAYEAR T SW_TSTG(T,J)$ '' -1
+*-----------------------------------------------------------------------------
+* Convert all concentration bounds to PPM basis
+  CM_MAXC(LL,CG('CO2-PPM'))$CM_MAXCO2C(LL) = MIN(CM_MAXC(LL,CG)+INF$(NOT CM_MAXC(LL,CG)),CM_MAXCO2C(LL)/CM_PPM('CO2-GTC'));
+  CM_MAXC(LL,CG('CO2-PPM'))$CM_MAXC(LL,'CO2-ATM') = MIN(CM_MAXC(LL,CG)+INF$(NOT CM_MAXC(LL,CG)),CM_MAXC(LL,'CO2-ATM')*CM_CONST('CO2-PREIND')/CM_PPM('CO2-GTC'));
+  CM_MAXC(LL,CG('CO2-PPM'))$(CM_MAXC(LL,'FORCING')*(NOT CM_KIND('FORCING'))) =
+     MIN(CM_MAXC(LL,CG)+INF$(NOT CM_MAXC(LL,CG)),CM_CONST('CO2-PREIND')/CM_PPM('CO2-GTC')*
+         EXP((CM_MAXC(LL,'FORCING')-CM_EXOFORC(LL))*LOG(2)/CM_CONST('GAMMA')));
+* Remove bounds from years with undefined concentration
+  F = SMIN(T,YEARVAL(T));  CM_MAXC(LL,CG)$(YEARVAL(LL) LT F) = 0;
+$IFI NOT %STAGES%==YES $GOTO SLOPE
+  S_CM_MAXC(LL,CG('CO2-PPM'),J,W)$S_CM_MAXCO2C(LL,J,W) = MIN(S_CM_MAXC(LL,CG,J,W)+INF$(NOT S_CM_MAXC(LL,CG,J,W)),S_CM_MAXCO2C(LL,J,W)/CM_PPM('CO2-GTC'));
+  S_CM_MAXC(LL,CG('CO2-PPM'),J,W)$S_CM_MAXC(LL,'CO2-ATM',J,W) = MIN(S_CM_MAXC(LL,CG,J,W)+INF$(NOT S_CM_MAXC(LL,CG,J,W)),S_CM_MAXC(LL,'CO2-ATM',J,W)*CM_CONST('CO2-PREIND')/CM_PPM('CO2-GTC'));
+  S_CM_MAXC(LL,CG('CO2-PPM'),J,W)$(S_CM_MAXC(LL,'FORCING',J,W)*(NOT CM_KIND('FORCING'))) =
+     MIN(S_CM_MAXC(LL,CG,J,W)+INF$(NOT S_CM_MAXC(LL,CG,J,W)),CM_CONST('CO2-PREIND')/CM_PPM('CO2-GTC')*
+         EXP((S_CM_MAXC(LL,'FORCING',J,W)-CM_EXOFORC(LL))*LOG(2)/CM_CONST('GAMMA')));
+  S_CM_MAXC(LL,CG,J,W)$(YEARVAL(LL) LT F) = 0;
+$ BATINCLUDE fillsow.stc CM_MAXC '' 'CG' LL YES 'SUPERYR(T,LL)' YES
+*-----------------------------------------------------------------------------
+* Calculate linear slope for FORCING from CO2
+$LABEL SLOPE
+ IF(CM_KIND('FORCING'),OPTION FIL<CM_LED;
+   LOOP(CM_ATMAP(CM_EMIS,CM_VAR),CM_LINFOR(FIL(LL),CM_EMIS,L) $= CM_LINFOR(LL,CM_VAR,L));
+   CM_LINFOR(FIL(LL),'CO2-GTC',BDNEQ) $= CM_LINFOR(LL,'CO2-ATM',BDNEQ)*CM_CONST('CO2-PREIND')*(1/CM_PPM('CO2-GTC'));
+   MY_ARRAY(FIL(LL)) = MAX(CM_LINFOR(LL,'CO2-GTC','LO'),
+      ((CM_LINFOR(LL,'CO2-GTC','UP')-CM_LINFOR(LL,'CO2-GTC','LO')) /
+       LOG(MAX(1.001,CM_LINFOR(LL,'CO2-GTC','UP')/CM_LINFOR(LL,'CO2-GTC','LO')))))$(CM_LINFOR(LL,'CO2-GTC','LO') GT 0);
+   CM_LINFOR(FIL(LL),'CO2-GTC','N')$MY_ARRAY(LL) = CM_CONST('GAMMA')/MY_ARRAY(LL)/LOG(2);
+   CM_LINFOR(FIL(LL),'CO2-GTC','FX')$MY_ARRAY(LL) =
+      (CM_CONST('GAMMA')/LOG(2) *
+       LOG(MY_ARRAY(LL)*CM_LINFOR(LL,'CO2-GTC','LO')/POWER(CM_CONST('CO2-PREIND')/CM_PPM('CO2-GTC'),2)) -
+       CM_LINFOR(LL,'CO2-GTC','N')*(MY_ARRAY(LL)+CM_LINFOR(LL,'CO2-GTC','LO')))/2);
+*-----------------------------------------------------------------------------
+* If EXOFORCING is not provided by the user, use default values
+  IF(NOT SUM(T,CM_EXOFORC(T)),CM_EXOFORC(MY_FIL(LL)) = MIN(1.15, -0.1965 + 0.013465 * (YEARVAL(LL)-1995)));

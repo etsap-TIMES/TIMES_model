@@ -1,0 +1,78 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQx_ASHAR is an ANNUAL level share constraint on flows
+*   %1 - equation declaration type
+*   %2 - BOUND type for %1
+*=============================================================================*
+* Comments:
+*-----------------------------------------------------------------------------
+*$ONLISTING
+$IF NOT '%1' == '' $GOTO EQDEF
+*-----------------------------------------------------------------------------
+* Collect all FLO_ASHAR groups
+  OPTION CG_GRP <= FLO_ASHAR;
+  FLO_SHAR(R,'0',P,C,CG,ANNUAL,'LO')$CG_GRP(R,P,C,CG) = EPS;
+
+* We have been left with any C not in CG or not in RPC
+  IF(CARD(CG_GRP),
+    LOOP((CG_GRP(RPC(R,P,C),C),COM_TMAP(R,COM_TYPE(CG),C)),RPCG_ASHAR(R,P,C,CG,S)$(PRC_SGL(R,P)=STOAL(R,S))=-1;
+      FLO_ASHAR(R,V,P,C,CG,S,BD)$=FLO_ASHAR(R,V,P,C,C,S,BD); FLO_ASHAR(R,LL,P,C,C,S,BD)=0);
+    CG_GRP(RPC(RP,C),C)=NO;
+    RP_PGFLO(RP_FLO(RP)) $= SUM(CG_GRP(NO_ACT(RP),C,ACTCG),1);
+    RPCG_ASHAR(CG_GRP(RPC,CG),S)$=RPCS_VAR(RPC,S);
+    RPCG_ASHAR(CG_GRP(RPC_STG(RP,C),ACTCG),S)=PRC_TS(RP,S);
+    CG_GRP(RPC,CG)=NO;
+    LOOP(CG_GRP(R,P,CG,CG2), Z=1;
+      LOOP(COM_TSL(R,C(CG),TSL), Z=0; RPCG_ASHAR(R,P,CG,CG2,S)$TS_GROUP(R,TSL,S) = 1);
+      IF(Z, RPCG_ASHAR(R,P,CG,CG2,ANNUAL) = YES));
+    OPTION CLEAR=CG_GRP);
+* Levelize FLO_ASHAR
+$ BATINCLUDE pp_lvlfc.mod FLO_ASHAR P RPS_S2 ',BD' ",''" ALL_TS V 1 0 ',C,CG' N
+$ EXIT
+$ LABEL EQDEF
+*-----------------------------------------------------------------------------
+
+ %EQ%%1_ASHAR(RTP_VINTYR(%R_V_T%,P),CG,CG2,RTS(S)%SWT%)$(SUM(RS_TREE(R,S,TS)$FLO_ASHAR(R,V,P,CG,CG2,TS,'%2'),1)$RPCG_ASHAR(R,P,CG,CG2,S))..
+
+* sum over RPS_S2 timeslices
+     SUM(RPS_S2(RP_FLO(R,P),SL)$TS_MAP(R,S,SL),
+         SUM(TS_ANN(SL,TS),FLO_ASHAR(R,V,P,CG,CG2,TS,'%2')) *
+* sum over all flows in the reference group CG2
+         (SUM((RTPCS_VARF(R,T,P,COM,TS),RS_TREE(R,SL,TS))$COM_GMAP(R,CG2,COM),
+$             BATINCLUDE %cal_red% COM COM1 TS P T
+             * MAX(RPCG_ASHAR(R,P,CG,CG2,S),1$SUM(TOP(R,P,C(CG),IO),TOP(R,P,COM,IO))$COM_TYPE(CG2)) *
+* timeslice S coarser than variable or finer than variable
+             RS_FR(R,SL,TS)*(1+RTCS_FR(R,T,COM,SL,TS))) +
+* Allow referring to activity as well
+          SUM((PRC_TS(R,P,TS),RTP_VARA(R,T,P))$RS_FR(R,SL,TS),RS_FR(R,SL,TS)*
+            (%VAR%_ACT(R,V,T,P,TS %SOW%)*EXP((-ABS(STG_LOSS(R,V,P,TS))*G_YRFR(R,TS)/RS_STGPRD(R,TS)/2)$RP_STG(R,P)))$(NOT RP_PGFLO(R,P)) +
+            SUM(RPC_PG(RP_STD(R,P),COM),(%VAR%_ACT(R,V,T,P,TS %SOW%)$RP_PGACT(R,P)+(%VAR%_FLO(R,V,T,P,COM,TS %SOW%)/PRC_ACTFLO(R,V,P,COM))$(NOT RP_PGACT(R,P))) *
+              RS_FR(R,SL,TS)*(1+RTCS_FR(R,T,COM,SL,TS)))$RP_PGFLO(R,P))$ACTCG(CG2)
+         )
+        ) +
+* Allow ANNUAL share for IRE processes
+     SUM(ANNUAL(S),
+       SUM(RPC_IRE(R,P,COM,IE)$(COM_GMAP(R,CG,COM)*((NOT IMPEXP(CG2))+SAMEAS(IE,CG2))),
+         FLO_ASHAR(R,V,P,CG,CG2,S,'%2') *
+         (SUM(RTPCS_VARF(REG,T,P,C,TS)$((COM_GMAP(REG,CG2,C)+IMPEXP(CG2))$RPC_IRE(REG,P,C,IE)),
+           %VAR%_IRE(REG,V,T,P,C,TS,IE%SOW%)$(NOT RPC_AIRE(REG,P,C))+(%VAR%_ACT(REG,V,T,P,TS%SOW%)*PRC_ACTFLO(REG,V,P,C))$RPC_AIRE(REG,P,C)) +
+          SUM(PRC_TS(R,P,TS),%VAR%_ACT(R,V,T,P,TS %SOW%))$ACTCG(CG2)) -
+         SUM(RTPCS_VARF(R,T,P,COM,TS),
+           %VAR%_IRE(R,V,T,P,COM,TS,IE%SOW%)$(NOT RPC_AIRE(R,P,COM))+(%VAR%_ACT(R,V,T,P,TS%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM)))
+        )$RP_IRE(R,P)
+
+    =%1=
+
+* derived commodities, summed for all flows in the group CG
+   SUM((RTPCS_VARF(R,T,P,COM,TS),COM_GMAP(R,CG,COM))$TS_MAP(R,S,TS),
+$      BATINCLUDE %cal_red% COM COM1 TS P T
+      )$RP_FLO(R,P) +
+   SUM(PRC_TS(R,P,TS)$TS_MAP(R,S,TS),%VAR%_ACT(R,V,T,P,TS %SOW%)$(NOT NO_ACT(R,P))+
+     SUM(RPC_PG(NO_ACT(R,P),C),%VAR%_FLO(R,V,T,P,C,TS %SOW%)/PRC_ACTFLO(R,V,P,C)))$ACTCG(CG) +
+   SUM((TOP(RPC_STG(R,P,C(CG)),'OUT'),RPCS_VAR(R,P,C,TS)),RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))*
+     %VAR%_SOUT(R,V,T,P,C,TS%SOW%)/PRC_ACTFLO(R,V,P,C))$ACTCG(CG2)
+
+;

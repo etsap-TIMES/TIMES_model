@@ -1,0 +1,133 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*============================================================================*
+* SOLPREP.MSA Preprocessing routine for MACRO Stand-Alone
+*============================================================================*
+$IF NOT '%1'=='' $GOTO %1
+*-----------------------------------------------------------------------------
+* Calculation of solution values for (due to reduction) substituted flows
+*-----------------------------------------------------------------------------
+$LABEL INIT
+  OPTION CLEAR=PAR_FLO,CLEAR=PAR_IRE;
+$ BATINCLUDE sol_flo.red PAR_FLO '' .L
+$ BATINCLUDE sol_ire.rpt
+*-----------------------------------------------------------------------------
+* Calculation of annual costs and commodity marginals
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=CST_PVP,CLEAR=CST_ACTC,CLEAR=CST_INVC,CLEAR=CST_INVX,CLEAR=CST_FIXC,CLEAR=CST_FIXX;
+  OPTION CLEAR=CAP_NEW,CLEAR=CST_FLOC,CLEAR=CST_FLOX,CLEAR=CST_COMC,CLEAR=CST_COMX,CLEAR=CST_IREC;
+$ BATINCLUDE rpt_obj.rpt '' "" '' '%SYSPREFIX%' 0
+$ BATINCLUDE cost_ann.rpt
+* Commodity levels and marginals
+  OPTION CLEAR=PAR_COMBALEM;
+  PAR_COMPRDL(R,T,C,S) $= VAR_COMPRD.L(R,T,C,S);
+  PAR_COMNETL(R,T,C,S) $= VAR_COMNET.L(R,T,C,S);
+  PAR_COMBALEM(R,T,C,S) $= EQG_COMBAL.M(R,T,C,S)*(1/COEF_PVT(R,T));
+  PAR_COMBALEM(R,T,C,S) $= EQE_COMBAL.M(R,T,C,S)*(1/COEF_PVT(R,T));
+$ BATINCLUDE preppm.msa TONLP
+*=============================================================================
+* Annual costs for MACRO
+  OPTION CLEAR=NCAP_YES,CLEAR=PAR_OBJINV,CLEAR=PAR_OBJFIX;
+  NCAP_YES(R,V,P)$(VAR_NCAP.L(R,V,P)+NCAP_PASTI(R,V,P))=YES;
+  PAR_OBJINV(RTP_CPTYR(R,V,T,P),CUR)$(NCAP_YES(R,V,P)$COEF_OBINVN(R,V,P,CUR)) = COEF_CPT(R,V,T,P) *
+         COEF_OBINVN(R,V,P,CUR) * (VAR_NCAP.L(R,V,P)$T(V)+NCAP_PASTI(R,V,P));
+  PAR_OBJFIX(RTP_CPTYR(R,V,T,P),CUR)$(NCAP_YES(R,V,P)$COEF_OBFIXN(R,V,P,CUR)) = COEF_CPT(R,V,T,P) *
+         COEF_OBFIXN(R,V,P,CUR) * (VAR_NCAP.L(R,V,P)$T(V)+NCAP_PASTI(R,V,P));
+$IFI %OBJANN%==YES MACST('VAR')=NO; VAR_ANNCST.UP('OBJVAR',R,T,CUR)=INF;
+  TM_ANNC(MR(R),T) = SUM(MACST$REG_ACOST(R,T,MACST),REG_ACOST(R,T,MACST)) +
+     SUM((VNT(V,T),P,RDCUR(R,CUR))$PAR_OBJINV(R,V,T,P,CUR),PAR_OBJINV(R,V,T,P,CUR)) +
+     SUM((VNT(V,T),P,RDCUR(R,CUR))$PAR_OBJFIX(R,V,T,P,CUR),PAR_OBJFIX(R,V,T,P,CUR));
+$IFI %OBJANN%==YES TM_ANNC(R,T) = TM_ANNC(R,T)+SUM(RDCUR(R,CUR),VAR_ANNCST.L('OBJVAR',R,T,CUR));
+*-----------------------------------------------------------------------------
+* Marginal costs of demands
+  OPTION CLEAR=TM_DMC;
+  TM_DMC(RTC(MR(R),T,C))$DEM(R,C) = SUM(RTCS_VARC(R,T,C,S),PAR_COMBALEM(R,T,C,S) * G_YRFR(R,S));
+  TM_DMC(R,T,C)$(TM_DMC(R,T,C) EQ 0) = 0;
+  LOOP(MIYR_1(TT(T-1)),TM_DMC(R,TT,C)$((TM_DMC(R,TT,C) GT TM_DMC(R,T,C))$DEM(R,C)) = TM_DMC(R,T,C));
+$ BATINCLUDE filparam TM_DMC 'R,' C ",'0','0','0','0','0'" DATAYEAR T
+  LOOP(MIYR_1(TT(T-1)),TM_DMC(R,TT,C)$((TM_DMC(R,TT,C) LT TM_DMC(R,T,C)*0.7)$DEM(R,C)) = TM_DMC(R,T,C)*0.7);
+* Demand levels
+  TM_DEM(MR(R),T,C)$((COM_PROJ(R,T,C) GT 0)$DEM(R,C)) = COM_PROJ(R,T,C)
+     - SUM((RTCS_VARC(R,T,C,S),RCJ(R,C,J,'LO')), VAR_ELAST.L(R,T,C,S,J,'LO'))
+     + SUM((RTCS_VARC(R,T,C,S),RCJ(R,C,J,'UP')), VAR_ELAST.L(R,T,C,S,J,'UP'));
+*-----------------------------------------------------------------
+$LABEL QSF
+* Quadratic supply function
+  OPTION DM < TM_DEM;
+  TM_DMC(MR,TB,DM)$(TM_DMC(MR,TB,DM)*TM_DEM(MR,TB,DM) < 1E-5*TM_ANNC(MR,TB)) = 0;
+  TM_ANNC(REG,TP)=TM_ANNC(REG,TP) * TM_SCALE_CST;
+  LOOP(TB(T-1), TM_ANNC(REG,TB) = MIN(TM_ANNC(REG,T),TM_ANNC(REG,TB));
+$IFI %MSA%%2==CSA0  TM_EC0(REG) = TM_ANNC(REG,TB); TM_DDATPREF(REG,DM) = TM_DMC(REG,TB,DM);
+   TM_ANNC(REG,TB) = TM_EC0(REG); TM_DMC(REG,TB,DM) = TM_DDATPREF(REG,DM));
+  TM_QSFB(REG,TP,DM)$TM_DEM(REG,TP,DM) = 0.5*TM_DMC(REG,TP,DM)*TM_SCALE_CST/TM_DEM(REG,TP,DM);
+  TM_QSFA(REG,TP)=TM_ANNC(REG,TP)- SUM(DM, TM_QSFB(REG,TP,DM)*TM_DEM(REG,TP,DM)**2);
+*-----------------------------------------------------------------------------
+$EXIT
+$LABEL OUT
+* Write data transfer attributes to file
+  FILE TIM2MSA / MSAQSF.DD /;
+*
+  PUT TIM2MSA;
+  PUT "$ONMULTI" /;
+* Milestones
+  PUT "SET T /" /;
+  LOOP(T, PUT T.TL /;);
+  PUT "/;" /;
+* Lagtimes
+  PUT "PARAMETER LAGT /" /;
+  LOOP(T, PUT T.TL, LAGT(T) /;);
+  PUT "/;" /;
+* Durations
+  PUT "PARAMETER D /" /;
+  LOOP(T, PUT T.TL, D(T) /;);
+  PUT "/;" /;
+* Regions
+  PUT "SET REG /" /;
+  LOOP(MR(R), PUT R.TL /;);
+  PUT "/;" /;
+* Commodities
+  PUT "SET COM /" /;
+  LOOP(DM(C), PUT C.TL /;);
+  PUT "/;" /;
+*
+  TIM2MSA.nr = 2;
+  TIM2MSA.nd = 9;
+  TIM2MSA.nw = 17;
+  TIM2MSA.nz = 1e-9;
+* Annual regional costs
+  PUT "PARAMETER TM_ANNC /" /;
+  LOOP((MR(R),T), PUT R.TL:0,".":0,T.TL:0 (TM_ANNC(R,T)/TM_SCALE_CST) /;);
+  PUT "/;" /;
+* GDP target
+  PUT "PARAMETER TM_GR /" /;
+  LOOP((MR(R),T), PUT R.TL:0,".":0,T.TL:0 TM_GR(R,T) /;);
+  PUT "/;" /;
+* Demand levels
+  PUT "PARAMETER TM_DEM /" /;
+  LOOP(MRTC(MR(R),T,C),PUT MRTC.TE(MRTC), TM_DEM(MRTC) /;);
+  PUT "/;" /;
+* Demand marginals
+  PUT "PARAMETER TM_DMC /" /;
+  LOOP(MRTC(MR(R),T,C)$TM_DMC(MRTC), PUT MRTC.TE(MRTC), TM_DMC(MRTC) /;);
+  PUT "/;" /;
+  PUT 'SCALAR TM_ARBM'       @25 '/' TM_ARBM ' /;' /;
+  PUT 'SCALAR TM_SCALE_UTIL' @25 '/' TM_SCALE_UTIL ' /;' /;
+  PUT 'SCALAR TM_SCALE_CST'  @25 '/' TM_SCALE_CST ' /;' /;
+  PUT 'SCALAR TM_SCALE_NRG'  @25 '/' TM_SCALE_NRG ' /;' /;
+  PUT / 'PARAMETER  TM_KGDP(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_KGDP(R) / @1 '/;');
+  PUT / 'PARAMETER TM_KPVS(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_KPVS(R) / @1 '/;');
+  PUT / 'PARAMETER TM_DEPR(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_DEPR(R) / @1 '/;');
+  PUT / 'PARAMETER TM_ESUB(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_ESUB(R) / @1 '/;');
+  PUT / 'PARAMETER TM_GDP0(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_GDP0(R) / @1 '/;');
+  PUT / 'PARAMETER TM_DMTOL(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_DMTOL(R) / @1 '/;');
+  PUT / 'PARAMETER TM_IVETOL(R)' @25 '/' /;
+  LOOP(MR(R), PUT @1 R.TL:0, TM_IVETOL(R) / @1 '/;');
+  PUTCLOSE TIM2MSA;

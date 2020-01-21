@@ -1,0 +1,68 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+********************************************************************************************************
+* File      : ATSC.ETL
+* Programmer: Ad Seebregts, adaped by Gary Goldstein for TIMES
+* last edit : 07-27-01
+********************************************************************************************************
+
+PUT /"Specific investment Cost SC(T) for key TEG and INVCOS per PRC in cluster of key";
+PUT /"-----------------------------------------------------------------------------------------------";
+PUT /"SCU: Specific Cost (per Unit) for key: linearized";
+PUT /"FOR: specific cost for key: end of T according to exact FORmula: sc = a * ccap ** (-b)";
+PUT /"INC: INvesment cost (per unit) for PRC in cluster key (exogenous, input value, equals INVCOST)";
+PUT /"-----------------------------------------------------------------------------------------------"//;
+PUT @63, PUT "Start (SC0)      ", LOOP(T,PUT T.TL:10); PUT "% of SC0"/;
+
+LOOP(RTP(R,T,TEG)$((VAR_NCAP.L(R,T,TEG) NE 0)$SEG(R,TEG)),
+  INVC_UNIT(R,T,TEG) $= VAR_IC.L(R,T,TEG)/VAR_NCAP.L(R,T,TEG);
+);
+
+PREV(RP(R,TEG)) = SC0(R,TEG);
+LOOP((TEG,REG)$SEG(REG,TEG),
+*    specific cost for key: linearized
+     PUT "k",".SCU.",TEG.TL:0 "/r.", REG.TL:0, @30;
+     PUT PRC.TE(TEG):30 @60;
+     PUT SC0(REG,TEG):14:0;
+     LOOP(T,
+          IF (INVC_UNIT(REG,T,TEG) GT 0,
+               PUT INVC_UNIT(REG,T,TEG):10:2;
+               PREV(REG,TEG) = INVC_UNIT(REG,T,TEG);
+          ELSE PUT PREV(REG,TEG):10:2;
+             );
+         )
+     PUT /;
+
+*    specific cost for key: end of T according to exact formula
+     PUT "k",".FOR.",TEG.TL:0,  "/r.", REG.TL:0, @30 PRC.TE(TEG):30 @60;
+     PUT SC0(REG,TEG):14:0;
+*formula: sc = a * ccap ** (-b)
+     LOOP(T,
+* TEG may have START>1
+              IF (RTP(REG,T,TEG),
+                 PUT (PAT(REG,TEG)*(VAR_CCAP.L(REG,T,TEG)**(-PBT(REG,TEG)))):10:2;
+                 IF (ORD(T) EQ CARD(T),
+                     PUT (100*(((PAT(REG,TEG)*
+                          (VAR_CCAP.L(REG,T,TEG)**(-PBT(REG,TEG)))))/SC0(REG,TEG))
+                         ):11:2;
+                    );
+              ELSE PUT SC0(REG,TEG):10:2;
+                 );
+
+         );
+      PUT /;
+*    specific cost for PRC in cluster key: input value
+
+      LOOP(PRC$(CLUSTER(REG,TEG,PRC) GT 0),
+          PUT "c",".INC.",PRC.TL:0, @30;
+          PUT PRC.TE(PRC):30;
+          LOOP(T,
+               PUT (SUM(CUR,NCAP_COST(REG,T,PRC,CUR))):10:2;
+              );
+          PUT /;
+          );
+
+     PUT /;
+    );

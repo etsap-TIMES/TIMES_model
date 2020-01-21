@@ -1,0 +1,94 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQMRKCOM Bound on the market share of flow in the production/consumption of commodity
+*   %1 - mod or v# for the source code to be used
+*   %2 - equation declaration type
+*   %3 - bound type for %1
+*   %4 - PRD/CON indicator
+*   %5 - IN/OUT indicator
+*=============================================================================*
+*Questions/Comments:
+*
+*-----------------------------------------------------------------------------
+*$ONLISTING
+
+  EQ%2_MRK%4(RTP(R,T,PRC),C,S %SWX%)$(%SWTX%TOP(R,PRC,C,'%5')*FLO_MRK%4(R,T,PRC,C,S,'%3')) ..
+
+  FLO_MRK%4(R,T,PRC,C,S,'%3') *
+
+$IF '%4'=='CON' $GOTO CONS
+
+  (
+
+* production of commodity
+* -----------------------
+      (
+* individual flows
+$       BATINCLUDE cal_fflo.mod OUT O
+
+*V07_1b blending flows
+        SUM(OPR$BLE_OPR(R,C,OPR),
+            RS_FR(R,S,'ANNUAL')*(1+RTCS_FR(R,T,C,S,'ANNUAL')) * BLE_BAL(R,T,C,OPR) * %VAR%_BLND(R,T,C,OPR %SOW%)
+        ) +
+*V07_1b emissions due to blending operations
+        SUM(BLE_ENV(R,C,BLE,OPR), RS_FR(R,S,'ANNUAL') * ENV_BL(R,C,BLE,OPR,T) * %VAR%_BLND(R,T,BLE,OPR %SOW%)
+        ) +
+
+* inter-regional trade to region
+$       BATINCLUDE cal_ire.mod IMP OUT IE
+
+* storage
+$       BATINCLUDE cal_stgn.mod OUT IN '*STG_EFF(R,V,P)' '' "(NOT PRC_NSTTS(R,P,TS))"
+
+* capacity related commodity flows
+$       BATINCLUDE cal_cap.mod OUT O
+
+      )
+  )
+
+$GOTO SIGN
+$LABEL CONS
+  (
+* consumption of commodity
+* ------------------------
+
+* individual flows
+$     BATINCLUDE cal_fflo.mod IN I
+
+*V07_1a blending flows
+      SUM(BLE_TP(R,T,BLE)$BLE_OPR(R,BLE,C),
+         RS_FR(R,S,'ANNUAL')*(1+RTCS_FR(R,T,C,S,'ANNUAL')) * %VAR%_BLND(R,T,BLE,C %SOW%)
+      ) +
+      SUM(BLE_OPR(R,BLE,OPR)$(BLE_INP(R,BLE,C) * BLE_TP(R,T,BLE)),
+         RS_FR(R,S,'ANNUAL')*(1+RTCS_FR(R,T,C,S,'ANNUAL')) * BL_INP(R,BLE,C) + %VAR%_BLND(R,T,BLE,OPR %SOW%)
+      ) +
+
+* inter-regional trade from region
+$     BATINCLUDE cal_ire.mod EXP IN IE
+
+* storage
+$     BATINCLUDE cal_stgn.mod IN OUT '' 'STG_EFF(R,V,P)*' "((NOT PRC_MAP(R,'NST',P))+PRC_NSTTS(R,P,TS))"
+
+* capacity related commodity flows
+$     BATINCLUDE cal_cap.mod IN I
+
+* include the elasticity variables
+      - SUM(RCJ(R,C,J,BDNEQ(BD))$COM_ELAST(R,T,C,S,BD),BDSIG(BD)*%VAR%_ELAST(R,T,C,S,J,BD %SOW%))
+
+  )
+
+$LABEL SIGN
+
+  =%2=
+
+  SUM(RTPCS_VARF(R,T,PRC,C,TS)$(TOP(R,PRC,C,'%5')$RP_FLO(R,PRC)),
+     SUM(RTP_VINTYR(R,V,T,PRC),
+$            BATINCLUDE %cal_red% C COM TS PRC T
+         *RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))
+     )
+  )
+  ;
+*$OFFLISTING
