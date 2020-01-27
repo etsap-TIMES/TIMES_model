@@ -1,0 +1,37 @@
+# The Integrated Markal-EFOM System – TIMES
+#### The code owner is the IEA Energy Technology Systems Analysis Programme (ETSAP)
+# Original Authors of ETSAP TIMES (by contracting party)
+* Ken Noble (Australia)
+* Denise van Regemorter (Belgium)
+* Amit Kanudia (Canada)
+* Richard Loulou (Canada)
+* Uwe Remme (Germany)
+* Peter Schaumann (Germany)
+* Günter Schmid (Germany)
+* GianCarlo Tosato (Italy)
+* Tom Kram (Netherlands)
+* Tomas Larsson (Sweden)
+* Gary Goldstein (USA)
+
+# Other contributing authors (incomplete list)
+* Martin Baumann (Austria)
+* Wouter Nijs (Belgium)
+* Kathleen Vaillancourt (Canada)
+* Kenneth Karlsson (Denmark)
+* Raffaele Salvucci (Denmark)
+* Markus Blesl (Germany)
+* George Giannakidis (Greece)
+* Kostas Tigas (Greece)
+* James Glynn (Ireland)
+* Maurizio Gargiulo (Italy)
+* Ad Seebregts (Netherlands)
+* Pernille Seljom (Norway)
+* Evangelos Panos (Switzerland)
+* Socrates Kypreos (Switzerland)
+* Paul Dodds (United Kingdom)
+* Evelyn Wright (USA)
+
+### Many thanks to all individuals who have contributed to ETSAP TIMES.
+
+# Current maintainer
+* [@Antti-L](https://github.com/Antti-L)
