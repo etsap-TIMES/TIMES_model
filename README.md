@@ -38,15 +38,16 @@ In the first instance, TIMES model addresses the question: is the target feasibl
 
 ## Documentation
 
-Detailed documentation is available on https://iea-etsap.org/index.php/documentation
-i)   Concept and Theory https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-I_July-2016.pdf
-ii)  Comprehensive Reference Manual https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-II_July-2016.pdf
-iii) Operation of TIMES code https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-III_July-2016.pdf
+Detailed documentation is available on ETSAP's [website](https://iea-etsap.org/index.php/documentation):
+
+i)   [Concept and Theory](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-I_July-2016.pdf).
+ii)  [Comprehensive Reference Manual](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-II_July-2016.pdf).
+iii) [Operation of TIMES code](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-III_July-2016.pdf).
 
 ## Community
 
-Information on the activities of ETSAP are available on ETSAP's website: https://iea-etsap.org/
+Information on the activities of ETSAP are available on ETSAP's [website](https://iea-etsap.org/).
 
-If you are interested in receiving information and newsletters on ETSAP's tool you can register on https://iea-etsap.org/index.php/etsap-tools/acquiring-etsap-tools
+If you are interested in receiving information and newsletters on ETSAP's tool you can register [here](https://iea-etsap.org/index.php/etsap-tools/acquiring-etsap-tools).
 
-A forum for TIMES users is available http://iea-etsap.org/forum/index.php 
+A forum for TIMES users is [available](http://iea-etsap.org/forum/index.php).
