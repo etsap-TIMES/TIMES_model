@@ -44,6 +44,10 @@ i)   [Concept and Theory](https://iea-etsap.org/docs/Documentation_for_the_TIMES
 ii)  [Comprehensive Reference Manual](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-II_July-2016.pdf).
 iii) [Operation of TIMES code](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-III_July-2016.pdf).
 
+## TIMES Demo 
+
+A Demo model is available on [GitHub](https://github.com/etsap-TIMES/TIMES_Demo).
+
 ## Community
 
 Information on the activities of ETSAP are available on ETSAP's [website](https://iea-etsap.org/).
