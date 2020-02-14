@@ -1,0 +1,30 @@
+# These files are in the GAMS language
+*.gms linguist-language=GAMS
+*.mod linguist-language=GAMS
+*.abs linguist-language=GAMS
+*.ans linguist-language=GAMS
+*.def linguist-language=GAMS
+*.dsc linguist-language=GAMS
+*.cli linguist-language=GAMS
+*.etl linguist-language=GAMS
+*.ier linguist-language=GAMS
+*.lin linguist-language=GAMS
+*.msa linguist-language=GAMS
+*.red linguist-language=GAMS
+*.rpt linguist-language=GAMS
+*.stc linguist-language=GAMS
+*.tm  linguist-language=GAMS
+*.v3  linguist-language=GAMS
+*.vda linguist-language=GAMS
+
+# These files are binary and should be left untouched
+# (binary is a macro for -text -diff)
+*.g00 binary
+*.gz  filter=lfs merge=lfs -text -diff
+*.zip filter=lfs merge=lfs -text -diff
+*.7z  filter=lfs merge=lfs -text -diff
+*.rar filter=lfs merge=lfs -text -diff
+*.exe filter=lfs merge=lfs -text -diff 
+
+# Documents
+*.pdf filter=lfs merge=lfs -text -diff
