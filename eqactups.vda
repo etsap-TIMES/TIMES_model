@@ -1,0 +1,156 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQACTUPS - implements the linear dispatching equations
+*   %1 - MX control
+*=============================================================================*
+* Set indicators
+  IF(CARD(RP_UPL)+CARD(RP_PL)+CARD(ACT_CSTRMP),OPTION CLEAR=UNCD7;
+  AFUPS(R,T,P,S)$((NOT RPS_CAFLAC(R,P,S,'UP'))$PRC_TS(R,P,S)) $= AFS(R,T,P,S,'UP')$RP_UPL(R,P,'FX'); AFS(AFUPS,BD)=NO;
+  RPS_UPS(R,P,S)$((STOAL(R,S)<2+1$RP_UPR(R,P,'N'))$RP_UPL(R,P,'FX')) = SUM(PRC_TS(R,P,TS)$RS_BELOW(R,S,TS),RS_BELOW1(R,S,TS) OR STOA(S));
+  RP_UX(RP)$(NOT PRC_VINT(RP))$=RP_UPL(RP,'FX'); RTP_VARP(RTP(R,T,P))$RP_UX(R,P)=YES;
+  COEF_AF(R,T,T,P,S,'UP')$AFUPS(R,T,P,S) $= NCAP_AF(R,T,P,S,'UP')$RP_UX(R,P);
+* Check for startup costs
+  UNCD7(R,LL--ORD(LL),P,TSL,RDCUR(R,CUR),'UP') $= ACT_CSTUP(R,LL,P,TSL,CUR);
+  UNCD7(R,LL--ORD(LL),P,BD,RDCUR(R,CUR),'N') $= ACT_CSTRMP(R,LL,P,BD,CUR);
+  LOOP(UNCD7(R,LL,P,ITEM,R,CUR,L),RP_UPS(R,P,TSL(ITEM),L)$(TSLVLNUM(TSL)$RP_UPL(R,P,'FX')>1)=YES; RPC_CUR(R,P,%PGPRIM%,CUR)=YES);
+  RP_UPS(RP,TSL,L)$SUM(PRC_TSL(RP,TSLVL)$(ORD(TSL)>ORD(TSLVL)),1)=NO;
+  RPS_UPS(RP,S)$SUM(RP_UPS(PRC_TSL(RP,TSL),L),1)=NO;
+  RPS_UPS(R,P,S) $= SUM(RP_UPS(R,P,TSL,L)$TS_GROUP(R,TSL,S),1);
+  RP_UPS(R,P,TSL,LNX(L))$RP_UPS(R,P,TSL,'UP') = SUM(RP_UPS(R,P,TSLVL,BD),RLUP(R,TSLVL,TSL)$BD(L)+RLUP(R,TSL,TSLVL)$IPS(L));
+  RP_UPS(R,P,TSL,'FX')$(SUM(RP_UPS(PRC_TSL(R,P,TSLVL),L),RLUP(R,TSLVL,TSL))$RP_UPR(R,P,'UP'))=YES;
+* Check partial loads
+  LOOP(UNCD7(R,LL,P,TSL(ANNUAL),R,CUR,L),RP_UPS(R,P,TSL,L)=YES; RP_PL(R,P,'N')=NOT RP_PL(R,P,L));
+  ACT_LOSPL(RTP(R,V,P),BDNEQ(BD))$((ACT_LOSPL(RTP,BD)<=0)$RP_PL(R,P,'N'))=MAX(.1+.5$BDUPX(BD),ACT_MINLD(RTP));
+* Levelize ACT_UPS
+$ BATINCLUDE pp_lvlfc.mod ACT_UPS P PRC_TS ',BD' ",'','',''" ALL_TS V RTP(R,V,P) 0 '' N
+  RTP_PL(RTP(R,V,P))$((ACT_LOSPL(RTP,'LO')=ACT_MINLD(RTP))$RP_UPL(R,P,'FX'))$=RP_PL(R,P,'N');
+* Check for cycling limits
+  RP_UPC(R,P,TSL,'N')$RP_UPR(R,P,'N') $= SUM(RP_UPS(PRC_TSL(R,P,TSLVL),L),RLUP(R,TSLVL,TSL));
+  RP_UPC(PRC_TSL(RP,TSL),BDNEQ(BD))$RP_UPS(RP,TSL,'UP') $= RP_UPR(RP,BD));
+  OPTION RP_UPR < ACT_CSTRMP;
+$SET CAPON (COEF_CPT(R,V,T,P)*(%VARV%_NCAP(R,V,P%SWS%)$T(V)+NCAP_PASTI(R,V,P)%RCAPSUB%))$PRC_VINT(R,P)+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)
+$SET MX SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%))
+$SET TMP $(NOT RP_UX(R,P))+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)%UPSCAPS%
+*-----------------------------------------------------------------------
+
+  %EQ%_CAPLOAD(RTP_VINTYR(%R_V_T%,P),S,BDNEQ(BD)%SWT%)$AFUPS(R,T,P,S)..
+
+   %VAR%_ACT(R,V,T,P,S%SOW%)*BDSIG(BD)  =G=  %VAR%_UPS(R,V,T,P,S,'FX'%SOW%)$RTP_PL(R,V,P)$BDLOX(BD) +
+
+* capacity - vintaged or not
+   (%CAPON%%UPSCAPS%) * MIN(COEF_AF%1(R,V,T,P,S,'UP')*BDSIG(BD),SUM(TS_ANN(S,TS)$(NOT RTP_PL(R,V,P)),ACT_UPS(R,V,P,TS,'FX'))$BDLOX(BD)) *
+   PRC_CAPACT(R,P) * G_YRFR(R,S);
+
+*-----------------------------------------------------------------------
+
+  %EQ%_ACTRAMP(RTP_VINTYR(%R_V_T%,P),RTS(S),BDNEQ(BD)%SWT%)$(SUM(TS_ANN(S,TS)$ACT_UPS(R,V,P,TS,BD),1)$PRC_TS(R,P,S)$RP_UPL(R,P,BD))..
+
+* max fraction of capacity
+   SUM(PRC_TS(R,P,TS(S--RS_STG(R,S))),PRC_CAPACT(R,P)*SUM(TS_ANN(S,SL),ACT_UPS(R,V,P,SL,BD)) *
+     (%MX%%TMP% + ((%VAR%_UPS(R,V,T,P,S,'N'%SOW%)-%VAR%_UPS(R,V,T,P,TS,'N'%SOW%))$BDLOX(BD))$RPS_UPS(R,P,S)) +
+
+* dynamic ramp limits
+     RS_STGPRD(R,S)*2/(G_YRFR(R,S)+G_YRFR(R,TS))/8760 *
+     (%VAR%_ACT(R,V,T,P,S%SOW%)/G_YRFR(R,S)-%VAR%_ACT(R,V,T,P,TS%SOW%)/G_YRFR(R,TS) +
+      ((%VAR%_UPS(R,V,T,P,S,'N'%SOW%)-%VAR%_UPS(R,V,T,P,TS,'N'%SOW%))*PRC_CAPACT(R,P)*ACT_MINLD(R,V,P))$RPS_UPS(R,P,S))*BDSIG(BD))
+
+    =G= 0;
+
+*-----------------------------------------------------------------------
+
+  %EQ%E_ACTUPS(RTP_VINTYR(%R_V_T%,P),TSL,L(BND_TYPE),RTS(S)%SWT%)$(TS_GROUP(R,TSL,S)$RP_UPS(R,P,TSL,L))..
+
+* start-up/shut-down capacity
+   (SUM(TS(S--RS_STG(R,S)),%VAR%_UPS(R,V,T,P,S,'N'%SOW%)-%VAR%_UPS(R,V,T,P,TS,'N'%SOW%)-SUM(BD,%VAR%_UPS(R,V,T,P,S,BD%SOW%)*BDSIG(BD)))$STOA(S) +
+    SUM(ANNUAL(S)$RP_PL(R,P,'N'),%VAR%_UPS(R,V,T,P,S,L%SOW%)-SUM(PRC_TS(R,P,TS),%VAR%_UPS(R,V,T,P,TS,'FX'%SOW%))))$(BDSIG(L)<0) +
+   SUM(BDLOX(BD(L)),%MX%%TMP%-%VAR%_UDP(R,V,T,P,S,'FX'%SOW%)-%VAR%_UPS(R,V,T,P,S,'FX'%SOW%)$RP_UPL(R,P,'FX'))
+
+    =E= 0;
+
+*-----------------------------------------------------------------------
+
+  %EQ%L_ACTUPS(RTP_VINTYR(%R_V_T%,P),TSL,LNX(L),RTS(S)%SWT%)$(TS_GROUP(R,TSL,S)$RP_UPS(R,P,TSL,L))..
+
+* balance at higher level
+   (%VAR%_UPS(R,V,T,P,S,L%SOW%)-SUM(RS_BELOW1(R,TS,S),%VAR%_UPS(R,V,T,P,TS,'FX'%SOW%)))$IPS(L) +
+   (%VAR%_UPS(R,V,T,P,S,L%SOW%)-SUM(RS_BELOW1(R,S,TS),%VAR%_UPS(R,V,T,P,TS,'UP'%SOW%)))$BD(L)
+
+    =L= 0;
+
+*-----------------------------------------------------------------------
+
+  %EQ%L_ACTUPC(RTP_VINTYR(%R_V_T%,P),TSL,L,RTS(S)%SWT%)$(TS_GROUP(R,TSL,S)$RP_UPC(R,P,TSL,L))..
+
+* max number of cycles
+   (SUM(RS_BELOW1(R,S,SL),%VAR%_UPS(R,V,T,P,SL,'UP'%SOW%)) - (%CAPON%%UPSCAPS%)*ACT_TIME(R,T,P,L))$IPS(L) +
+* min UP/LO hours
+   SUM(BD(L),SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),
+       %VAR%_UPS(R,V,T,P,SL,L%SOW%)$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ACT_TIME(R,T,P,L)/8760)) -
+     SUM(RS_UP(R,S,J,TS),%VAR%_UPS(R,V,T,P,TS,'FX'%SOW%))$BDUPX(BD)-%VAR%_UPS(R,V,T,P,S,'N'%SOW%)*BDSIG(L))
+
+    =L= 0;
+
+*-----------------------------------------------------------------------
+
+  %EQ%_ACTPL(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWT%)$(PRC_TS(R,P,S)$RP_PL(R,P,'N'))..
+
+* partial loads
+   %VAR%_UPS(R,V,T,P,S,'FX'%SOW%)  =G=
+
+   ((%MX%%TMP%)*PRC_CAPACT(R,P)*G_YRFR(R,S) * (ACT_LOSPL(R,V,P,'UP')+ACT_LOSPL(R,V,P,'LO')*(1-ACT_LOSPL(R,V,P,'UP'))) -
+    %VAR%_ACT(R,V,T,P,S%SOW%)) / (ACT_LOSPL(R,V,P,'UP')*(1/ACT_LOSPL(R,V,P,'LO')-1)) +
+   sum((rp_upt(r,p,upt,bd),PRC_TSL(R,P,TSL))$DP_UNS(R,V,T,P,TSL,'IN','N'),
+     sum((rs_up(r,s,js),rj_sl(r,js,sl))$(MOD((RS_HR(r,s)-RS_HR(r,sl))*BDSIG(bd)+G_YRFR(r,sl)/RS_STGPRD(r,s)/2+2/G_CYCLE(tsl),1/G_CYCLE(tsl))<ACT_SDTIME(r,v,p,upt,bd)/8760*(1.001)),
+       MIN(1,MOD((RS_HR(r,s)-RS_HR(r,sl))*BDSIG(bd)+(G_YRFR(r,sl)-G_YRFR(r,s))/2/RS_STGPRD(r,s)+2/G_CYCLE(tsl),1/G_CYCLE(tsl))/(ACT_SDTIME(r,v,p,upt,bd)/8760))*(1-DIAG(S,SL))*DP_PSUD(r,v,p,upt,bd) *
+       (%var%_upt(r,v,t,p,sl,upt%SOW%)$bdupx(bd) + %var%_ups(r,v,t,p,sl,bd%SOW%)$bdlox(bd))) * PRC_CAPACT(r,p)*G_YRFR(r,s)*ACT_MINLD(r,v,p))$DP_LOSD(r,v,p);
+
+*-----------------------------------------------------------------------
+
+  %EQ%_ACTRMPC(RTP_VINTYR(%R_V_T%,P),TS(S--RS_STG(R,S))%SWT%)$(PRC_TS(R,P,S)$RP_STD(R,P)$SUM(RP_UPR(R,P,BD),1))..
+
+* ramping costs
+   (%VAR%_ACT(R,V,T,P,TS%SOW%)/G_YRFR(R,TS)-%VAR%_ACT(R,V,T,P,S%SOW%)/G_YRFR(R,S))/PRC_CAPACT(R,P) =E=
+   SUM(BDNEQ(BD),%VAR%_UDP(R,V,T,P,S,BD%SOW%)*BDSIG(BD))-ACT_MINLD(R,V,P)*(%VAR%_UPS(R,V,T,P,TS,'N'%SOW%)-%VAR%_UPS(R,V,T,P,S,'N'%SOW%))$RPS_UPS(R,P,S);
+
+*-----------------------------------------------------------------------
+
+  EQL_STGCCL(RTP_VINTYR(%R_V_T%,P)%SWX%)$(%SWTX%SUM(RPS_STG(R,P,S)$COEF_AFUPS(R,V,P,S),1)$STG_MAXCYC(R,V,P)$RP_STG(R,P))..
+
+* Storage cycling penalty
+   (%MX%+%VAR%_UPS(R,V,T,P,'ANNUAL','UP'%SOW%))/EXP(PRC_SC(R,P))*SMAX(RPS_STG(R,P,S),COEF_AFUPS(R,V,P,S))*PRC_CAPACT(R,P) =G=
+   SUM((TOP(RPC_STG(R,P,C),'OUT'),RPCS_VAR(R,P,C,S)),%VAR%_SOUT(R,V,T,P,C,S%SOW%)/PRC_ACTFLO(R,V,P,C))*NCAP_TLIFE(R,V,P) / STG_MAXCYC(R,V,P);
+
+*-----------------------------------------------------------------------
+$IFI %OBMAC%==YES $macro var_sift(v,s,l) %var%_udp(r,v,t,p,s,l%sow%)*prc_capact(r,p)*rs_stgprd(r,s)/8760
+
+* Load Shifting
+  %EQ%_SLSIFT(RTP(%R_T%,P),COM,RTS(S),LNX,L%SWT%)$((PRC_TS(R,P,S)$ACT_TIME(RTP,L)+BD(LNX)$LNX(L))$RPS_PRCTS(R,P,S)$RPC_LS(R,P,COM))..
+
+  SUM(RTP_VINTYR(R,V,T,P),
+* Limit net and gross sifting flows
+    SUM(IPS(L)$(PRC_TS(R,P,S)+YES$STG_SIFT(RTP,%PGPRIM%,S)+ANNUAL(S)$ACTCG(COM)),
+      SUM(PRC_TS(R,P,TS)$RS_BELOW1(R,S,TS),%VAR%_ACT(R,V,T,P,TS%SOW%))$STG_SIFT(RTP,%PGPRIM%,S) +
+      SUM((TOP(RPC_STG(R,P,C),'OUT'),RPCS_VAR(R,P,C,TS)),%VAR%_SOUT(R,V,T,P,C,TS%SOW%))$ANNUAL(S)$ACTCG(COM) +
+      (%VAR%_SIN(R,V,T,P,COM,S%SOW%) + %VAR%_ACT(R,V,T,P,S%SOW%))$PRC_TS(R,P,S) + %VAR%_SOUT(R,T,T,P,%PGPRIM%,S%SOW%) -
+      SUM((TOP(RPC_STG(R,P,C),'OUT'),RTCS_VARC(RTC(R,T,C),TS))$RS_FR(R,S,TS),(STG_SIFT(RTP,C,TS)$(PRC_TS(R,P,S)+ANNUAL(S)$ACTCG(COM))+STG_SIFT(RTP,%PGPRIM%,S))*%VAR%_COMPRD(RTC,TS%SOW%)/COM_IE(RTC,TS)*RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS)))) -
+* Get net sifting, force zero shifting at seasonal level
+    SUM(BD(L)$LNX(L),
+      (SUM((TOP(RPC_STG(R,P,C),'OUT'),RPCS_VAR(R,P,C,TS))$RS_FR(R,S,TS),%VAR%_SOUT(R,V,T,P,C,TS%SOW%)*RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))) -
+       SUM(TOP(RPC_STG(R,P,C),'IN'),%VAR%_SIN(R,V,T,P,C,S%SOW%))-(%VAR%_ACT(R,V,T,P,S%SOW%)-%VAR%_SIN(R,V,T,P,COM,S%SOW%)))$PRC_TS(R,P,S) +
+      SUM(PRC_TS(R,P,TS)$RS_BELOW1(R,S,TS),%VAR%_SIN(R,V,T,P,COM,TS%SOW%)-%VAR%_ACT(R,V,T,P,TS%SOW%))$(SUM(LIM$ACT_TIME(RTP,LIM),1)=0)) +
+* Asymmetric advance or delay
+    SUM(BDNEQ(BD(L))$ACT_TIME(RTP,'LO'),VAR_SIFT(V,S,L)+VAR_SIFT('0',S,L) -
+       SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),%VAR%_UPS(R,V,T,P,SL,L%SOW%)$(MOD((RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/9)*BDSIG(L)+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ACT_TIME(RTP,L)/8760))))$BD(LNX)
+  =E=
+  SUM(RTP_VINTYR(R,V,T,P),
+* Balance for sifting (LO=advance, UP=delay)
+    SUM(TS(S--RS_STG(R,S)),SUM(BDNEQ(BD),(VAR_SIFT(V,TS,BD)-VAR_SIFT(V,S,BD))*BDSIG(BD))+%VAR%_SIN(R,V,T,P,COM,S%SOW%)-%VAR%_ACT(R,V,T,P,S%SOW%))$(BDSIG(L)<0) +
+    (SUM(BDNEQ(BD),%VAR%_UPS(R,V,T,P,S,BD%SOW%))-%VAR%_SIN(R,V,T,P,COM,S%SOW%))$(BDSIG(L)>0) +
+* Limit advance and delay or balancing time window
+    SUM(LASTLL$LNX(L),SUM(LIM$(IPS(L) XOR BD(LIM)),VAR_SIFT(V,S,LIM)) +
+      SUM((RS_UP(R,S,JS),RJ_SL(R,JS,TS(SL--RS_STG(R,SL)))),
+        (%VAR%_ACT(R,V,T,P,SL%SOW%)$IPS(L)-%VAR%_SIN(R,V,T,P,COM,SL%SOW%) -
+         (VAR_SIFT(V,SL,'UP')-VAR_SIFT(V,TS,'UP'))$BD(L))$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/9+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ACT_TIME(RTP,L)/8760))))$IPS(LNX);

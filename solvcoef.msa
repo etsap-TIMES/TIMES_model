@@ -1,0 +1,91 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*============================================================================*
+* SOLVCOEF.MSA oversees extended preprocessing activities for MSA
+*============================================================================*
+
+*============================================================================*
+* Initialize the economic parameters                                         *
+*============================================================================*
+  TM_AEEIV(R,TP,C)$DEM(R,C) = TM_DDF(R,TP,C) / 100;
+  TM_ASRV(R)                = 1 - TM_DEPR(R) / 100;
+  TM_DFACTCURR(R,XTP)       = 1 - (TM_KPVS(R) / TM_KGDP(R) - TM_DEPR(R)/100 - TM_GROWV(R,XTP)/100);
+  TM_RHO(R)                 = 1 - 1 / TM_ESUB(R);
+  TM_TSRV(R,TP)             = TM_ASRV(R) ** NYPER(TP);
+
+*============================================================================*
+*  Calculate the initial values for the economic variables for the first time period
+*   - Capital Stock
+*   - Investment during time period 0
+*   - Consumption during time period 0
+*   - GDP (Consumption + Investment) + Energy Costs
+
+  TM_K0(R)  = TM_KGDP(R) * TM_GDP0(R);
+  TM_IV0(R) = TM_K0(R) * (TM_DEPR(R) + SUM(TB, TM_GROWV(R,TB))) / 100;
+  TM_C0(R)  = TM_GDP0(R) - TM_IV0(R);
+  TM_Y0(R)  = TM_GDP0(R) + TM_EC0(R) + SUM(TB,TM_AMP(R,TB));
+
+*============================================================================*
+* Calculate intermediate values                                              *
+*============================================================================*
+  TM_AEEIFAC(R,TB,DM) = 1;
+  TM_DFACT(R,TB)      = 1;
+  TM_L(R,TB)          = 1;
+
+  LOOP(PP(T+1),
+   TM_AEEIFAC(R,PP,DM) = TM_AEEIFAC(R,T,DM) * (1 - TM_AEEIV(R,PP,DM)) ** NYPER(T);
+   TM_DFACT(R,PP)      = TM_DFACT(R,T) * TM_DFACTCURR(R,T) ** NYPER(T);
+   TM_L(R,PP)          = TM_L(R,T) * (1 + TM_GROWV(R,T) / 100) ** NYPER(T);
+  );
+  OPTION TM_UDF < TM_DFACT;
+
+*  Arbitrary multiplier on utility in last time period.
+  TM_DFACT(MR(R),TLAST)$(TM_ARBM NE 1) = TM_DFACT(R,TLAST) * 
+      (1-MIN(.999,TM_DFACTCURR(R,TLAST))**(NYPER(TLAST)*TM_ARBM)) / 
+      (1-MIN(.999,TM_DFACTCURR(R,TLAST))**(NYPER(TLAST) * 1 ));
+* Weights for periods (use only if requested by TM_ARBM=1)
+  TM_PWT(T) = 1; IF(TM_ARBM=1, Z=MAX(1,SMAX(T,D(T))); TM_PWT(T) = D(T)/Z);
+
+  TM_D0(MR(R),DM) = SUM(TB,TM_DEM(R,TB,DM))*TM_SCALE_NRG;
+
+  TM_B(MR(R),DM)  = TM_D0(R,DM) / TM_Y0(R);
+  TM_B(MR(R),DM)  = TM_B(R,DM) ** (1 - TM_RHO(R));
+  TM_B(MR(R),DM)  = TM_SCALE_CST / TM_SCALE_NRG * TM_DDATPREF(R,DM) * TM_B(R,DM);
+
+  TM_AKL(MR(R))   =  TM_Y0(R) ** TM_RHO(R) - SUM(DEM(R,C), TM_B(R,C) * (TM_D0(R,C) ** TM_RHO(R)));
+  TM_AKL(MR(R))   =  TM_AKL(R) / (TM_K0(R) ** (TM_KPVS(R) * TM_RHO(R)));
+
+  TM_YCHECK(MR(R)) = TM_AKL(R) * TM_K0(R) ** (TM_KPVS(R) * TM_RHO(R)) + SUM(DEM(R,C),TM_B(R,C)*(TM_D0(R,C)**TM_RHO(R)));
+  TM_YCHECK(MR(R)) = TM_YCHECK(R) ** (1 / TM_RHO(R));
+
+display TM_b,TM_akl,TM_ycheck;
+
+*-----------------------------------------------------------------
+* Variable bounds
+
+  VAR_D.LO(MRTC(R,PP,DM)) = TM_DMTOL(R) * TM_D0(R,DM);
+  VAR_D.L(MRTC(R,PP,DM))  = TM_D0(R,DM);
+  VAR_D.FX(MR(R),TB,DM)   = TM_D0(R,DM);
+  VAR_D.FX(MR(R),T,DM)$(TM_DEM(R,T,DM) LE 0)  = 0;
+  VAR_DEM.FX(MR(R),T,C)$((TM_DDATPREF(R,C) LE 0)$DEM(R,C)) = TM_DEM(R,T,C);
+  VAR_DEM.FX(MR(R),T,C)$NO_RT(R,T) = TM_DEM(R,T,C);
+
+  LOOP(MR(R), Z=TM_K0(R)*TM_DEPR(R)/100; LOOP(PP(T+1), Z=Z*TM_TSRV(R,T); VAR_INV.LO(R,PP) = Z));
+  VAR_INV.FX(MR(R),T)$NO_RT(R,T) = PAR_IV(R,T);
+
+  VAR_INV.L(MR,PP)     = TM_IV0(MR) * TM_L(MR,PP);
+  VAR_INV.FX(MR,TB)    = TM_IV0(MR);
+  VAR_K.L(MR,TP)       = TM_K0(MR) * TM_L(MR,TP);
+  VAR_K.LO(MR,TP)      = TM_K0(MR) * 0.5;
+  VAR_K.FX(MR,TB)      = TM_K0(MR);
+
+  VAR_C.L(MR,TP)       = TM_GDP0(MR) - TM_IV0(MR);
+  VAR_C.LO(MR,TP)      = TM_GDP0(MR) * 0.1;
+  VAR_Y.L(MR,TP)       = TM_Y0(MR);
+  VAR_Y.LO(MR,TP)      = TM_GDP0(MR) * 0.5;
+  VAR_SP.FX(MR,TP,DM)  = 0;
+
+  VAR_EC.LO(MR,PP)     = TM_ANNC(MR,PP) * 0.1;
+  VAR_EC.FX(MR,TB)     = TM_EC0(MR) + TM_AMP(MR,TB);

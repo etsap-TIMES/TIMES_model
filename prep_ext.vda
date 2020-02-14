@@ -1,0 +1,84 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* PREP_ext.VDA oversees all the added inperpolation activities needed by VEDA
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Comments: RVP can be used to control flow-related attribs instead of RTP
+*------------------------------------------------------------------------------
+* Prepare commodity-specific availabilities; NCAP_AFAC overrides NCAP_AFC
+  OPTION RP_GRP < NCAP_AFAC;
+  NCAP_AFC(R,DATAYEAR,P,CG,'ANNUAL')$RP_GRP(R,P,CG) = NCAP_AFAC(R,DATAYEAR,P,CG);
+  NCAP_AFC(R,LL,P,CG,STL(S)) $= NCAP_AFCS(R,LL,P,CG,S); OPTION CLEAR=NCAP_AFCS;
+* Collect ACT_EFF groups
+  OPTION RP_GRP < ACT_EFF, CLEAR=UNCD7;
+  UNCD7(R,LL--ORD(LL),P,CG,S--ORD(S),'','')$BOHYEAR(LL) $= (ACT_EFF(R,LL,P,CG,S) GT 0)$ACT_EFF(R,LL,P,CG,S);
+  LOOP(UNCD7(R,LL,P,CG,S,'',''),RPC_ACE(R,P,CG) = YES);
+  RPG_1ACE(RP_GRP(RPC(R,P,C)),C)$(NOT RPC_ACE(RPC)) = YES;
+  OPTION CLEAR=RP_GRP;
+*------------------------------------------------------------------------------
+* Interpolate VDA-specific parameters
+$BATINCLUDE fillparm VDA_EMCB R 'C,COM' ",'0','0','0','0'" V 1 'GE 0'
+$BATINCLUDE fillparm NCAP_AFC R 'P,CG,STL' ",'0','0','0'" V 'RTP(R,V,P)' 'GE -1$ACTCG(CG)'
+$BATINCLUDE fillparm ACT_EFF  R 'P,CG,TS' ",'0','0','0'"  V 'RVP(R,V,P)' 'GE 0' X_RPGS
+$BATINCLUDE fillparm VDA_FLOP R 'P,CG,TS' ",'0','0','0'"  V 'RVP(R,V,P)' 'GE 0' X_RPGS
+$BATINCLUDE fillparm FLO_EMIS R 'P,CG,COM,S' ",'0','0'"   V 'RVP(R,V,P)' 'GE 0' X_RPGCS
+$BATINCLUDE fillparm ACT_UPS  R 'P,S,BD' ",'0','0','0'"  V  'RVP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm ACT_LOSPL R 'P,L' ",'0','0','0','0'" V 'RVP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm ACT_LOSSD R 'P,UPT,BD' ",'0','0','0'" V 'RVP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm ACT_SDTIME R 'P,UPT,BD' ",'0','0','0'" V 'RVP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm ACT_MAXNON R 'P,UPT' ",'0','0','0','0'" V 'RVP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm STG_MAXCYC R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
+$IF DEFINED UC_FLOBET $BATINCLUDE fillparm UC_FLOBET 'UC_N,R' 'P,C' ",'0','0','0'" T 1 'GE 0'
+$IF DEFINED COM_CSTBAL $BATINCLUDE fillparm COM_CSTBAL R 'C,S,ITEM,CUR' ",'0','0'" T 1 'GE 0'
+$IF DEFINED PRC_REACT $BATINCLUDE powerflo.vda PREP
+$IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda
+$BATINCLUDE equcrtp.vda PREP_EXT
+*------------------------------------------------------------------------------
+$IF %VINTOPT%==1 $BATINCLUDE fillvint VDA_FLOP R 'P,CG,TS' X_RPGS
+$IF %VINTOPT%==1 $BATINCLUDE fillvint ACT_EFF R 'P,CG,TS' X_RPGS
+*------------------------------------------------------------------------------
+
+* Tailored interpolation of PRC_RESID
+  OPTION CLEAR=PRC_YMAX,CLEAR=MY_ARRAY;
+  TRACKP(R,P)$=PRC_RESID(R,'0',P); PRC_YMAX(TRACKP(R,P))=ROUND(PRC_RESID(R,'0',P));
+  LOOP(PYR_S(PYR(LL)),
+    PRC_RESID(R,'0',P)$TRACKP(R,P) = MAX(1,NCAP_TLIFE(R,LL,P)+G_TLIFE$(NOT NCAP_TLIFE(R,LL,P)));
+    LOOP(TRACKP(R,P), DFUNC=PRC_YMAX(R,P);
+      MY_ARRAY(DM_YEAR)=PRC_RESID(R,DM_YEAR,P); MY_F=0; F=0; Z=0;
+* do interpolate
+      LOOP(DM_YEAR$MY_ARRAY(DM_YEAR),
+        LAST_VAL=MY_F; MY_F=MY_ARRAY(DM_YEAR); Z=YEARVAL(DM_YEAR);
+        IF(LAST_VAL, PRC_RESID(R,T,P)$((Z>M(T))$(M(T)>MY_FYEAR)) = MY_F-(MY_F-LAST_VAL)/(Z-MY_FYEAR)*(Z-M(T));
+        ELSE F=Z); MY_FYEAR=Z; CNT$(LAST_VAL+MY_F>0)=Z);
+* If only one RESID Interpolate towards EPS at Z+TLIFE
+      IF(ABS(DFUNC-10)=5, DFUNC=F; F=Z; ELSE F$DFUNC=0);
+      IF(Z=F,CNT=PRC_RESID(R,'0',P); Z=F+CNT; DFUNC=DFUNC+CNT;
+         PRC_RESID(R,T,P)$(M(T)>F)=MY_F*MAX(0,1-(M(T)-F)$(M(T)>=DFUNC)/CNT); MY_F=0; ELSE Z=CNT);
+$IFI %WAVER%==YES PRC_YMAX(R,P)=Z+1$(MY_F>0); IF(MY_F=0, PRC_RESID(R,LL+(Z-MIYR_BOH),P)=EPS);
+    );
+* Initialize PRC_RESID capacity availability:
+    NCAP_TLIFE(R,LL,P)$TRACKP(R,P) = 1;
+    NCAP_ILED(R,LL,P)$TRACKP(R,P) = 0;
+    RTP_CPTYR(R,LL,T,P)$(((PRC_RESID(R,T,P)>0)+(B(T)<PRC_YMAX(R,P)))$TRACKP(R,P))=YES);
+  OPTION CLEAR=TRACKP;
+* INF-QA override
+  IFQ$SUM(COM_TYPE(CG(R)),1)=0;
+  COM_LIM(RC,BDNEQ)$COM_LIM(RC,'FX')=NO;
+*-----------------------------------------------------------------------------
+* Have NCAP_AFSX / NCAP_AFSM by control option
+$SET X1 'FLOOR(NCAP_AF' SET X2 R,'0',P)/1000
+  FIL(LL)=V(LL)+LASTLL(LL);
+  NCAP_AFSX(R,FIL(LL),P) $= NCAP_AFX(R,LL,P)$(%X1%X(%X2%) GT 1$V(LL));
+  NCAP_AFX(R,LL,P)$((%X1%X(%X2%) EQ 2)$NCAP_AFX(R,'0',P)) = 0;
+  NCAP_AFSM(R,FIL(LL),P) $= NCAP_AFM(R,LL,P)$(%X1%M(%X2%) GT 1$V(LL));
+  NCAP_AFM(R,LL,P)$((%X1%M(%X2%) EQ 2)$NCAP_AFM(R,'0',P)) = 0;
+*-----------------------------------------------------------------------------
+  ACT_MINLD(RTP) $= ACT_UPS(RTP,'ANNUAL','FX');
+* Move non-standard share parameters to dedicated parameter
+  FLO_ASHAR(R,DM_YEAR,P,C,CG,S,BD) $= FLO_SHAR(R,DM_YEAR,P,C,CG,S,BD)$(NOT COM_GMAP(R,CG,C)*RPC(R,P,C));
+  LOOP(RTP(R,T,P)$NCAP_BND(RTP,'N'),
+    COEF_ILED(RTP) = ABS(NCAP_ILED(RTP))+1000; NCAP_ILED(RTP) = MAX(EPS,NCAP_BND(RTP,'N')+1-B(T)));
+  NCAP_BND(RTP,BDUPX)$((NCAP_BND(RTP,BDUPX)=0)$NCAP_BND(RTP,'N'))=0;

@@ -1,0 +1,178 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* Solve.MSA is the wrapper for solving the soft-linked standalone MACRO
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+
+$IF %MSA%==CSA TM_YCHECK(R) = TM_IVETOL(R); TM_IVETOL(R)=MAX(1,TM_IVETOL(R));
+
+* Abort execution if execute errors
+  ABORT$EXECERROR '*** ERRORS IN EXECUTION ***'
+
+  OPTION SOLPRINT = OFF;
+  OPTION SOLVELINK = 1;
+  OPTION DECIMALS = 5;
+
+  MODEL MCE  /  EQ_UTIL, EQ_CONSO, EQ_PROD_Y, EQ_MCAP, EQ_TMC, EQ_DD, EQ_IVECBND, EQ_ESCOST, EQ_TRDBAL
+$IF DEFINED TM_CATT EQ_CCDM, EQ_CLITOT, EQ_CLICONC, EQ_CLITEMP, EQ_CLIBEOH
+  /;
+  MCE.MODELSTAT=0; MCE.SOLVESTAT=0; MCE.OPTFILE=1;
+
+  SET LOOPS / NWT, DDF, GDP /;
+  PARAMETER GDPLOSS(MITER,REG,tp) 'GDP losses in percent';
+  PARAMETER MSA_ERR(MITER,NITER,LOOPS,REG);
+  PARAMETER TM_TOL(ITEM) / CAL 7E-7, MST 1E-5, BND 0.5, TIG 0.6, DEM 0, EQUIL 1 /;
+  SCALAR ERRDEM / 0 /, ERRGDP / 0 /, TM_CAL / 1 /, DOITER/ 1 /;
+  TM_GDP(MR(R),T) = TM_GDPGOAL(R,T);
+  PAR_Y(R,T)      = TM_GDPGOAL(R,T);
+  TM_NWT(MR) = 1;
+*--------------------------------------------------------
+$IFI %MSA%==MSA $GOTO POLICY
+*--------------------------------------------------------
+  TM_GROWV(R,T)  = TM_GR(R,T);
+  PAR_GRGDP(R,T) = TM_GR(R,T);
+  PAR_MC(R,T,DM)$TM_DEM(R,T,DM) = TM_DMC(R,T,DM);
+
+  DOITER=1;
+  OPTION SOLVEOPT=MERGE,LIMROW=0,BRATIO=0.25;
+
+  LOOP(NITER$DOITER,
+
+$  INCLUDE ddfupd.msa
+
+   IF(ORD(NITER)<5,
+     LOOP(MSAREG, MR(R)= NO; MR(MSAREG)=YES;
+        SOLVE MCE MAXIMIZING VAR_UTIL USING NLP); MR(MSAREG)=YES;
+   ELSE SOLVE MCE MAXIMIZING VAR_UTIL USING NLP);
+
+   TM_GDP(R,T) = VAR_C.L(R,T) + VAR_INV.L(R,T);
+   PAR_GRGDP(MR(R),TP(T-1)) = 100 * ((TM_GDP(R,T)/TM_GDP(R,TP))**(1/NYPER(TP))-1);
+   PAR_Y(R,T) = VAR_Y.L(R,T);
+   PAR_MC(MR(R),PP(T),C)$TM_DEM(R,T,C) = MAX(ABS(VAR_SP.M(R,T,C)*TM_SCALE_NRG),ABS(EQ_DD.M(R,T,C))) / MAX(EQ_ESCOST.M(R,T),-VAR_EC.M(R,T)) / TM_SCALE_CST;
+
+   MSA_ERR('1',NITER,'DDF',MR(R)) = SMAX((T,C)$TM_DEM(R,T,C),ABS(TM_DEM(R,T,C)-VAR_DEM.L(R,T,C))/TM_DEM(R,T,C));
+   MSA_ERR('1',NITER,'GDP',MR(R)) = SMAX(T,ABS(TM_GDPGOAL(R,T)-TM_GDP(R,T))/TM_GDPGOAL(R,T));
+   ERRDEM = SMAX(MR, MSA_ERR('1',NITER,'DDF',MR));
+   ERRGDP = SMAX(MR, MSA_ERR('1',NITER,'GDP',MR));
+   IF(MAX(ERRDEM,ERRGDP) < TM_TOL('CAL')*ORD(NITER), DOITER=0);
+  );
+
+  DISPLAY MSA_ERR;
+  TM_DDF_DM(MR,TP,DM)$TM_DEM(MR,TP,DM)=(1-VAR_DEM.L(MR,TP,DM)/TM_DEM(MR,TP,DM))*100;
+  OPTION TM_DD < TM_DDF_DM;
+  DISPLAY 'estimated to assumed demand difference in percent', TM_dd;
+  TM_TOL('DEM') = ERRDEM;
+  TM_TOL('GDP') = ERRGDP;
+
+$IFI NOT %OBJANN%==YES $GOTO NEGISHI
+*-----------------------------------------------------------------
+* Update discounting factors
+  TM_CAL = 2;
+  LOOP(PP(T-1),OBJ_PVT(MR(R),T,CUR) = OBJ_PVT(R,PP,CUR)*EQ_ESCOST.M(R,T)/EQ_ESCOST.M(R,PP));
+  COEF_PVT(MR(R),T) = SUM(G_RCUR(R,CUR),OBJ_PVT(R,T,CUR));
+  OPTION SOLVEOPT=REPLACE,LIMROW=0,BRATIO=1;
+  SOLVE %MODEL_NAME% MINIMIZING objZ USING LP;
+$ batinclude solprep.msa
+$ GOTO NEGISHI
+
+*-----------------------------------------------------------------
+$LABEL POLICY
+*-----------------------------------------------------------------
+* Get initial solution
+  TM_CAL=0;
+  OPTION SOLVEOPT=MERGE;
+  LOOP(MSAREG, MR(R)= NO; MR(MSAREG)=YES; SOLVE MCE MAXIMIZING VAR_UTIL USING NLP);
+  MR(MSAREG)=YES;
+
+$LABEL NEGISHI
+* Prepare Negishi iterations
+
+* Calculate initial Negishi weights as in MERGE, e.g. based on the regional GDP
+  TM_NWT(MR(R)) = SUM(TP, TM_GDPGOAL(R,TP)*TM_DFACT(R,TP));
+  Z = SUM(MR(R),TM_NWT(R));
+  TM_NWT(MR(R)) = TM_NWT(R) / Z;
+  OPTION CLEAR=MSA_ERR;
+
+* Relax trades
+  VAR_NTX.UP(MR,PP,TRD) = INF;
+  VAR_NTX.LO(MR,PP,TRD) = -INF;
+  RT_PP(R,T)$(NOT NO_RT(R,T)) = YES;
+  DOITER=1; ERRDEM=0.8;
+
+  LOOP(MITER$DOITER,
+*   Heuristic tightening of demand bounds
+    TM_TOL('BND')=MIN(TM_TOL('BND'),ERRDEM);
+    IF(NOT TM_CAL,
+      VAR_DEM.LO(RT_PP(MR(R),T),C)$((TM_DDATPREF(R,C)>0)$TM_DEM(R,T,C)) = TM_DEM(R,T,C)*(1-TM_TOL('BND')*TM_TOL('TIG'));
+      VAR_DEM.UP(RT_PP(MR(R),T),C)$((TM_DDATPREF(R,C)>0)$TM_DEM(R,T,C)) = TM_DEM(R,T,C)*(1+TM_TOL('BND')*TM_TOL('TIG'));
+    );
+   LOOP(NITER$DOITER,
+
+    OPTION BRATIO=0.25,SOLVEOPT=REPLACE;
+    SOLVE MCE MAXIMIZING VAR_UTIL USING NLP;
+
+*-- Calculate Macro parameters
+    EQ_TRDBAL.M(PP,TRD) = EQ_TRDBAL.M(PP,"NMR");
+    VAR_NTX.L(MR,PP,TRD('IRE')) = -REG_ACOST(MR,PP,TRD)*TM_SCALE_CST;
+    TM_GDP(MR(R),PP) = VAR_C.L(R,PP)+VAR_INV.L(R,PP) + SUM(TRD, ABS(EQ_TRDBAL.M(PP,TRD)/EQ_TRDBAL.M(PP,"NMR"))*VAR_NTX.L(R,PP,TRD));
+    PAR_GRGDP(MR(R),tp(T-1)) = 100 * ((TM_GDP(R,T)/TM_GDP(R,TP))**(1/NYPER(TP))-1);
+    PAR_Y(R,T) = VAR_Y.L(R,T);
+    PAR_MC(MR(R),PP(T),C)$TM_DEM(R,T,C) = MAX(ABS(VAR_SP.M(R,T,C)*TM_SCALE_NRG),ABS(EQ_DD.M(R,T,C))) / MAX(EQ_ESCOST.M(R,T),-VAR_EC.M(R,T)) / TM_SCALE_CST;
+    MSA_ERR(MITER,NITER,'DDF',MR(R)) = SMAX((T,C)$TM_DEM(R,T,C),ABS(TM_DEM(R,T,C)-VAR_DEM.L(R,T,C))/TM_DEM(R,T,C));
+    MSA_ERR(MITER,NITER,'GDP',MR(R)) = SMAX(T,ABS(TM_GDPGOAL(R,T)-TM_GDP(R,T))/TM_GDPGOAL(R,T));
+    ERRDEM = SMAX(MR, MSA_ERR(MITER,NITER,'DDF',MR)); DISPLAY ERRDEM;
+    ERRGDP = SMAX(MR, MSA_ERR(MITER,NITER,'GDP',MR));
+    DFUNC = ((ERRGDP>1.5*TM_TOL('GDP'))+(ERRDEM>1.5*TM_TOL('DEM')))*(MAX(ERRDEM,ERRGDP)>TM_TOL('MST'))$TM_CAL;
+
+*-- Calculate deflators and new Negishi weights
+    LOOP(TB(T-1), TM_PVPI(TRD,PP) = ABS(EQ_TRDBAL.M(PP,TRD)/EQ_TRDBAL.M(T,"NMR")));
+    TM_NWT(MR(R)) = SUM(PP,TM_PVPI("NMR",PP)*VAR_C.L(R,PP) + SUM(TRD, TM_PVPI(TRD,PP)*VAR_NTX.L(R,PP,TRD)));
+    TM_NWT(MR) = TM_NWT(MR) / SUM(REG, TM_NWT(REG));
+    TM_NWTIT(NITER,MR) = TM_NWT(MR);
+    IF(CARD(MR)=1, TM_TOL('EQUIL')=0;
+    ELSE TM_TOL('EQUIL') = SUM(MR, ABS(TM_NWTIT(NITER-1,MR) - TM_NWT(MR))));
+    MSA_ERR(MITER,NITER,'NWT',MR) = TM_TOL('EQUIL');
+    IF((TM_CAL=1)$DFUNC, TM_TOL('EQUIL')=1; DFUNC=0);
+    IF(TM_TOL('EQUIL') LE TM_TOL('MST') OR ORD(NITER)=CARD(NITER), DOITER=0);
+
+    IF(DOITER+DFUNC,
+*-- Recalibrate DDF factors
+$IFI %MSA%==CSA $INCLUDE ddfupd.msa
+    ));
+
+   GDPLOSS(MITER,MR,TP)= 100*(TM_GDPGOAL(MR,TP)-TM_GDP(MR,TP))/TM_GDPGOAL(MR,TP);
+   TM_DDF_DM(MR,TP,DM)$TM_DEM(MR,TP,DM)=(VAR_DEM.L(MR,TP,DM)/TM_DEM(MR,TP,DM));
+   OPTION TM_DD < TM_DDF_DM;
+*  DISPLAY 'Demand ratio VAR_DEM/TM_DEM', TM_dd;
+   IF(TM_CAL=2, DOITER=DFUNC; ELSEIF NOT TM_CAL, DOITER=ROUND(ERRDEM/CARD(MR),5)>3*TM_TOL('MST'));
+$  IF DEFINED TM_CATT $batinclude preppm.msa TOLP
+   IF(DOITER$(ORD(MITER) < CARD(MITER)),
+*     Update either demands or PVT factors
+      IF(NOT TM_CAL,OPTION CLEAR=RCJ; COM_PROJ(MR(R),PP(T),C)$TM_DEM(R,T,C) = COM_PROJ(R,T,C)+VAR_DEM.L(R,T,C)-TM_DEM(R,T,C);
+      ELSEIF TM_CAL=2,LOOP(PP(T-1),OBJ_PVT(MR(R),T,CUR) = OBJ_PVT(R,PP,CUR)*EQ_ESCOST.M(R,T)/EQ_ESCOST.M(R,PP));
+         COEF_PVT(MR(R),T) = SUM(G_RCUR(R,CUR),OBJ_PVT(R,T,CUR)) DISPLAY "UDF updated";);
+      OPTION BRATIO=1;
+$     INCLUDE clearsol.stp
+      OPTION SOLVEOPT=MERGE;
+      SOLVE %MODEL_NAME% MINIMIZING objZ USING LP;
+$     BATINCLUDE solprep.msa
+    );
+  );
+  OPTION MSA_ERR:6:3:1;
+  DISPLAY MSA_ERR,GDPLOSS,ERRDEM,ERRGDP;
+
+$SET SOLVEDA 1
+$batinclude rptlite.rpt '' '' '' NO
+$IFI %QSF%==YES $batinclude solprep.msa OUT
+$IFI NOT %MSA%==CSA $EXIT
+*------------------------------------------------------------------
+* Calculate IVETOL for policy run
+  TM_IVETOL(MR(R)) = MAX(TM_YCHECK(R),SMAX(PP$(TM_L(R,PP)>1),LOG((VAR_INV.L(R,PP)+VAR_EC.L(R,PP))/TM_Y0(R))/LOG(TM_L(R,PP)))+.005);
+  PAR_IV(MR(R),T) = VAR_INV.L(R,T);
+
+* Write out final calibrated DDF factors and realized GDP
+  OPTION CLEAR=TM_UDF; IF(TM_CAL=2,TM_UDF(MR(R),T)=COEF_PVT(R,T); DISPLAY TM_UDF);
+$batinclude writeddf.msa MSADDF PAR_GRGDP

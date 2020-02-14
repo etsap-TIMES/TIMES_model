@@ -1,0 +1,56 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================
+* INIT Declarations for the ABS Extension (Ancillary Balancing Services)
+*=============================================================================
+$ SETGLOBAL ABS YES
+
+* System sets
+  SETS
+  ITEM / SI /
+  CLVT / PRB, DET /
+  RSP  / EXOGEN, WMAXSI, DELTA, OMEGA /;
+
+* Input parameters
+  PARAMETERS
+  BS_CAPACT(R)              'Conversion factor from exogenous reserve demand to activity' //
+  BS_RTYPE(R,C)             'Types of reserve commodities, positive or negative 1-4' //
+  BS_DEMDET(R,YEAR,RSP,C,S) 'Deterministic demands of reserves - EXOGEN and WMAXSI' //
+  BS_STIME(R,P,COM,BD)      'Minimum times for reserve provision form storage (hours)' //
+  BS_DETWT(R,YEAR,C)        'Weights for deterministic reserve demands' //
+  BS_LAMBDA(R,YEAR,C)       'Fudge factors for dependencies in reserve requirements' //
+  BS_SIGMA(R,YEAR,C,ITEM,S) 'Standard deviation of imbalance source ITEM' //
+  BS_OMEGA(REG,YEAR,COM,TS) 'Indicator of how to define reserve demand from deterministic and probabilistic component' //
+  BS_MAINT(R,YEAR,P,S)      'Continuous maintenance duration (hours)' //
+  BS_RMAX(R,YEAR,P,C,S)     'Maximum contribution of process p to provision of reserve c as a fraction of capacity' //
+  BS_DELTA(R,YEAR,C,S)      'Calibration parameters for probabilistic reserve demands' //
+  BS_SHARE(R,YEAR,C,ITEM,L) 'Share of group reserve provision' //
+  BS_BNDPRS(R,YEAR,P,C,S,L) 'Bound on process reserve provision' //
+  ;
+
+* Internal sets
+  SETS
+  BS_K(ITEM)              'Sources of imbalance or provision' / UP, LO /
+  BS_RTK(R,T,ITEM)        'Sources of imbalances by period' //
+  BS_COMTS(R,C,S)         'Reserve commodity timeslices' //
+  BS_APOS(R,C)            'Positive reserve commodities' //
+  BS_ANEG(R,C)            'Negative reserve commodities' //
+  BS_ABD(R,C,L)           'Reserve commodities by direction' //
+  BS_BSC(R,P,C)           'Reserve provisions by process' //
+  BS_UPL(R,P,L)           'Maximum ramping rate indicator' //
+  BS_UPC(R,P,TSL,L)       'Minimum uptime/downtime indicator' //
+  BS_TOP(R,P,C,IO)        'Topology for imbalance process' //
+  BS_ENDP(R,P)            'Reserve providion by demand' //
+  BS_SUPP(R,P)            'Reserve provision by generation' //
+  BS_STGP(R,P)            'Reserve provision by storage' //
+  BS_NEGP(R,P)            'Processes with negative provision' //
+  BS_PRS(R,P,S)           'Process slices for reserve tracking' //
+  BS_SBD(R,S,L)           'Timeslices for reserve provision' //
+  BS_UCMAP(UCN,SIDE,R,P,C) 'Map to refer to reserves in UC_FLO' //
+  ;
+
+  PARAMETERS
+  BS_RTCS(RSP,R,YEAR,C,S) 'Temporary work parameter' //
+  ;

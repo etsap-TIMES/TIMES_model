@@ -1,0 +1,23 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================
+* INIT DECLARATIONS FOR THE IER EXTENSION
+*=============================================================================
+* Parameters used in EQx_MRKCON
+PARAMETER FLO_MRKCON(REG,ALLYEAR,PRC,COM,TS,BD)  'Bound on the share of a flow in the total consumption of a commmodity'  //;
+PARAMETER FLO_MRKPRD(REG,ALLYEAR,PRC,COM,TS,BD)  'Bound on the share of a flow in the total production of a commmodity'   //;
+
+* Sets and parameters used for CHP plants
+SET ECT_CHP(REG,PRC)                             'Set of extraction condensing CHP plants'                                  //;
+SET ECT_ELC(REG,PRC,COM)                         'Electricity commodity of extraction condensing CHP plants'                //;
+SET ECT_DHT(REG,PRC,COM)                         'Heat commodity of extraction condensing CHP plants'                       //;
+SET ECT_CGOUT(REG,PRC,COM_GRP)                   'Output commodity group ELC+HEAT of ECT CHP plant'                         //;
+SET ECT_CGIN(REG,PRC,COM_GRP)                    'Fuel input commodity group of ECT CHP plant'                              //;
+PARAMETER ECT_INP2ELC(REG,ALLYEAR,PRC)           'Conversion factor from input capacity to ELC capacity in BPT point'       //;
+PARAMETER ECT_INP2DHT(REG,ALLYEAR,PRC)           'Conversion factor from input capacity to heat capacity in BPT point'      //;
+PARAMETER ECT_INP2CON(REG,ALLYEAR,PRC)           'Conversion factor from input capacity to heat capacity in BPT point'      //;
+PARAMETER ECT_REH(REG,ALLYEAR,PRC)               'Ratio of electricity to heat in brackpressure point'                      //;
+PARAMETER ECT_AFCON(REG,ALLYEAR,PRC,BD)		 'Availability of condensing mode operation of extraction condensing CHP'   //;
+PARAMETER ECT_AFBPT(REG,ALLYEAR,PRC,BD)		 'Availability of backpressure mode operation of extraction condensing CHP' //;

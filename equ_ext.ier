@@ -1,0 +1,48 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQMAIN.EXT declarations & call for actual equations
+*  %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Questions/Comments:
+*-----------------------------------------------------------------------------
+  EQUATIONS
+*-----------------------------------------------------------------------------
+* Bound on the market share of a flow in the production/consumption of a commodity
+*-----------------------------------------------------------------------------
+EQE_MRKPRD(R,T,P,C,S,ALLSOW)            'Production share (=E=)'
+EQL_MRKPRD(R,T,P,C,S,ALLSOW)            'Production share (=L=)'
+EQG_MRKPRD(R,T,P,C,S,ALLSOW)            'Production share (=G=)'
+EQE_MRKCON(R,T,P,C,S,ALLSOW)            'Consumption share (=E=)'
+EQL_MRKCON(R,T,P,C,S,ALLSOW)            'Consumption share (=L=)'
+EQG_MRKCON(R,T,P,C,S,ALLSOW)            'Consumption share (=G=)'
+*-----------------------------------------------------------------------------
+* Equation bounding the electricity production of extraction condensing CHP plants
+* by the available condensing resp. backpressure capacity
+*-----------------------------------------------------------------------------
+EQL_CHPCON(R,YEAR,YEAR,P,ALLSOW)      'Condensing capacity constraint (=L=)'
+EQL_CHPBPT(R,YEAR,YEAR,P,ALLSOW)      'Backpressure capacity constraint (=L=)'
+EQE_CHPCON(R,YEAR,YEAR,P,ALLSOW)      'Condensing capacity constraint (=E=)'
+EQE_CHPBPT(R,YEAR,YEAR,P,ALLSOW)      'Backpressure capacity constraint (=E=)'
+;
+*----------------------------End of equations---------------------------------
+
+* Call for Implementations
+*-----------------------------------------------------------------------------
+* Bound on the market share of a flow in the production/consumption of a commodity
+*-----------------------------------------------------------------------------
+$BATINCLUDE eqmrkcom.%1	%1 L LO PRD OUT
+$BATINCLUDE eqmrkcom.%1	%1 E FX PRD OUT
+$BATINCLUDE eqmrkcom.%1	%1 G UP PRD OUT
+$BATINCLUDE eqmrkcom.%1	%1 L LO CON IN
+$BATINCLUDE eqmrkcom.%1	%1 E FX CON IN
+$BATINCLUDE eqmrkcom.%1	%1 G UP CON IN
+*-----------------------------------------------------------------------------
+* Equation bounding the electricity production of extraction condensing CHP plants
+* by the available condensing resp. backpressure capacity
+*-----------------------------------------------------------------------------
+ECT_CHP(RP)$(NOT PRC_CAP(RP)$RP_STD(RP)) = NO;
+$IF %CHP_MODE% == YES $BATINCLUDE eqchpelc.%1 L UP
+$IF %CHP_MODE% == YES $BATINCLUDE eqchpelc.%1 E FX

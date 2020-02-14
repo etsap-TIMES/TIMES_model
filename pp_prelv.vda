@@ -1,0 +1,114 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* pp_prelvl.vda - Auxiliary preprocessing before levelizing
+*=============================================================================*
+* To be called AFTER establishing RTCS_VARC and RPCS_VAR.
+*-----------------------------------------------------------------------------
+* Restore NCAP_TLIFE for RESID
+  LOOP(PYR_S(V),NCAP_TLIFE(R,V,P)$PRC_RESID(R,'%DFLBL%',P) = PRC_RESID(R,'%DFLBL%',P));
+* Remove commodity from PG if PRC_ACTFLO flagged non-interpolated
+  RPC_PG(R,P,C)$((NOT RP_PG(R,P,C))$(ROUND(PRC_ACTFLO(R,'0',P,C) LT 0))) = NO;
+*=============================================================================
+* For filtering VDA_FLOP, check ACT_EFF groups
+  TRACKPC(RPC_SPG(R,P,C))$RPC_ACE(R,P,%PGPRIM%) = YES;
+  TRACKPC(RPC_SPG(R,P,C))$RPG_1ACE(R,P,C,C) = NO;
+  Z = CARD(VDA_FLOP);
+  VDA_FLOP(R,LL,P,C,S)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)) = 0;
+$IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)) = 0;
+  Z = Z-CARD(VDA_FLOP); IF(Z, DISPLAY 'DELETED FLOPS FOR SPG:',Z);
+  OPTION CLEAR=TRACKPC,CLEAR=KEEP_FLOP;
+*-----------------------------------------------------------------------------
+* Preprocessing of VDA_FLOP after establishing PRC_SPG
+  OPTION RP_GRP < VDA_FLOP;
+  TRACKPC(RP_GRP(RPC)) = YES;
+* RP_GRP contains only CGs that are not in topology, but include some C in RPC
+  RP_GRP(TRACKPC) = NO;
+  RP_GRP(R,P,CG)$(NOT SUM(RPC(R,P,C)$COM_GMAP(R,CG,C),1)) = NO;
+*-----------------------------------------------------------------------------
+* Set PRC_CG now automatically
+  PRC_CG(RP_GRP) = YES;
+*-----------------------------------------------------------------------------
+* Identify processes with PG-based FLO_SUMs
+  LOOP(TRACKPC(RPC_PG(R,P,C)),TRACKP(R,P)=YES);
+* Add default value for PG commodities not in TRACKPC
+  VDA_FLOP(RTP(R,V,P),C,ANNUAL)$((RPC_PG(R,P,C)*(NOT TRACKPC(R,P,C)))$TRACKP(R,P)) = 1;
+* Remove all PG commodities from TRACKPC:
+  TRACKPC(RPC_PG) = NO;
+*-----------------------------------------------------------------------------
+* Partition the groups into direct/PG based ones
+  CG_GRP(RP_PG(R,P,CG2),CG)$RP_GRP(R,P,CG) = YES;
+  RPCC_FFUNC(CG_GRP(TRACKP(R,P),CG2,CG))$SUM(RPC_SPG(R,P,C)$COM_GMAP(R,CG,C),1) = YES;
+  CG_GRP(RPCC_FFUNC) = NO; OPTION CLEAR=RXX,CLEAR=RP_GRP;
+*-----------------------------------------------------------------------------
+* Remove from TRACKP those processes for which CG has been defined:
+  LOOP(RPCC_FFUNC(R,P,CG2,CG),TRACKP(R,P) = NO);
+* Add into FFUNC single SPG commodities for remaining TRACKP:
+  LOOP(TRACKP(R,P)$(SUM(RPC_SPG(R,P,C),1) EQ 1),RXX(RPC_SPG(R,P,C)) = YES);
+  RPCC_FFUNC(RP_PG(R,P,CG),C)$RXX(R,P,C) = YES; TRACKPC(RXX(R,P,C)) = NO;
+*-----------------------------------------------------------------------------
+* VDA_FLOP is in the direction from the PG to the CG:
+  FLO_FUNC(RTP(R,V,P),CG2,CG,S)$RPCC_FFUNC(R,P,CG2,CG) = VDA_FLOP(RTP,CG,S);
+*-----------------------------------------------------------------------------
+* Set FLO_SUM for individual commodities in PG:
+  FLO_SUM(RTP(R,V,P),CG2,C,CG,S)$(RPC_PG(R,P,C)$RPCC_FFUNC(R,P,CG2,CG)) = VDA_FLOP(RTP,C,S)*(1/PRC_ACTFLO(RTP,C));
+* Set FLO_SUM for groups of commodities:
+  FLO_SUM(RTP(R,V,P),CG2,C,CG,S)$(RPC_PG(R,P,C)$CG_GRP(R,P,CG2,CG)) = VDA_FLOP(RTP,CG,S)*(1/PRC_ACTFLO(RTP,C));
+* Finally, handle single commodities without a group (and not in PG either)
+  FLO_SUM(RTP(R,V,P),CG,C,COM,S)$(RP_PG(R,P,CG)*RPC_PG(R,P,C)*TRACKPC(R,P,COM)) $= VDA_FLOP(RTP,COM,S)*(1/PRC_ACTFLO(RTP,C));
+  OPTION CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=VDA_FLOP,CLEAR=CG_GRP,CLEAR=RXX,CLEAR=RPCC_FFUNC;
+*-----------------------------------------------------------------------------
+* Distribute IRE_FLOSUM for ACT; Ignore possible overwriting for now
+  PRC_ACTFLO(R,V,P,C) $= FLO_EMIS(R,V,P,%PGPRIM%,C,'ANNUAL')$PRC_MAP(R,'STG',P);
+  IRE_FLOSUM(R,V,P,C(ACTCG),S,IE,COM,'OUT') $= FLO_EMIS(R,V,P,C,COM,S)$RP_AIRE(R,P,IE);
+* Preprocessing of FLO_EMIS
+  OPTION RP_CGC <= FLO_EMIS;
+  FLO_EMIS(RTP(R,V,P),C,C,S)$(RP_CGC(R,P,C,C)$RPC_PG(R,P,C)) = 1+(FLO_EMIS(R,V,P,C,C,S)-1)/PRC_ACTFLO(R,V,P,C);
+  RP_CGC(RP_IRE(R,P),CG,C)=NO; RP_CGC(RPC_STG,C)=NO;
+  RPCC_FFUNC(RP_CGC(RPC,COM)) = YES;
+  RP_CGC(RPCC_FFUNC(RPC,COM)) = NO;
+  RPC_EMIS(R,P,C)$SUM(RPCC_FFUNC(R,P,COM,C),1) = NO;
+* Add groups of source commodities
+  FSCK(RP_CGC(R,P,CG,COM),C)$(COM_GMAP(R,CG,C)$RPC(R,P,C)) = YES;
+  LOOP(FSCK(R,P,CG,COM,C), FLO_SUM(R,V,P,COM,C,COM,S) $= FLO_EMIS(R,V,P,CG,COM,S); RPC_EMIS(R,P,COM) = NO);
+* Add activity sources
+  FLO_SUM(RTP(R,V,P),COM,C,COM,S)$(RPC_PG(R,P,C)$RP_CGC(R,P,%PGPRIM%,COM)) = FLO_EMIS(R,V,P,%PGPRIM%,COM,S)/PRC_ACTFLO(R,V,P,C);
+  RP_CGC(R,P,%PGPRIM%,C) = NO; PUTGRP=0;
+  LOOP(RP_CGC(R,P,CG,COM)$RPC_EMIS(R,P,COM),
+$   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'FLO_EMIS with no members of source group in process - ignored'
+    PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' CG=',CG.TL,' COM=',COM.TL;
+  );
+  FLO_SUM(RTP(R,V,P),COM,C,COM,ANNUAL)$RPC_PG(R,P,C) $= SUM(RP_CGC(R,P,CG,COM)$RPC_EMIS(R,P,COM),EPS);
+* Add single source commodities
+  OPTION CLEAR=RP_CGC,CLEAR=FSCK,CLEAR=RPC_EMIS;
+  OPTION CG_GRP < RPCC_FFUNC;
+  FLO_SUM(R,V,P,COM,C,COM,S)$CG_GRP(R,P,COM,C) = FLO_EMIS(R,V,P,C,COM,S);
+  OPTION CLEAR=CG_GRP,CLEAR=RPCC_FFUNC,CLEAR=FLO_EMIS;
+*=============================================================================
+* Other preprocessing stuff for the VEDA interface
+*=============================================================================
+* Remove non-standard shares from FLO_SHAR
+  FLO_ASHAR(R,DM_YEAR,P,C,CG,S,BD) $= FLO_SHAR(R,DM_YEAR,P,C,CG,S,BD)$(NOT RP_STD(R,P));
+  FLO_SHAR(R,LL,P,C,CG,S,BD)$FLO_ASHAR(R,LL,P,C,CG,S,BD) = 0;
+  NCAP_CHPR(RTP(R,V,P),'N') $= NCAP_CHPR(R,'0',P,'N');
+* Support for levelised FLO_FR
+  RPC_CONLY(RTP,C) $=SUM(L$FLO_FR(RTP,C,'ANNUAL',L),1);
+$ BATINCLUDE pp_lvlfc.mod FLO_FR 'P,C' RPCS_VAR ',BD' ",'0','0'" ALL_TS T RPC_CONLY(R,T,P,C)
+  FLO_FR(RPC_CONLY(R,T,P,C),S,'N')=MIN(1,SUM(RS_BELOW1(R,S,TS)$RPCS_VAR(R,P,C,TS),G_YRFR(R,TS)))$TS_CYCLE(R,S);
+  FLO_FR(RPC_CONLY(R,T,P,C),S,BD)$FLO_FR(R,T,P,C,S,BD)=FLO_FR(R,T,P,C,S,BD)*G_YRFR(R,S)$RPCS_VAR(R,P,C,S);
+  OPTION CLEAR=RPC_CONLY;
+* Call the powerflo extension
+$IFI %POWERFLO%==YES $include powerflo.vda
+*-----------------------------------------------------------------------------
+* Set COM_VAR default bounds
+  COM_BNDNET(R,T,C,ANNUAL(S),'N')$(NOT COM_BNDNET(R,T,C,S,'N')) $=COM_BNDNET(R,'0',C,S,'N');
+  COM_BNDNET(RTCS_VARC(RTC,S),BDLOX(BD))$((NOT COM_BNDNET(RTC,S,BD))$COM_BNDNET(RTC,'ANNUAL','N')) =
+    (EPS-INF$BDNEQ(BD))$(-SIGN(COM_BNDNET(RTC,'ANNUAL','N'))=1$BDNEQ(BD));
+  COM_BNDPRD(R,T,C,ANNUAL(S),'N')$(NOT COM_BNDPRD(R,T,C,S,'N')) $=COM_BNDPRD(R,'0',C,S,'N');
+  COM_BNDPRD(RTCS_VARC(RTC,S),BDLOX(BD))$((NOT COM_BNDPRD(RTC,S,BD))$COM_BNDPRD(RTC,'ANNUAL','N')) =
+    (EPS-INF$BDNEQ(BD))$(-SIGN(COM_BNDPRD(RTC,'ANNUAL','N'))=1$BDNEQ(BD));
+*-----------------------------------------------------------------------------
+* Remove timeslices turned off if DYNTS enabled
+$IF NOT %RTS%==S $BATINCLUDE dynslite.vda PRELEV

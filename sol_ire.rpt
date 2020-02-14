@@ -1,0 +1,20 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==============================================================================*
+* SOL_IRE - basic solution parameters for IRE flows and auxiliaries
+*==============================================================================*
+$SET SRC  'PAR_IRE(R,V,T,P,C,S,IE)' SET%1 V VAR
+$SET SWS %V%_IRE.L(R,V,T,P,C,S,IE%2)$(NOT RPC_AIRE(R,P,C))+(%V%_ACT.L(R,V,T,P,S%2)*PRC_ACTFLO(R,V,P,C))$RPC_AIRE(R,P,C)
+$SET SWD %V%_IRE.M(R,V,T,P,C,S,IE%2)$(NOT RPC_AIRE(R,P,C))+(%V%_ACT.M(R,V,T,P,S%2)/PRC_ACTFLO(R,V,P,C))$RPC_AIRE(R,P,C)
+$IF '%4'==) $SET SRC '%SWS%' SET SWS '0' SET SWD 0
+
+  OPTION CLEAR=PAR_IRE,CLEAR=PAR_IREM;
+  PAR_IRE(RTP_VINTYR(R,V,T,P),C,S,IE)$(RTPCS_VARF(R,T,P,C,S)$RPC_IRE(R,P,C,IE)) = %SWS%;
+  PAR_IREM(RTP_VINTYR(R,V,T,P),C,S,IE)$(RTPCS_VARF(R,T,P,C,S)$RPC_IRE(R,P,C,IE)) = %SWD%;
+
+* emissions & auxiliary flows from IRE
+$IF DEFINED RTP_FFCS $SET MX "(%SHFF%S(R,V,P,COM,COM%SOW%))*"
+  F_INOUTS(F_IOSET(R,V,T,P,COM,S,IO)) = %3 %MX%
+    SUM(RPC_IRE(R,P,C,IE),IRE_FLOSUM(R,T,P,C,S,IE,COM,IO)*(%SRC%%4));

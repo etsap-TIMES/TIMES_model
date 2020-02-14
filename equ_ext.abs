@@ -1,0 +1,196 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================
+* EQU_EXT.abs - Extension for Ancillery Balancing Services
+*-----------------------------------------------------------------------------
+* ABS Final pre-processing
+*-----------------------------------------------------------------------------
+$IFI NOT %OBMAC%==YES $EXIT
+* Adjust equation controls
+  BS_UPL(RP_UPL(BS_SUPP,BDNEQ))=YES;
+  BS_UPC(PRC_TSL(BS_SUPP(R,P),TSL),BDNEQ)$SUM(BS_BSC(R,P,C)$(ABS(BS_RTYPE(R,C))>2),1)$=RP_UPS(R,P,TSL,'UP');
+  RP_UPL(BS_UPL)=NO;
+  RP_UPC(BS_UPC)=NO;
+* Activate capacity equations
+  OPTION TRACKP<BS_BSC;
+  RP_UPS(TRACKP(R,P),TSL,'FX')$SUM(RP_UPS(PRC_TSL(R,P,TSLVL),L),RLUP(R,TSLVL,TSL))=YES;
+  RP_UPS(TRACKP(R,P),TSL,'LO')$SUM(PRC_TSL(R,P,TSLVL)$RLUP(R,TSLVL,TSL),NOT RP_UPS(R,P,TSL,'FX'))=YES;
+  RP_UPS(PRC_TSL(TRACKP,TSL(S)),'LO')=YES;
+* Remove other basic Capact equations
+  OPTION TRACKP<AFUPS; BS_MAINT(R,V,P,S)$(NOT TRACKP(R,P)+RP_DP(R,P))=0;
+  OPTION TRACKP<BS_SUPP, RP_PRC<NCAP_AFX; TRACKP(BS_STGP)=YES;
+  RP_PRC(RP_STD(RP))$RP_UPL(RP,'FX')=NO;
+  AFS(R,T,P,S,L('UP'))$((NOT RPS_CAFLAC(R,P,S,L)+RP_PRC(R,P))$TRACKP(R,P)$BS_PRS(R,P,S))=NO;
+  AFUPS(R,T,P,S)$BS_SUPP(R,P)=NO;
+  NCAP_AFC(R,V,P,%PGPRIM%,STL(S))$(BS_PRS(R,P,S)$BS_STGP(R,P))=0;
+  OPTION CLEAR=UNCD7,CLEAR=TRACKP,CLEAR=RP_PRC;
+  LOOP((RTP(R,V,P),RPS_PRCTS(R,P,S))$((NOT PRC_TS(R,P,S))$BS_MAINT(RTP,S)),Z=BS_MAINT(RTP,S);
+    F=ABS(Z); IF((F>=TS_CYCLE(R,S)*24$(F>1))$(RPS_UPS(R,P,S) OR (STOAL(R,S)*SIGN(Z)<2)),UNCD7(RTP,S,RTP)=YES));
+  LOOP(UNCD7(RTP,S,R,T,P),RPS_UPS(R,P,TS)$(STOAL(R,TS)=1)=YES; BS_MAINT(RTP,TS)$RS_TREE(R,S,TS)=EPS$(BS_MAINT(RTP,TS)>=0)$BS_MAINT(RTP,TS));
+
+*-----------------------------------------------------------------------------
+* Variable macros
+$ macro var_bson(r,v,t,p,s) sum(ts_map(r,all_ts,s)$(rs_below1(r,all_ts,s)+annual(s)),var_gap(r,v,t,p,all_ts)+(%var%_ups(r,v,t,p,all_ts,'FX'%SOW%)-var_off(r,v,t,p,s))$rps_ups(r,p,s))
+$ macro var_bsd(typ,rtc,s) %var%_comlv(typ,rtc,s%SOW%)
+$ macro var_bsmup(r,v,t,p,s) %var%_bsprs(r,v,t,p,%PGPRIM%,s,'N'%SOW%)
+$ macro var_bsfsp(r,v,t,p,c,s) %var%_bsprs(r,v,t,p,c,s,'N'%SOW%)
+$ macro var_bsfnsp(r,v,t,p,c,s) %var%_bsprs(r,v,t,p,c,s,'FX'%SOW%)
+$ macro var_bsupsr(r,v,t,p,s,bd) %var%_bsprs(r,v,t,p,%PGPRIM%,s,bd%SOW%)
+* Capacity-CPT expression
+$SET TMP SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%))
+
+*-----------------------------------------------------------------------------
+* ABS Equation Formulations - numbers refer to document (00=01)
+*-----------------------------------------------------------------------------
+* ABSEQ1 : Demands for reserves
+  EQ_BS00(RTC(%R_T%,C),RTS(S)%SWX%)$(%SWTX%BS_OMEGA(R,'0',C,S)$BS_LAMBDA(RTC))..
+  SUM(RHS_COMBAL(RTC,TS)$TS_MAP(R,TS,S),%VAR%_COMPRD(RTC,TS%SOW%)/G_YRFR(R,TS))
+  =L=
+* Supply (converted to common flow units, as also demand)
+  SUM((RHS_COMBAL(RTC,SL),TS_MAP(R,SL,S))$BS_OMEGA(RTC,SL),
+    SUM(RTP_VINTYR(R,V,T,P)$(BS_BSC(R,P,C)+BS_STGP(R,P)$BS_STIME(R,P,C,'UP')),PRC_CAPACT(R,P) *
+      SUM(BS_PRS(R,P,TS)$RS_FR(R,S,TS),(VAR_BSFSP(R,V,T,P,C,TS)+SUM(BS_SUPP(R,P)$(ABS(BS_RTYPE(R,C))>2),VAR_BSFNSP(R,V,T,P,C,TS)))*RS_FR(R,TS,S))));
+*-----------------------------------------------------------------------------
+* ABSEQ1+: Max and ABS(diff) and Share equations
+  EQ_BS01(RHS_COMBAL(RTC(%R_T%,C),RTS(S)),BS_K,L%SWX%)$(%SWTX%(BS_OMEGA(RTC,S)<>2$IPS(L))$BS_SHARE(RTC,BS_K,L)$BS_OMEGA(RTC,S))..
+  SUM(BD(LIM(BS_K)),%VAR%_COMNET(RTC,S%SOW%)/G_YRFR(R,S) - BS_LAMBDA(RTC) *
+    (VAR_BSD('PRB',RTC,S)$BDUPX(BD)-VAR_BSD('DET',RTC,S)$BDLOX(BD))$(BS_OMEGA(RTC,S)<2) -
+    ((VAR_BSD('PRB',RTC,S)-VAR_BSD('DET',RTC,S))*BDSIG(BD))$(BS_OMEGA(RTC,S)>2))$IPS(L) +
+  SUM(BD(L),
+* Supply by group
+    SUM(RTP_VINTYR(R,V,T,P)$((BS_BSC(R,P,C)+BS_STGP(R,P)$BS_STIME(R,P,C,'UP'))$GR_GENMAP(R,P,BS_K)),PRC_CAPACT(R,P) *
+      SUM(BS_PRS(R,P,TS)$RS_FR(R,S,TS),(VAR_BSFSP(R,V,T,P,C,TS)+SUM(BS_SUPP(R,P)$(ABS(BS_RTYPE(R,C))>2),VAR_BSFNSP(R,V,T,P,C,TS)))*RS_FR(R,TS,S))) -
+* Share in demand
+    BS_SHARE(RTC,BS_K,L)*%VAR%_COMNET(RTC,S%SOW%)/G_YRFR(R,S))*BDSIG(L)
+  =G= 0;
+*-----------------------------------------------------------------------------
+* ABSEQ2 : Loads by source of imbalance for each user category k
+  EQ_BS02(%R_T%,RTS(S),BS_K%SWX%)$(%SWTX%SUM(BS_SBD(FINEST(R,S),BD),1)$BS_RTK(R,T,BS_K))..
+  SUM(BS_TOP(RP_STD(R,P),C,IO)$GR_GENMAP(R,P,BS_K),
+    SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,C,TS))$RS_FR(R,S,TS),
+$      BATINCLUDE %cal_red% C COM TS P T
+       * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS)))) +
+  SUM(RPC_STG(R,P,C)$GR_GENMAP(R,P,BS_K),SIGN(GR_GENMAP(R,P,BS_K))*
+    SUM((RTP_VINTYR(R,V,T,P),RPCS_VAR(R,P,C,TS))$RS_FR(R,S,TS),RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))*
+       SUM(BS_TOP(R,P,C,'OUT'),V_U(SOUT,R,V,T,P,C,TS)*STG_EFF(R,V,P))-SUM(BS_TOP(R,P,C,'IN'),V_U(SIN,R,V,T,P,C,TS)))) +
+  SUM(RPC_IRE(R,P,C,IE)$(NRG_TMAP(R,'ELC',C)$GR_GENMAP(R,P,BS_K)),SIGN(GR_GENMAP(R,P,BS_K))*
+    SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,C,TS))$RS_FR(R,S,TS),
+       (%VAR%_IRE(R,V,T,P,C,TS,IE%SOW%)$(NOT RPC_AIRE(R,P,C))+(%VAR%_ACT(R,V,T,P,TS%SOW%)*PRC_ACTFLO(R,V,P,C))$RPC_AIRE(R,P,C))*
+       (1-2$XPT(IE)) * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))))
+  =E=  %VAR%_RLD(R,T,S,BS_K%SOW%)*G_YRFR(R,S);
+*-----------------------------------------------------------------------------
+* ABSEQ3 : Stochastic or combined demand with variances
+  EQ_BS03(RTC(%R_T%,C),RTS(S)%SWX%)$(%SWTX%FINEST(R,S)$BS_LAMBDA(RTC))..
+  SUM((RTCS_VARC(RTC,TS),TS_MAP(R,TS,S))$BS_OMEGA(RTC,TS),
+    (BS_LAMBDA(RTC)*VAR_BSD('PRB',RTC,TS))$(BS_OMEGA(RTC,TS)<>2) +
+    (%VAR%_COMNET(RTC,TS%SOW%)/G_YRFR(R,TS)-BS_LAMBDA(RTC)*VAR_BSD('DET',RTC,TS)*BS_DETWT(RTC))$(BS_OMEGA(RTC,TS)=2) -
+    BS_LAMBDA(RTC)*(1-BS_DETWT(RTC)$(BS_OMEGA(RTC,TS)=2))*BS_DELTA(RTC,TS)*3*SUM(BS_RTK(R,T,BS_K),BS_SIGMA(RTC,BS_K,S)*%VAR%_RLD(R,T,S,BS_K%SOW%)))
+  =G= 0;
+*-----------------------------------------------------------------------------
+* ABSEQ4 : Deterministic demand
+  EQ_BS04(RHS_COMBAL(RTC(%R_T%,C),RTS(S)),P%SWX%)$(%SWTX%RTP(R,T,P)$GR_GENMAP(R,P,'SI')$BS_OMEGA(RTC,S))..
+  VAR_BSD('DET',RTC,S)
+  =G=
+  BS_RTCS('EXOGEN',RTC,S)*BS_CAPACT(R) + PRC_CAPACT(R,P) *
+  BS_RTCS('WMAXSI',RTC,S)*SUM(RTP_VINTYR(R,V,T,P),(%TMP%)*SUM(PRC_TS(R,P,TS)$RS_FR(R,TS,S),SUM(BDUPX(BD),COEF_AF%MX%(R,V,T,P,TS,BD))*RS_FR(R,TS,S)));
+*-----------------------------------------------------------------------------
+* ABSEQ5-6 : Minimum online and offline times (adjusted)
+  EQ_BS05(RTP_VINTYR(%R_V_T%,P),TSL,BD(L),RTS(S)%SWX%)$(%SWTX%TS_GROUP(R,TSL,S)$BS_UPC(R,P,TSL,L))..
+  SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),
+    V_U(UPS,R,V,T,P,SL,L)$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ACT_TIME(R,T,P,L)/8760)) +
+  SUM(LIM(BDNEQ)$(BDSIG(LIM)*BDSIG(L)<0),VAR_BSUPSR(R,V,T,P,S,LIM)$BS_SBD(R,S,LIM) -
+    (SUM(RS_UP(R,S,J,TS),V_U(UPS,R,V,T,P,TS,'FX'))$BDUPX(BD)+VAR_OFF(R,V,T,P,S)*BDSIG(BD))$(BS_SBD(R,S,LIM)+YES$ACT_TIME(R,T,P,L)))
+  =L= 0;
+*-----------------------------------------------------------------------------
+* ABSEQ7-8 : Ramping rates (adjusted)
+  EQ_BS07(RTP_VINTYR(%R_V_T%,P),RTS(S),BDNEQ(BD)%SWX%)$(%SWTX%SUM(TS_ANN(S,TS)$ACT_UPS(R,V,P,TS,BD),1)$PRC_TS(R,P,S)$BS_UPL(R,P,BD))..
+* max fraction of capacity
+   SUM(PRC_TS(R,P,TS(S--RS_STG(R,S))),PRC_CAPACT(R,P)*SUM(TS_ANN(S,SL),ACT_UPS(R,V,P,SL,BD)) *
+     (VAR_BSON(R,V,T,P,S) + ((VAR_OFF(R,V,T,P,S)-VAR_OFF(R,V,T,P,TS) - (VAR_BSUPSR(R,V,T,P,S,BD)$SUM(BS_COMTS(BS_ANEG(R,C),S),1)))$BDLOX(BD))$RPS_UPS(R,P,S)) +
+* dynamic ramp limits
+     RS_STGPRD(R,S)*2/(G_YRFR(R,S)+G_YRFR(R,TS))/8760 *
+     (%VAR%_ACT(R,V,T,P,S%SOW%)/G_YRFR(R,S)-%VAR%_ACT(R,V,T,P,TS%SOW%)/G_YRFR(R,TS) +
+      ((VAR_OFF(R,V,T,P,S)-VAR_OFF(R,V,T,P,TS))*PRC_CAPACT(R,P)*ACT_MINLD(R,V,P))$RPS_UPS(R,P,S))*BDSIG(BD) - PRC_CAPACT(R,P)*SUM(BS_BSC(R,P,C)$BS_ABD(R,C,BD),VAR_BSFSP(R,V,T,P,C,S)$BS_COMTS(R,C,S)))
+  =G= 0;
+*-----------------------------------------------------------------------------
+* ABSEQ9 : Capacity margin constraints - positive
+  EQ_BS09(RTP_VINTYR(%R_V_T%,P),RTS(S),L('UP')%SWX%)$(%SWTX%BS_PRS(R,P,S)$(NOT RP_DP(R,P))$BS_SUPP(R,P))..
+  SUM(BS_COMTS(BS_APOS(R,C),S)$BS_BSC(R,P,C),VAR_BSFSP(R,V,T,P,C,S))*PRC_CAPACT(R,P) +
+  (PRC_CAPACT(R,P)*(COEF_AF%MX%(R,V,T,P,S,L)-ACT_MINLD(R,V,P))*V_U(UPS,R,V,T,P,S,L)*MIN(1,ACT_SDTIME(R,V,P,'HOT',L)/8760/(G_YRFR(R,S)/RS_STGPRD(R,S))))$RPS_UPS(R,P,S)
+  =L=
+  PRC_CAPACT(R,P)*COEF_AF%MX%(R,V,T,P,S,L)*VAR_BSON(R,V,T,P,S) -
+  (%VAR%_ACT(R,V,T,P,S%SOW%)$RP_STD(R,P)+SUM(TOP(RPC_STG(R,P,C),'OUT'),V_U(SOUT,R,V,T,P,C,S)*STG_EFF(R,V,P))$RP_STG(R,P))/G_YRFR(R,S);
+*-----------------------------------------------------------------------------
+* ABSEQ10 : Capacity margin constraints - negative
+  EQ_BS10(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%BS_PRS(R,P,S)$BS_NEGP(R,P)$BS_SUPP(R,P))..
+  SUM(BS_COMTS(BS_ANEG(R,C),S)$BS_BSC(R,P,C),VAR_BSFSP(R,V,T,P,C,S)+VAR_BSFNSP(R,V,T,P,C,S)$RP_STD(R,P))*PRC_CAPACT(R,P)
+  =L=
+  (%VAR%_ACT(R,V,T,P,S%SOW%)$RP_STD(R,P)+SUM(TOP(RPC_STG(R,P,C),'OUT'),V_U(SOUT,R,V,T,P,C,S)*STG_EFF(R,V,P))$RP_STG(R,P))/G_YRFR(R,S) -
+  PRC_CAPACT(R,P)*ACT_MINLD(R,V,P)*(VAR_BSON(R,V,T,P,S)-SUM(RPS_UPS(R,P,S),VAR_BSUPSR(R,V,T,P,S,'LO')$SUM(BS_COMTS(BS_ANEG(R,C),S),1)));
+*-----------------------------------------------------------------------------
+* ABSEQ11-17 : Limit reserve by type and sign according to BS_RMAX
+  EQ_BS11(RTP_VINTYR(%R_V_T%,P),C,RTS(S),BD%SWX%)$(%SWTX%BS_PRS(R,P,S)$BS_COMTS(R,C,S)$RPC_CONLY(R,V,P,C)$BS_ABD(R,C,BD))..
+  SUM(BS_ABD(R,COM,BD)$(ABS(BS_RTYPE(R,COM))<=ABS(BS_RTYPE(R,C))),VAR_BSFSP(R,V,T,P,COM,S)$BS_BSC(R,P,COM)$BS_COMTS(R,COM,S))
+  =L=  (VAR_BSON(R,V,T,P,S)-SUM(RPS_UPS(R,P,S)$BDLOX(BD),VAR_BSUPSR(R,V,T,P,S,BD))) * SUM(TS_ANN(S,TS),BS_RMAX(R,V,P,C,TS));
+*-----------------------------------------------------------------------------
+* ABSEQ18,20 : Limit the provision of TRT & RRR reserves according to quick start-up / shut-down capacity
+  EQ_BS18(RTP_VINTYR(%R_V_T%,P),RTS(S),BDNEQ(BD)%SWX%)$(%SWTX%BS_PRS(R,P,S)$RPS_UPS(R,P,S)$ACT_MINLD(R,V,P)$BS_SUPP(R,P))..
+  VAR_BSUPSR(R,V,T,P,S,BD)*ACT_MINLD(R,V,P)$BS_SBD(R,S,BD)
+  =L=  SUM(BS_ABD(R,C,BD)$(ABS(BS_RTYPE(R,C))>2),VAR_BSFNSP(R,V,T,P,C,S)$BS_BSC(R,P,C)$BS_COMTS(R,C,S));
+*-----------------------------------------------------------------------------
+* ABSEQ19,21 : Limit the provision of TRT & RRR reserves according to quick start-up / shut-down capacity
+  EQ_BS19(RTP_VINTYR(%R_V_T%,P),C,RTS(S),BD%SWX%)$(%SWTX%(ABS(BS_RTYPE(R,C))>2)$BS_PRS(R,P,S)$BS_SUPP(R,P)$BS_BSC(R,P,C)$BS_ABD(R,C,BD))..
+  SUM(BS_ABD(R,COM,BD)$(MOD(ABS(BS_RTYPE(R,COM))-1,BS_RTYPE(R,C))>1),VAR_BSFNSP(R,V,T,P,COM,S)$BS_BSC(R,P,COM)$BS_COMTS(R,COM,S))
+  =L=  VAR_BSUPSR(R,V,T,P,S,BD)$RPS_UPS(R,P,S) * SUM(TS_ANN(S,TS),BS_RMAX(R,V,P,C,TS))$BS_COMTS(R,C,S);
+*-----------------------------------------------------------------------------
+* ABSEQ22 : Ensure sufficient storage level when contracted to reserve
+  EQ_BS22(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%BS_STGP(R,P)$COEF_AFUPS(R,V,P,S)$RPS_STG(R,P,S))..
+* storage: for single-day (true) activity divide by cycles under parent
+  SUM(PRC_TS(R,P,TS)$RS_FR(R,TS,S),%VAR%_ACT(R,V,T,P,TS%SOW%)*RS_FR(R,TS,S)/RS_STGPRD(R,TS))$BS_SBD(R,S,'UP')
+  =G=
+  SUM(BS_COMTS(BS_APOS(R,C),S),PRC_CAPACT(R,P)/SQRT(STG_EFF(R,V,P)) / 8760 *
+    VAR_BSFSP(R,V,T,P,C,S)*(BS_STIME(R,P,C,'LO')/2 +(BS_STIME(R,P,C,'UP')-BS_STIME(R,P,C,'LO'))*MAX(1,G_YRFR(R,S)/RS_STGPRD(R,S)*8760/(1+BS_STIME(R,P,C,'UP'))**0.5)));
+*-----------------------------------------------------------------------------
+* ABSEQ23 : Limit storage level by capacity and contracted reserve
+  EQ_BS23(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%BS_STGP(R,P)$COEF_AFUPS(R,V,P,S)$RPS_STG(R,P,S))..
+* storage: for single-day (true) activity divide by cycles under parent
+  SUM(PRC_TS(R,P,TS)$RS_FR(R,TS,S),%VAR%_ACT(R,V,T,P,TS%SOW%)*RS_FR(R,TS,S)/RS_STGPRD(R,TS))
+  =L=
+* available process capacity - vintaged or not
+  ((%TMP%)*COEF_AFUPS(R,V,P,S) / EXP(PRC_SC(R,P)) * PRC_CAPACT(R,P)) -
+  SUM(BS_COMTS(BS_ANEG(R,C),S),PRC_CAPACT(R,P)*SQRT(STG_EFF(R,V,P)) / 8760 *
+    VAR_BSFSP(R,V,T,P,C,S)*(BS_STIME(R,P,C,'LO')/2 +(BS_STIME(R,P,C,'UP')-BS_STIME(R,P,C,'LO'))*MAX(1,G_YRFR(R,S)/RS_STGPRD(R,S)*8760/(1+BS_STIME(R,P,C,'UP'))**0.5)));
+*-----------------------------------------------------------------------------
+* ABSEQ24 : End-use - negative
+  EQ_BS24(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%BS_PRS(R,P,S)$AFS(R,T,P,S,'UP')$BS_SBD(R,S,'LO')$BS_NEGP(R,P)$BS_ENDP(R,P))..
+  SUM(BS_COMTS(BS_ANEG(R,C),S)$BS_BSC(R,P,C),VAR_BSFSP(R,V,T,P,C,S)) =L=
+* available process capacity - activity level
+  (VAR_BSON(R,V,T,P,S)*COEF_AF%MX%(R,V,T,P,S,'UP') - %VAR%_ACT(R,V,T,P,S%SOW%)/PRC_CAPACT(R,P)/G_YRFR(R,S)) *
+  SUM((TOP(R,P,C,'IN'),RPC_PG(R,P,COM))$NRG_TMAP(R,'ELC',C),
+    PRC_ACTFLO(R,V,P,C)$RPC_PG(R,P,C) +
+    (SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,TS,S),RS_FR(R,TS,S)*SUM(RPG_1ACE(R,P,CG,C)$COEF_PTRAN(R,V,P,CG,C,COM,TS),1/COEF_PTRAN(R,V,P,CG,C,COM,TS)))+
+     SUM(RP_PG(R,P,CG),COEF_PTRAN(R,V,P,CG,COM,C,S)))$(NOT RPC_PG(R,P,C)));
+*-----------------------------------------------------------------------------
+* ABSEQ25 : End-use - positive
+  EQ_BS25(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%BS_PRS(R,P,S)$BS_SBD(R,S,'UP')$BS_ENDP(R,P))..
+  SUM(BS_COMTS(BS_APOS(R,C),S)$BS_BSC(R,P,C),VAR_BSFSP(R,V,T,P,C,S))*PRC_CAPACT(R,P)*G_YRFR(R,S) =L=
+  SUM(TOP(R,P,C,'IN')$NRG_TMAP(R,'ELC',C),
+    SUM(RTPCS_VARF(R,T,P,C,TS)$TS_MAP(R,S,TS),
+$     BATINCLUDE %cal_red% C COM TS P T
+    )$RP_STD(R,P)+SUM(RPCS_VAR(RPC_STG(R,P,C),TS)$TS_MAP(R,S,TS),V_U(SIN,R,V,T,P,C,TS)$(PRC_NSTTS(R,P,TS)+PRC_STGTSS(R,P,C))));
+*-----------------------------------------------------------------------------
+* ABSEQ27 : Maintenence 1 - entrance to maintenance
+  EQ_BS27(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%(BS_MAINT(R,V,P,S)>=0)$BS_MAINT(R,V,P,S))..
+  SUM(TS_MAP(R,S,TS)$RPS_UPS(R,P,TS),
+    (VAR_BSMUP(R,V,T,P,TS)*MIN(1,ROUND(BS_MAINT(R,V,P,S),1)/8760*RS_STGPRD(R,TS)/G_YRFR(R,S)))$PRC_TS(R,P,TS) +
+    (VAR_OFF(R,V,T,P,TS)*RS_FR(R,TS,S)$(BS_MAINT(R,V,P,S)=0))$TS_CYCLE(R,TS))
+  =G=
+* unavailable process capacity - vintaged or not
+  SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%)*((1-COEF_AF%MX%(R,K,T,P,S,'UP'))$(ACT_UPS(R,T,P,S,'N')=0)+ACT_UPS(R,T,P,S,'N')));
+*-----------------------------------------------------------------------------
+* ABSEQ28 : Maintenence 2 - continuous duration
+  EQ_BS28(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%PRC_TS(R,P,S)$BS_MAINT(R,V,P,S))..
+  SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),VAR_BSMUP(R,V,T,P,SL)$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ABS(BS_MAINT(R,V,P,S))/8760))
+  =L=  %TMP%*(1-COEF_AF%MX%(R,V,T,P,S,'UP'))-(%UPSCAPS%*COEF_AF%MX%(R,V,T,P,S,'UP'));

@@ -1,0 +1,74 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+******************************************************************************
+* COEF_ETL.ETL - Calculate technological change parameters                   *
+******************************************************************************
+
+* copy aliases
+  SC0(R,P)   $= TL_SC0(R,P);
+  PRAT(R,P)  $= TL_PRAT(R,P);
+  SEG(R,P)   $= TL_SEG(R,P);
+  CCAP0(R,P) $= TL_CCAP0(R,P);
+  CCAPM(R,P) $= TL_CCAPM(R,P);
+  CLUSTER(R,P,PRC)$=TL_CLUSTER(R,P,PRC);
+
+* ensure integral SEG; set TEG on from SEG
+  SEG(R,P)$SEG(R,P) = ROUND(SEG(R,P))$RP(R,P);
+  LOOP(R, TEG(P)$SEG(R,P) = RP(R,P));
+
+* Starting periods for learning technologies
+  OPTION CLEAR=PRC_YMIN;
+  LOOP(T, PRC_YMIN(R,TEG(P))$((NOT PRC_YMIN(R,P))*RTP(R,T,P)) = ORD(T)-1+EPS);
+  LOOP(MIYR_1(T),TL_START(RTP(R,T+PRC_YMIN(R,P),TEG(P))) = YES);
+
+* computation of the learning curve exponent
+  PBT(R,TEG)$SEG(R,TEG)=-LOG(PRAT(R,TEG))/LOG(2);
+
+* computation of the learning curve coefficient
+  PAT(R,TEG)$SEG(R,TEG)=SC0(R,TEG)*(CCAP0(R,TEG)**(PBT(R,TEG)));
+
+* assignment of the initial cumulative cost
+  CCOST0(R,TEG)$SEG(R,TEG)=(PAT(R,TEG)/(1-PBT(R,TEG)))*(CCAP0(R,TEG)**(1-PBT(R,TEG)));
+
+* assignment of the maximum cumulative cost
+  CCOSTM(R,TEG)$SEG(R,TEG)=(PAT(R,TEG)/(1-PBT(R,TEG)))*(CCAPM(R,TEG)**(1-PBT(R,TEG)));
+
+* assignment of the kink points for cumulative cost
+  LOOP(KP$(ORD(KP) GE 2), CNT=ORD(KP)-2;
+    WEIG(R,KP,TEG)$SEG(R,TEG)=(2**(-SEG(R,TEG)+CNT))/(SUM(KP2$(ORD(KP2) LE (SEG(R,TEG))), (2**(-SEG(R,TEG)+ORD(KP2)-1))));
+  );
+
+*$ IF NOT %ETL%==YES $GOTO NOMIP
+  CCOSTK(R,'1',TEG)=CCOST0(R,TEG);
+  LOOP(KP$(ORD(KP) GE 2),
+    CCOSTK(R,KP,TEG)$SEG(R,TEG)=CCOSTK(R,KP-1, TEG)+((CCOSTM(R,TEG)-CCOST0(R,TEG))*WEIG(R,KP,TEG));
+  );
+
+* assignment of the kink points for cumulative capacity
+  CCAPK(R,KP,TEG)$((ORD(KP) LE SEG(R,TEG)+1)$SEG(R,TEG)) = (((1-PBT(R,TEG))/PAT(R,TEG))*CCOSTK(R,KP,TEG))**(1/(1-PBT(R,TEG)));
+
+* assignment of beta coeff. for interpolation of cumulative cost
+  BETA(R,KP,TEG)$((ORD(KP) LE SEG(R,TEG)+1)$SEG(R,TEG)) = (CCOSTK(R,KP,TEG)-CCOSTK(R,KP-1,TEG))/(CCAPK(R,KP,TEG)-CCAPK(R,KP-1,TEG));
+
+* assignment of alpha coeff. for interpolation of cumulative cost
+  ALPH(R,KP,TEG)$((ORD(KP) LE SEG(R,TEG)+1)$SEG(R,TEG)) = CCOSTK(R,KP-1,TEG) - BETA(R,KP,TEG)*CCAPK(R,KP-1,TEG);
+
+* determine NTCHTEG, number of PRC's in learning cluster
+  NTCHTEG(R,TEG)$SEG(R,TEG) = SUM(PRC$(CLUSTER(R,TEG,PRC) > 0), 1);
+
+* perhaps other defaults for testing purposes: growth factors etc.
+
+*-----------------------------------------------------------------------------
+* Create a set of all key components of cluster technologies
+* Create a set of all cluster technologies
+LOOP((RP(R,P),REG,PRC)$((TL_MRCLUST(R,P,REG,PRC) > 0.0)$TL_MRCLUST(R,P,REG,PRC)),
+   TL_RP_KC(R,P) = YES; TL_RP_CT(REG,PRC) = YES);
+
+*-----------------------------------------------------------------------------
+* setting normal NCAP_COST of ETL technologies to zero to exclude this contribution fro the objective function
+OBJ_ICOST(R,EACHYEAR,P,CUR)$SEG(R,P) = 0;
+*-----------------------------------------------------------------------------
+display ccapk, beta, alph;
+*$LABEL NOMIP

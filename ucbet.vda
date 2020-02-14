@@ -1,0 +1,129 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* UCBET.vda Derivation of maximum activities and flows according to UCBET     *
+*   %1 - mod or v# for the source code to be used                             *
+*=============================================================================*
+* Questions/Comments:
+*-----------------------------------------------------------------------------
+* Preprocessing of UC_FLOBET:
+  SET UC_GMAX(UC_N,ALL_R,ITEM,C,ITEM);
+  SET UC_GMAXR(ALL_R,UC_N);
+  ALIAS(*,NAME);
+
+* Collect set of all regional cumulative UC_N
+  OPTION CLEAR=UNCD1;
+  LOOP((UC_N,R,T,P,C)$UC_FLOBET(UC_N,R,T,P,C),UNCD1(UC_N)=YES);
+  UC_GMAXR(UC_R_EACH) = YES;
+  UC_R_SUM(R,UC_N(UNCD1)) = YES;
+
+* Set Equation controls
+  LOOP((UC_N,R,T,P,C)$UC_FLOBET(UC_N,R,T,P,C),
+   IF(SAMEAS(%PGPRIM%,C),
+     IF(UC_ATTR(R,UC_N,'LHS','ACT','N'),
+       UC_GMAX(UC_N,'IMPEXP',P,C,'EACH') = YES;
+     ELSE UC_GMAX(UC_N,R,P,C,'EACH') = YES);
+   ELSE
+     IF(UC_GMAXR(R,UC_N), UC_GMAX(UC_N,R,'N',C,'N') = YES;
+     ELSE UC_GMAX(UC_N,'IMPEXP','N',C,'N') = YES);
+  ));
+
+* If IMPEXP should be one group, add IMPEXP for regional UC_N
+  LOOP(R,UC_GMAXR('IMPEXP',UC_N)$UC_GMAXR(R,UC_N) = YES);
+* Remove all (ALL_R,UC_N) not used in betting parameters
+  OPTION CLEAR=RXX;
+  LOOP(UC_GMAX(UC_N,ALL_R,ITEM,C,NAME),RXX('IMPEXP',UC_N,ALL_R) = YES);
+  UC_GMAXR(ALL_R,UC_N)$(NOT RXX('IMPEXP',UC_N,ALL_R)) = NO;
+* Remove EQE_UC equations for maxed UC_N
+  UC_TS_SUM(R,UC_N(UNCD1),S) = NO;
+
+*-----------------------------------------------------------------------------
+  EQUATIONS
+*-----------------------------------------------------------------------------
+
+   %EQ%G_UCMAX(UC_GMAX(UC_N,ALL_R,ITEM,C,NAME)%SOW%) ..
+
+* Select variable to be maximized (remove SUM if IMPEXP group allowed)
+
+      %VAR%_UC(UC_N%SOW%)$(NOT UC_GMAXR(ALL_R,UC_N)) +
+      SUM(R(ALL_R),%VAR%_UCR(UC_N,R%SOW%)$UC_GMAXR(ALL_R,UC_N))
+
+   =G=
+
+$IF %STAGES%==YES $SETLOCAL ORGSOW '%SOW%' SET SWTD ",SW_TSW(SOW,T,W)" SET SOW ,W
+
+* Sum of flows by region
+   SUM((UC_T_SUM(UC_GMAXR(R(ALL_R),UC_N),T)%SWTD%),
+*....Time Mutiplier
+     (FPD(T)+(COEF_PVT(R,T)-FPD(T))$UC_ATTR(R,UC_N,'LHS','ACT','PERDISC')) *
+     SUM(RTPCS_VARF(R,T,P,COM,S)$(COM_GMAP(R,C,COM)$UC_FLOBET(UC_N,R,T,P,C)),
+       UC_FLOBET(UC_N,R,T,P,C) *
+       SUM(RTP_VINTYR(R,V,T,P),
+         (
+$           BATINCLUDE %cal_red% COM COM1 S P T
+         )$RP_STD(R,P) +
+*....For IRE processes, sum Import flows only
+         SUM(RPC_IRE(R,P,COM,IE('IMP')),
+          %VAR%_IRE(R,V,T,P,COM,S,IE%SOW%)$(NOT RPC_AIRE(R,P,COM)) +
+          (%VAR%_ACT(R,V,T,P,S%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM))$RP_IRE(R,P)
+       )))$LIM(NAME) +
+
+* Sum of flows globally
+   SUM((UC_T_SUM(R,UC_N,T)%SWTD%)$(NOT UC_GMAXR(R,UC_N)),
+*....Time Mutiplier
+     (FPD(T)+(COEF_PVT(R,T)-FPD(T))$UC_ATTR(R,UC_N,'LHS','ACT','PERDISC')) *
+     SUM(RTPCS_VARF(R,T,P,COM,S)$(COM_GMAP(R,C,COM)$UC_FLOBET(UC_N,R,T,P,C)),
+       UC_FLOBET(UC_N,R,T,P,C) *
+       SUM(RTP_VINTYR(R,V,T,P),
+         (
+$           BATINCLUDE %cal_red% COM COM1 S P T
+         )$RP_STD(R,P) +
+*....For IRE processes, sum Import flows only
+         SUM(RPC_IRE(R,P,COM,IE('IMP')),
+          %VAR%_IRE(R,V,T,P,COM,S,IE%SOW%)$(NOT RPC_AIRE(R,P,COM)) +
+          (%VAR%_ACT(R,V,T,P,S%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM))$RP_IRE(R,P)
+       )))$((NOT REG(ALL_R))$LIM(NAME)) +
+
+* Sum of activities by region
+   SUM((UC_T_SUM(R(ALL_R),UC_N,T)%SWTD%),
+*....Time Mutiplier
+     (FPD(T)+(COEF_PVT(R,T)-FPD(T))$UC_ATTR(R,UC_N,'LHS','ACT','PERDISC')) *
+     SUM(RTP_VINTYR(R,V,T,P(ITEM))$UC_FLOBET(UC_N,R,T,P,%PGPRIM%),
+       UC_FLOBET(UC_N,R,T,P,%PGPRIM%) *
+       (
+*........For Standard processes, sum activities
+         SUM((RTP_VARA(R,T,P),PRC_TS(R,P,S)), %VAR%_ACT(R,V,T,P,S%SOW%))$RP_STD(R,P) +
+*........For IRE processes, sum Import flows only
+         SUM((RPC_IRE(R,P,COM,IE('IMP')),RTPCS_VARF(R,T,P,COM,S)),
+           (%VAR%_IRE(R,V,T,P,COM,S,IE%SOW%)$(NOT RPC_AIRE(R,P,COM))+
+            (%VAR%_ACT(R,V,T,P,S%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM)))$RP_IRE(R,P)
+       ))
+    )$UC_NUMBER(NAME) +
+
+* Sum of activities globally
+   SUM((UC_T_SUM(R,UC_N,T)%SWTD%)$(NOT REG(ALL_R)),
+*....Time Mutiplier
+     (FPD(T)+(COEF_PVT(R,T)-FPD(T))$UC_ATTR(R,UC_N,'LHS','ACT','PERDISC')) *
+     SUM(RTP_VINTYR(R,V,T,P(ITEM))$UC_FLOBET(UC_N,R,T,P,%PGPRIM%),
+       UC_FLOBET(UC_N,R,T,P,%PGPRIM%) *
+       (
+*........For Standard processes, sum activities
+         SUM((RTP_VARA(R,T,P),PRC_TS(R,P,S)), %VAR%_ACT(R,V,T,P,S%SOW%))$RP_STD(R,P) +
+*........For IRE processes, sum Import flows only
+         SUM((RPC_IRE(R,P,COM,IE('IMP')),RTPCS_VARF(R,T,P,COM,S)),
+           (%VAR%_IRE(R,V,T,P,COM,S,IE%SOW%)$(NOT RPC_AIRE(R,P,COM))+
+            (%VAR%_ACT(R,V,T,P,S%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM)))$RP_IRE(R,P)
+       ))
+    )$((NOT REG(ALL_R))$UC_NUMBER(NAME))
+
+;
+$IF %STAGES%==YES $SET SOW %ORGSOW%
+*-----------------------------------------------------------------------------
+* Sum regional maximums to global (change R to ALL_R if IMPEXP allowed)
+   %EQ%G_UCSUMAX(UC_N%SOW%)$SUM(UC_GMAXR(ALL_R,UC_N),1) ..
+
+    %VAR%_UC(UC_N%SOW%)  =G=  SUM(UC_GMAXR(R,UC_N),%VAR%_UCR(UC_N,R%SOW%));
+
+*-----------------------------------------------------------------------------

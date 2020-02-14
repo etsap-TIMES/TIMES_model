@@ -1,0 +1,199 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* COST_ANN: annual cost calculation
+*   - Investment Costs, Tax/Subsidies
+*   - Decommissioning
+*   - Fixed costs and taxes
+*   - Variable costs and Taxes/Subsidies
+*-----------------------------------------------------------------------------
+*  %1 - Prefix for parameter names (optional)
+*  %2 - SOW, (optional)
+*=============================================================================*
+  OBJ_YES(NCAP_YES)=YES;
+  OPTION CLEAR=COEF_CAP; CNT=1$ROUND(RPT_OPT('OBJ','2'));
+$IF DEFINED PRC_RCAP COEF_CAP(RTP_CPTYR(R,V,T,P))$(NCAP_YES(R,V,P)$PRC_RCAP(R,P)) = VAR_SCAP.L(R,V,T,P)/RTP_CAPVL(R,V,P);
+* Levelized annual investment and fixed costs
+  IF(CNT, OPTION CLEAR=PAR_OBJCAP;
+    PAR_OBJCAP(OBJ_ICUR(NCAP_YES(R,V,P),CUR)) = SUM(RTP_CPTYR(R,V,T,P),COEF_CPT(R,V,T,P)*OBJ_PVT(R,T,CUR));
+    RTP_OBJ(J,R,V,P,CUR)$RTP_OBJ(J,R,V,P,CUR) = (RTP_OBJ(J,R,V,P,CUR)/PAR_OBJCAP(R,V,P,CUR))$PAR_OBJCAP(R,V,P,CUR);
+    %1CST_INVC(%2RTP_CPTYR(R,V,T,P),SYSINV)$NCAP_YES(R,V,P) =
+       SUM(RDCUR(R,CUR),RTP_OBJ('1',R,V,P,CUR)*COEF_CPT(R,V,T,P)*ABS(SYSONE(SYSINV)-COEF_CRF(R,V,P,CUR)));
+    %1CST_INVX(%2RTP_CPTYR(R,V,T,P),SYSINV)$NCAP_YES(R,V,P) =
+       SUM(RDCUR(R,CUR),RTP_OBJ('2',R,V,P,CUR)*COEF_CPT(R,V,T,P)*ABS(SYSONE(SYSINV)-COEF_CRF(R,V,P,CUR)));
+  IF(ACL,
+    PAR_OBJCAP(OBJ_FCUR(NCAP_YES(R,V,P),CUR)) = SUM(RTP_CPTYR(R,V,T,P),COEF_CPT(R,V,T,P)*(1-COEF_CAP(R,V,T,P))*OBJ_PVT(R,T,CUR));
+    RTP_NPV(J,R,V,P,CUR)$RTP_NPV(J,R,V,P,CUR) = (RTP_NPV(J,R,V,P,CUR)/PAR_OBJCAP(R,V,P,CUR))$PAR_OBJCAP(R,V,P,CUR);
+    %1CST_FIXC(%2RTP_CPTYR(R,V,T,P))$NCAP_YES(R,V,P) = SUM(RDCUR(R,CUR),RTP_NPV('1',R,V,P,CUR)*COEF_CPT(R,V,T,P)*(1-COEF_CAP(R,V,T,P)));
+    %1CST_FIXX(%2RTP_CPTYR(R,V,T,P))$NCAP_YES(R,V,P) = SUM(RDCUR(R,CUR),RTP_NPV('2',R,V,P,CUR)*COEF_CPT(R,V,T,P)*(1-COEF_CAP(R,V,T,P)));
+    OPTION CLEAR=COEF_CAP);
+    OPTION CLEAR=NCAP_YES;
+  );
+*------------------------------------------------------------------------------
+* Cases I - Investment Cost and II - Taxes/Subsidies
+*------------------------------------------------------------------------------
+* Calculate Annual undiscounted investment costs CST_INVC
+$SET TMP '' SET X1 '' SETLOCAL SIC 1
+$IFI '%STAGES%'==YES PASTSUM(NCAP_YES(R,T,P)) = SUM(SW_TSW(SOW,T,WW),OBJ_SIC(R,T,P,WW));
+$IFI '%STAGES%'==YES $SETLOCAL SIC 1+PASTSUM(R,V,P)
+
+OPTION CLEAR=FIL,COEF_RVPT<=COEF_CPT; IF(NOT CNT,NCAP_YES(R,PYR_S,P)$PRC_RESID(R,'0',P)=NO; FIL(PYR_S)=1);
+
+LOOP(OBJ_ICUR(NCAP_YES(R,V,P),CUR), OPTION CLEAR=YKK; MY_F=%SIC%;
+  SYSPLIT(SYSINV)=ABS(SYSONE(SYSINV)-COEF_CRF(R,V,P,CUR));
+  F = RTP_CAPVL(R,V,P)*OBJ_CRF(R,V,P,CUR)/OBJ_DIVI(R,V,P);
+  LOOP(OBJ_SUMII(R,V,P,LIFE,K_EOH,JOT), Z=ORD(LIFE);
+    YKK(YK(T(YEAR),LL),K)$((ORD(YEAR) < ORD(LL)+Z)$INVSPRED(K_EOH,JOT,LL,K)$VNT(V,T)) = YES);
+  %1CST_INVC(%2R,VNT(V,T),P,SYSINV) = SUM(YKK(T,LL,K), F * MY_F * OBJ_ICOST(R,K,P,CUR))*SYSPLIT(SYSINV);
+  %1CST_INVX(%2R,VNT(V,T),P,SYSINV)$(OBJ_ITAX(R,V,P,CUR)+OBJ_ISUB(R,V,P,CUR)) =
+       SUM(YKK(T,LL,K), F * (OBJ_ITAX(R,K,P,CUR)-OBJ_ISUB(R,K,P,CUR)))*SYSPLIT(SYSINV);
+);
+* Report approximate costs for RESID according to available capacity
+LOOP(OBJ_ICUR(R,FIL(V),P,CUR)$PRC_RESID(R,'0',P), 
+ FIL2(T)=(NCAP_PASTI(R,V,P)*COEF_RVPT(R,V,P,T)-RTFORC(R,V,T,P))*OBJ_CRF(R,V,P,CUR);
+ %1CST_INVC(%2RTP_CPTYR(R,V,T,P),SYSINV) = ABS(SYSONE(SYSINV)-COEF_CRF(R,V,P,CUR)) * FIL2(T) * OBJ_ICOST(R,V,P,CUR);
+ %1CST_INVX(%2RTP_CPTYR(R,V,T,P),SYSINV) = ABS(SYSONE(SYSINV)-COEF_CRF(R,V,P,CUR)) * FIL2(T) * (OBJ_ITAX(R,V,P,CUR)-OBJ_ISUB(R,V,P,CUR));
+);
+
+* Handle ETL
+$IF NOT %ETL% == 'YES' $GOTO ETLDONE
+LOOP(OBJ_ICUR(R,T,TEG(P),CUR)$VAR_IC.L(R,T,P), OPTION CLEAR=YKK;
+  F = VAR_IC.L(R,T,P) * OBJ_CRF(R,T,P,CUR)/OBJ_DIVI(R,T,P);
+  LOOP((OBJ_SUMII(R,T,P,LIFE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL,K)),
+    Z=ORD(LIFE); YKK(YK(TT,LL),K)$(YEARVAL(TT) < YEARVAL(LL)+Z) = YES);
+  %1CST_INVC(%2R,VNT(T,TT),P,SYSINV)$SYSONE(SYSINV) = %1CST_INVC(%2R,T,TT,P,SYSINV)+SUM(YKK(TT,LL,K),F);
+);
+$LABEL ETLDONE
+
+*------------------------------------------------------------------------------
+* Cases III - Decommissioning
+*------------------------------------------------------------------------------
+OPTION OBJ_SUMSI <= OBJ_SUMIII;
+* Calculate decommissioning costs, annualized to operating years:
+LOOP(OBJ_ICUR(NCAP_YES(R,V,P),CUR)$OBJ_DCOST(R,V,P,CUR), F = RTP_CAPVL(R,V,P);
+  F = F*OBJ_CRF(R,V,P,CUR)/OBJ_DIVIII(R,V,P); Z = ROUND(NCAP_%INVLIF%(R,V,P));
+  %1CST_DECC(%2R,VNT(V,T),P) = SUM(OBJ_SUMSI(R,V,P,LL)$((YEARVAL(T) < YEARVAL(LL)+Z)$YK(T,LL)),
+      (SUM(OBJ_SUMIII(R,V,P,LL,K,Y),OBJ_DISC(R,Y,CUR)*OBJ_DCOST(R,K,P,CUR))*COR_SALVD(R,V,P,CUR) +
+       SUM(OBJ_SUMIVS(R,V,P,K(LL),Y),OBJ_DISC(R,Y,CUR))*OBJ_DLAGC(R,LL,P,CUR))*F/OBJ_DISC(R,LL,CUR));
+);
+
+*------------------------------------------------------------------------------
+* Cases IV - Fixed costs
+*------------------------------------------------------------------------------
+ IF(NOT ACL,OPTION CLEAR=FIL2,CLEAR=MY_FIL2;
+   IF(CNT,NCAP_YES(OBJ_YES)=YES; NCAP_YES(R,PYR_S,P)$PRC_RESID(R,'0',P)=NO; FIL(PYR_S)=1;
+   ELSE COEF_RVPT(NCAP_YES(RTP),T)$COEF_RVPT(RTP,T) = (1+RTP_CPX(RTP,T)$NCAP_CPX(RTP))/MAX(1,OBJ_DIVIV(RTP))));
+ LOOP(OBJ_FCUR(NCAP_YES(R,V,P),CUR), F = RTP_CAPVL(R,V,P);
+   OPTION CLEAR=YKAGE; MY_FIL2(T)=COEF_RVPT(R,V,P,T); MY_F = B(V)+NCAP_ILED(R,V,P);
+   LOOP(OBJ_SUMIV(K_EOH,R,V,P,JOT,LIFE), Z=ORD(LIFE)-1;
+     FIL2(T(YEAR))=ORD(YEAR)+(MAX(0,MY_F-M(T))-MAX(0,M(T)-MY_F-Z))$CNT;
+     YKAGE(T,LL,AGE(LIFE+(FIL2(T)-ORD(LL)-Z)))$(INVSTEP(K_EOH,JOT,LL,JOT)$OPYEAR(LIFE,AGE)$MY_FIL2(T)) = YES);
+   FIL2(T)=F*MY_FIL2(T)/MAX(1,SUM(YKAGE(T,LL,AGE),1)$CNT); 
+   %1CST_FIXC(%2R,VNT(V,T),P) = FIL2(T) *
+     SUM(YKAGE(T,K,AGE), OBJ_FOM(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'1',J,JJ),SHAPE(J,AGE)*MULTI(JJ,T)-1)));
+   %1CST_FIXX(%2R,VNT(V,T),P)$(OBJ_FTX(R,V,P,CUR)+OBJ_FSB(R,V,P,CUR)) = FIL2(T) *
+     SUM(YKAGE(T,K,AGE), (OBJ_FTX(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'2',J,JJ),SHAPE(J,AGE)*MULTI(JJ,T)-1)) -
+                          OBJ_FSB(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'3',J,JJ),SHAPE(J,AGE)*MULTI(JJ,T)-1))));
+);
+* Report approximate costs for RESID according to available capacity
+LOOP(OBJ_FCUR(R,FIL(V),P,CUR)$PRC_RESID(R,'0',P),
+ %1CST_FIXC(%2RTP_CPTYR(R,V,T,P)) = NCAP_PASTI(R,V,P)*COEF_RVPT(R,V,P,T) * OBJ_FOM(R,V,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'1',J,JJ),MULTI(JJ,T)-1));
+ %1CST_FIXX(%2RTP_CPTYR(R,V,T,P)) = NCAP_PASTI(R,V,P)*COEF_RVPT(R,V,P,T) *(OBJ_FTX(R,V,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'2',J,JJ),MULTI(JJ,T)-1)) -
+                                                                          OBJ_FSB(R,V,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'3',J,JJ),MULTI(JJ,T)-1)));
+);
+
+$IF NOT DEFINED PRC_RCAP $GOTO RETDONE
+ COEF_CAP(RTP_CPTYR(R,V,T,P))$COEF_CAP(R,V,T,P) = 1-COEF_CAP(R,V,T,P)+EPS;
+ %1CST_FIXC(%2RTP_CPTYR(R,V,T,P)) $= COEF_CAP(R,V,T,P)*%1CST_FIXC(%2R,V,T,P);
+ %1CST_FIXX(%2RTP_CPTYR(R,V,T,P)) $= COEF_CAP(R,V,T,P)*%1CST_FIXX(%2R,V,T,P);
+$LABEL RETDONE
+ NCAP_YES(OBJ_YES)=YES;
+
+*-----------------------------------------------------------------------------
+* Marginal costs of endogenous trade
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=OBJ_YES,CLEAR=PAR_IPRIC;
+  PAR_IPRIC(RTP(R,T,P),C,TS,'IMP') $= (-1) * EQ_IRE.M(R,T,P,C,'IMP',TS);
+  CG_GRP(R,P,C,COM)$TOP_IRE(R,C,R,COM,P) = YES;
+  LOOP(CG_GRP(REG,P,COM1,COM)$RPC_MARKET(REG,P,COM,'IMP'),
+    PAR_IPRIC(RTPCS_VARF(R,T,P,C,TS),'IMP')$TOP_IRE(REG,COM1,R,C,P) =
+      -SUM((RS_TREE(R,ALL_TS,TS),S)$(IRE_TSCVT(R,ALL_TS,REG,S)$EQ_IRE.M(REG,T,P,COM,'IMP',S)),
+               EQ_IRE.M(REG,T,P,COM,'IMP',S) *
+               IRE_CCVT(REG,COM1,REG,COM) * IRE_CCVT(R,C,REG,COM1) * RS_FR(R,ALL_TS,TS) * IRE_TSCVT(R,ALL_TS,REG,S)));
+
+  PAR_IPRIC(RTPCS_VARF(R,T,P,C,TS),'EXP')$RPC_IREIO(R,P,C,'EXP','IN') $=
+    SMAX(TOP_IRE(R,C,REG,COM,P),SUM((RS_TREE(R,TS,ALL_TS),S)$(IRE_TSCVT(R,ALL_TS,REG,S)$EQ_IRE.M(REG,T,P,COM,'IMP',S)),
+               EQ_IRE.M(REG,T,P,COM,'IMP',S) * IRE_FLO(R,T,P,C,REG,COM,S) *
+               IRE_CCVT(R,C,REG,COM) * RS_FR(R,ALL_TS,TS) * IRE_TSCVT(R,ALL_TS,REG,S)));
+
+  PAR_IPRIC(RTP(R,T,P),C,TS,'EXP') $= EQ_IRE.M(R,T,P,C,'EXP',TS);
+  LOOP(RPC_EQIRE(REG,P,COM,'EXP'),
+    PAR_IPRIC(RTPCS_VARF(R,T,P,C,TS),'IMP')$TOP_IRE(REG,COM,R,C,P) =
+      -SUM((RS_TREE(R,ALL_TS,TS),S)$IRE_TSCVT(R,ALL_TS,REG,S),
+               EQ_IRE.M(REG,T,P,COM,'EXP',S) / IRE_FLO(REG,T,P,COM,R,C,TS) *
+               IRE_CCVT(R,C,REG,COM) * RS_FR(R,ALL_TS,TS) * IRE_TSCVT(R,ALL_TS,REG,S)));
+
+  PRC_YMAX(RP_IRE(R,P)) $= SUM((RPC_IREIO(R,P,C,IE,'IN'),RTP_VINTYR(R,V,T,P),RPCS_VAR(R,P,C,S)),
+                                PAR_IPRIC(R,T,P,C,S,IE)*PAR_IRE(R,V,T,P,C,S,IE));
+  %1REG_IREC(%2R) $= SUM(P,PRC_YMAX(R,P));
+  PAR_IPRIC(R,T,P,C,TS,IE)$PAR_IPRIC(R,T,P,C,TS,IE) = PAR_IPRIC(R,T,P,C,TS,IE)*(1/COEF_PVT(R,T));
+$IF %1==S  %1PAR_IPRIC(%2R,T,P,C,TS,IE) $= PAR_IPRIC(R,T,P,C,TS,IE);
+  OPTION CLEAR=CG_GRP,CLEAR=PAR_OBJCAP,CLEAR=RTP_OBJ,CLEAR=RTP_NPV,CLEAR=COEF_CRF,CLEAR=COEF_RVPT;
+
+*------------------------------------------------------------------------------
+* Marginal costs associated with endogenous imports/exports
+* - note that price only applied when actually an internal region
+*------------------------------------------------------------------------------
+  %1CST_IREC(%2RTP_VINTYR(R,V,T,P),C)$(RPC(R,P,C)$RP_IRE(R,P)) $=
+     SUM((RTPCS_VARF(R,T,P,C,S),RPC_IREIO(R,P,C,IE,'IN')),PAR_IPRIC(R,T,P,C,S,IE)*PAR_IRE(R,V,T,P,C,S,IE));
+
+*------------------------------------------------------------------------------
+* EQOBJVAR the objective function variable cost reporting
+*------------------------------------------------------------------------------
+$IFI %ANNCOST%==LEV $SET X1 'LEV' SET TMP *(1/OBJ_PVT(R,T,CUR))
+  %1CST_TIME(%2R,T,ANNUAL,'%SYSPREFIX%%X1%COST') = COEF_PVT(R,T);
+$IFI NOT %ANNCOST%==LEV $BATINCLUDE eqobjvar.rpt PAR J('1'), J('2'), T
+  %1CST_ACTC(%2R,V,T,P,'-') $= SUM(CUR$PAR_ACTC('1',R,V,T,P,%PGPRIM%,CUR),PAR_ACTC('1',R,V,T,P,%PGPRIM%,CUR)%TMP%);
+  %1CST_ACTC(%2R,V,T,P,'+') $= SUM(CUR$PAR_ACTC('2',R,V,T,P,%PGPRIM%,CUR),PAR_ACTC('2',R,V,T,P,%PGPRIM%,CUR)%TMP%);
+  %1CST_FLOC(%2R,V,T,P,C) $= SUM(CUR$PAR_FLOC('1',R,V,T,P,C,CUR),PAR_FLOC('1',R,V,T,P,C,CUR)%TMP%);
+  %1CST_FLOX(%2R,V,T,P,C) $= SUM(CUR$PAR_FLOC('2',R,V,T,P,C,CUR),PAR_FLOC('2',R,V,T,P,C,CUR)%TMP%);
+  %1CST_COMC(%2R,T,C)     $= SUM(CUR$PAR_COMC('1',R,T,C,CUR),PAR_COMC('1',R,T,C,CUR)%TMP%);
+  %1CST_COMX(%2R,T,C)     $= SUM(CUR$PAR_COMC('2',R,T,C,CUR),PAR_COMC('2',R,T,C,CUR)%TMP%);
+
+$IF DEFINED OBJ_COMBAL $BATINCLUDE powerflo.vda RPTB '' '' '%1' "%2" "%SOW%"
+*------------------------------------------------------------------------------
+* EQOBJELS the objective function flexible demand cost reporting
+*------------------------------------------------------------------------------
+$ BATINCLUDE eqobjels.rpt %1CST_COME(%2R,TT,C) TT
+  IF(CARD(%1CST_PVP),
+   %1CST_PVC(%2'%SYSPREFIX%ELS',R,C)$SUM(RCJ(R,C,'1',BDNEQ),1) = SUM(T,%1CST_COME(%2R,T,C)*COEF_PVT(R,T));
+   %1CST_PVP(%2'%SYSPREFIX%IRE',RP_IRE(R,P)) $= PRC_YMAX(R,P);
+  );
+*------------------------------------------------------------------------------
+* Regional annual costs
+  %1REG_ACOST(%2R,T,'INV') =  SUM((VNT(V,T),P,SYSINV)$%1CST_INVC(%2R,V,T,P,SYSINV),%1CST_INVC(%2R,V,T,P,SYSINV));
+  %1REG_ACOST(%2R,T,'INVX') = SUM((VNT(V,T),P,SYSINV)$%1CST_INVX(%2R,V,T,P,SYSINV),%1CST_INVX(%2R,V,T,P,SYSINV));
+  %1REG_ACOST(%2R,T,'FIX') =  SUM((VNT(V,T),P)$%1CST_FIXC(%2R,V,T,P),%1CST_FIXC(%2R,V,T,P));
+  %1REG_ACOST(%2R,T,'FIXX') = SUM((VNT(V,T),P)$%1CST_FIXX(%2R,V,T,P),%1CST_FIXX(%2R,V,T,P));
+  %1REG_ACOST(%2R,T,'VAR') =  SUM((VNT(V,T),P,RPM)$%1CST_ACTC(%2R,V,T,P,RPM),%1CST_ACTC(%2R,V,T,P,RPM)) +
+                              SUM((VNT(V,T),P,C)$%1CST_FLOC(%2R,V,T,P,C),%1CST_FLOC(%2R,V,T,P,C)) +
+                              SUM(C$%1CST_COMC(%2R,T,C),%1CST_COMC(%2R,T,C));
+  %1REG_ACOST(%2R,T,'VARX') = SUM((VNT(V,T),P,C)$%1CST_FLOX(%2R,V,T,P,C),%1CST_FLOX(%2R,V,T,P,C)) +
+                              SUM(C$%1CST_COMX(%2R,T,C),%1CST_COMX(%2R,T,C));
+  %1REG_ACOST(%2R,T,'IRE') =  SUM((VNT(V,T),P,C)$%1CST_IREC(%2R,V,T,P,C),%1CST_IREC(%2R,V,T,P,C));
+  %1REG_ACOST(%2R,T,'ELS') =  SUM(C$%1CST_COME(%2R,T,C),%1CST_COME(%2R,T,C));
+*------------------------------------------------------------------------------
+  OPTION CLEAR=PAR_ACTC,CLEAR=PAR_COMC,CLEAR=PAR_FLOC,CLEAR=PRC_YMAX,CLEAR=PASTSUM;
+$IF %1==S $EXIT
+
+*------------------------------------------------------------------------------
+* Salvage costs (not for stochastic runs)
+*------------------------------------------------------------------------------
+* Calculate actual Salvage values
+  PAR_OBJSAL(OBJ_ICUR(R,T,P,CUR)) = PAR_OBJSAL(R,T,P,CUR)*VAR_NCAP.L(R,T,P);
+$IF %ETL% == 'YES'
+  PAR_OBJSAL(RTP(R,T,TEG(P)),CUR)$G_RCUR(R,CUR) = PAR_OBJSAL(R,T,P,CUR)+SUM(OBJ_SUMS(R,T,P),OBJSIC(R,T,P)*VAR_IC.L(R,T,P))*OBJ_DCEOH(R,CUR);
+  %1CST_SALV(%2R,T,P) $= SUM(RDCUR(R,CUR),PAR_OBJSAL(R,T,P,CUR));
+  REG_OBJ(R) = SUM((RDCUR(R,CUR),ITEM,OBV)$SUM_OBJ(ITEM,OBV),VAR_OBJ.L(R,OBV,CUR)*SUM_OBJ(ITEM,OBV));

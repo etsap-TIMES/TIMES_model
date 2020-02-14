@@ -1,0 +1,169 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* SOLSETV.VDA
+*
+* Output routine - creating flat Sets for VEDA
+*
+*-----------------------------------------------------------------------------
+$IF NOT '%1'=='' $GOTO %1
+* Scenario index not supported in current version
+$IF NOT %STAGES%==YES  SOW('1') = YES;
+*-----------------------------------------------------------------------------
+* Make sure CLI attributes are defined
+$IF %CLI%==YES $GOTO ADESCVDD
+$IF %SOLVEDA%==1 PARAMETER CM_SRESULT(ALLSOW,ITEM,ALLYEAR) //;
+$IF %SOLVEDA%==1 PARAMETER CM_SMAXC_M(ALLSOW,ITEM,ALLYEAR) //;
+*-----------------------------------------------------------------------------
+$LABEL ADESCVDD
+SET ADESC Attribute Descriptions /
+
+* variables (and their marginals)
+VAR_act     'Process Activity'
+VAR_actM    'Process Activity - Marginals'
+VAR_cap     'Technology Capacity'
+VAR_capM    'Technology Capacity - Marginals'
+VAR_ncap    'Technology Investment - New capacity'
+VAR_ncapM   'Technology Investment - Marginals'
+VAR_ncapR   'Technology Investment - BenCost + ObjRange'
+VAR_fin     'Commodity Consumption by Process'
+VAR_fout    'Commodity Production by Process'
+VAR_Pout    'Commodity Output Level by Process'
+VAR_comprd  'Commodity Total Production'
+VAR_comprdM 'Commodity Total Production - Marginal'
+VAR_comnet  'Commodity Net'
+VAR_comnetM 'Commodity Net - Marginal'
+VAR_eout    'Electricity supply by technology and energy source'
+VAR_CumCst  'Cumulative costs by type (if constrained)'
+
+* equations (and their marginals)
+EQ_combal  'Commodity Slack/Levels'
+EQ_combalM 'Commodity Slack/Levels - Marginals'
+EQ_peak    'Peaking Constraint Slack'
+EQ_peakM   'Peaking Constraint Slack - Marginals'
+EQ_Cumflo  'Cumulative flow constraint - Levels'
+EQ_CumfloM 'Cumulative flow constraint - Marginals'
+EQ_IreM    'Inter-regional trade equations - Marginals'
+
+* calculated parameters
+PAR_capLO 'Capacity Lower Limit'
+PAR_capUP 'Capacity Upper Limit'
+PAR_Top   'Process topology (Opted out - SET RPT_TOP YES to activate)'
+Cap_New   'Newly installed capacity and lumpsum investment by vintage and commissioning period'
+
+* calculated costs
+COST_inv   'Annual investment costs'
+COST_dec   'Annual decommissioning costs'
+COST_salv  'Salvage values of capacities at EOH+1'
+COST_late  'Annual late costs'
+COST_fom   'Annual fixed operating and maintenance costs'
+COST_act   'Annual activity costs'
+COST_flo   'Annual flow costs (including import/export prices)'
+COST_com   'Annual commodity costs'
+COST_els   'Annual elastic demand cost term'
+COST_dam   'Annual damage cost term'
+COST_invx  'Annual investment taxes/subsidies'
+COST_fixx  'Annual fixed taxes/subsidies'
+COST_flox  'Annual flow taxes/subsidies'
+COST_comx  'Annual commodity taxes/subsidies'
+COST_ire   'Annual implied costs of endogenous trade'
+COST_NPV   'Total discounted costs by process/commodity (optional)'
+Time_NPV   'Discounted value of time by period'
+VAL_Flo    'Annual commodity flow values'
+ObjZ       'Total discounted system cost'
+Reg_wobj   'Regional total expected discounted system cost'
+Reg_obj    'Regional total discounted system cost'
+Reg_irec   'Regional total discounted implied trade cost'
+Reg_ACost  'Regional total annualized costs by period'
+User_Con   'Level of user constraint'
+User_ConFXM  'Marginal cost of user constraint (or group-wise market share)'
+User_ConLOM  'Marginal cost of lower bound user constraint'
+User_ConUPM  'Marginal cost of upper bound user constraint'
+User_DynbM  'Marginal cost of dynamic process bound constraint'
+User_Maxbet 'Level of MaxBet constraint'
+
+* Climate module and MACRO
+VAR_climate   'Climate result variables'
+Dual_Clic     'Shadow price of climate constraint'
+VAR_Macro     'MACRO result variables'
+/;
+
+$LABEL REST
+
+$IF DECLARED IRE $ABORT Illegal Declaration of Internal TIMES Identifier: IRE - Run Aborted
+SCALAR IRE "Inter-regional Exchange (Exports & Imports)";
+SCALAR STG "Storage Processes (genuine)";
+SETS
+  DMD(R,PRC)   'Demand Devices'
+  PRE(R,PRC)   'Energy Processes'
+  PRW(R,PRC)   'Material Processes - Weight'
+  PRV(R,PRC)   'Material Processes - Volume'
+  REF(R,PRC)   'Refineries'
+  ELE(R,PRC)   'Electric Power Plants'
+  CHP(R,PRC)   'Coupled Heat+Power Plants'
+  HPL(R,PRC)   'Heating Plants'
+  DISTR(R,PRC) 'Distribution Technologies'
+;
+* set the regional memebers of the reporting sets
+  DMD(RP(R,P))   $= PRC_MAP(R,'DMD',P);
+  PRE(RP(R,P))   $= PRC_MAP(R,'PRE',P);
+  PRW(RP(R,P))   $= PRC_MAP(R,'PRW',P);
+  PRV(RP(R,P))   $= PRC_MAP(R,'PRV',P);
+  REF(RP(R,P))   $= PRC_MAP(R,'REF',P);
+  ELE(RP(R,P))   $= PRC_MAP(R,'ELE',P);
+  CHP(RP(R,P))   $= PRC_MAP(R,'CHP',P);
+  HPL(RP(R,P))   $= PRC_MAP(R,'HPL',P);
+  DISTR(RP(R,P)) $= PRC_MAP(R,'DISTR',P);
+
+SETS
+  RES(R,COM)   'Residential Sector Demands'
+  COMM(R,COM)  'Commercial Sector Demands'
+  TRN(R,COM)   'Transporation Sector Demands'
+  AGR(REG,COM) 'Agriculature Sector Demands'
+  NE(REG,COM)  'Non-energy Demands'
+  IND(REG,COM) 'Industrial Demands'
+  NRGELC(ALL_R,C) 'Electricity'
+  NRGHET(ALL_R,C) 'Heat'
+;
+* set the regional memebers of the reporting sets
+  RES(RC(R,C))  $= DEM_SMAP(R,'RES',C);
+  COMM(RC(R,C)) $= DEM_SMAP(R,'COM',C);
+  TRN(RC(R,C))  $= DEM_SMAP(R,'TRN',C);
+  AGR(RC(R,C))  $= DEM_SMAP(R,'AGR',C);
+  NE(RC(R,C))   $= DEM_SMAP(R,'NE',C);
+  IND(RC(R,C))  $= DEM_SMAP(R,'IND',C);
+  NRGELC(NRG(R,C)) $= NRG_TMAP(R,'ELC',C);
+  NRGHET(NRG(R,C)) $= NRG_TMAP(R,'LTHEAT',C);
+  NRGHET(NRG(R,C)) $= NRG_TMAP(R,'HTHEAT',C);
+
+*GG* set the REGional descriptions if not provided
+* Use the RC / RP masks
+  COM_DESC(RC(R,C))$(NOT COM_DESC(R,C)) = COM_GRP(C);
+  PRC_DESC(RP(R,P))$(NOT PRC_DESC(R,P)) = PRC(P);
+
+* timeslices
+  SET RS(R,ALL_TS);
+  OPTION RS < RS_TSLVL;
+* UCs
+  SETS
+   UC_CONST(*,UC_N) 'Genuine TIMES UC constraints'
+   UC_MARKS(R,ITEM) 'PRC_MARK Share UC constraints'
+   UC_DYNBD(R,UC_N) 'Dynamic UC bound constraints';
+  LOOP(R,UC_CONST('NONE',UC_N)$UC_R_SUM(R,UC_N)=YES);
+  LOOP(RMKC(R,ITEM,C)$RPT_OPT('COMPRD','4'),UC_MARKS(R,ITEM)=YES);
+
+$ EXIT
+*---------------------------------------------------------------------
+$ LABEL FINISHUP
+* Finally, do some cleanup and set optional TOP indicators
+  OPTION UC_DYNBD < PRC_DYNUC;
+$ BATINCLUDE solsysd.v3 REG_ACOST ! ,T, '' SOW,R S R
+$ BATINCLUDE solsysd.v3 REG_WOBJ ! , ,CUR SOW,R S R
+  OPTION CLEAR=AFS,CLEAR=PAR_OBJSAL,CLEAR=RTPC,CLEAR=RTTC,CLEAR=PAR_TOP;
+$IFI %RPT_TOP%==YES SET ADESC / PAR_Top 'Process topology indicator' /; RPT_OPT('FLO','7')=1;
+  IF(RPT_OPT('FLO','7'),
+    PAR_TOP(R,T(MIYR_1),P,C,IO)$TOP(R,P,C,IO) = EPS;
+    PAR_TOP(R,T(MIYR_1),P,C,'OUT')$RPC_IRE(R,P,C,'IMP') = EPS;
+    PAR_TOP(R,T(MIYR_1),P,C,'IN')$RPC_IRE(R,P,C,'EXP') = EPS;
+    PAR_TOP(R,T-(ORD(T)-1),P,C,IO)$NCAP_COM(R,T,P,C,IO) = EPS;
+  );

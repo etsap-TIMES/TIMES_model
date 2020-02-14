@@ -1,0 +1,32 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* INIT_EXT.xtd oversees initial preprocessor activities
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Get processes allowed to participate in the reserve markets per region
+  OPTION BS_BSC<BS_RMAX, TRACKP<BS_BSC; Z=CARD(TRACKP);
+  BS_RTYPE(R,C)$BS_RTYPE(R,C) = SIGN(BS_RTYPE(R,C))*ROUND(MIN(5,ABS(BS_RTYPE(R,C))));
+* Remove reserve commodities from topology
+  LOOP(TRACKP(R,P)$Z,RP_UPR(R,P,'FX')=Z; Z=0);
+  TRACKP(R,P)$=SUM((C,BD)$BS_STIME(R,P,C,BD),1);
+  TOP(TRACKP(R,P),C,IO)$BS_RTYPE(R,C) = NO;
+  NRG_TMAP(R,NRG_TYPE,C)$BS_RTYPE(R,C) = DIAG(NRG_TYPE,'RATE');
+  OPTION CLEAR=TRACKP;
+*-----------------------------------------------------------------------------
+* Make A-sets
+  BS_ABD(R,C,'LO')$(BS_RTYPE(R,C)<0) $=BS_RTYPE(R,C);
+  BS_ABD(R,C,'UP')$(BS_RTYPE(R,C)>0) $=BS_RTYPE(R,C);
+  BS_ANEG(R,C) $= BS_ABD(R,C,'LO');
+  BS_APOS(R,C) $= BS_ABD(R,C,'UP');
+* Remove invalid values
+  BS_DEMDET(R,YEAR,RSP,C,S)$(NOT BS_RTYPE(R,C))=0;
+  BS_OMEGA(R,YEAR,C,S)$(NOT BS_RTYPE(R,C))=0;
+  BS_DELTA(R,YEAR,C,S)$(NOT BS_RTYPE(R,C))=0;
+  BS_LAMBDA(R,YEAR,C)$(NOT BS_RTYPE(R,C))=0;
+  BS_DETWT(R,YEAR,C)$(NOT BS_RTYPE(R,C))=0;
+  BS_SIGMA(R,YEAR,C,ITEM,S)$(NOT BS_RTYPE(R,C))=0;
+  BS_RMAX(R,YEAR,P,C,S)$(NOT BS_RTYPE(R,C))=0;
+  BS_STIME(R,P,C,BD)$(NOT BS_RTYPE(R,C))=0;

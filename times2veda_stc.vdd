@@ -1,0 +1,129 @@
+*
+* TIMES GDX2VEDA Set Directives
+*
+
+[DataBaseName]
+ TIMES
+
+[Dimensions]
+ Attribute        attr
+ Sow              w
+ Commodity        c
+ Process          p
+ Period           t
+ Region           r
+ Vintage          v
+ TimeSlice        s
+ UserConstraint   uc_n
+
+[ParentDimension]
+ Region Commodity Process UserConstraint
+
+[Options]
+SetsAllowed Commodity Process UserConstraint
+*Scenario SCENCASE
+not-0 var_fin var_fout var_act var_actm var_cap var_capm cost_flo cost_act eq_combal eq_combalm
+
+[DataEntries]
+* VEDA Attr     GAMS             - indexes -
+*** Variables & Parameters
+  VAR_Act       spar_actl         w r v t p s
+  VAR_ActM      spar_actm         w r v t p s
+  VAR_Cap       spar_capl         w r t p
+  VAR_Cap       spar_pasti        w r t p v
+  VAR_CapM      spar_capm         w r t p
+  VAR_Ncap      spar_ncapl        w r t p
+  VAR_NcapM     spar_ncapm        w r t p
+  VAR_NcapR     spar_ncapr        w r t p uc_n
+  VAR_FIn       sf_in             w r v t p c s
+  VAR_FOut      sf_out            w r v t p c s
+  VAR_FOut      sagg_out          w r t c s
+  VAR_POut      sp_out            w r t p c s
+  VAR_Comprd    spar_comprdl      w r t c s
+  VAR_ComprdM   spar_comprdm      w r t c s
+  VAR_Comnet    spar_comnetl      w r t c s
+  VAR_ComnetM   spar_comnetm      w r t c s
+  VAR_Eout      spar_eout         w r v t p c
+  VAR_CumCst    spar_cumcst       w r v t uc_n c
+*** Equations
+  EQ_Combal     spar_combalgm     w r t c s
+  EQ_CombalM    spar_combalem     w r t c s
+  EQ_PeakM      spar_peakm        w r t c s
+  EQ_IreM       spar_ipric        w r t p c s uc_n
+  EQ_Cumflo     spar_cumflol      w r p c v t
+  EQ_CumfloM    spar_cumflom      w r p c v t
+*** Parameters
+  PAR_Top       par_top           r t p c uc_n
+  PAR_CapLO     spar_caplo        w r t p
+  PAR_CapUP     spar_capup        w r t p
+  Cap_New       SCap_New          w r v p t uc_n
+*** Costs
+  Cost_Inv      scst_invc         w r v t p uc_n
+  Cost_Invx     scst_invx         w r v t p uc_n
+  Cost_Dec      scst_decc         w r v t p
+  Cost_Fom      scst_fixc         w r v t p
+  Cost_Fixx     scst_fixx         w r v t p
+  Cost_Act      scst_actc         w r v t p uc_n
+  Cost_Flo      scst_floc         w r v t p c
+  Cost_Flox     scst_flox         w r v t p c
+  Cost_Com      scst_comc         w r t c
+  Cost_Comx     scst_comx         w r t c
+  Cost_Els      scst_come         w r t c
+  Cost_Dam      scst_dam          w r t c
+  Cost_ire      scst_irec         w r v t p c
+  Time_NPV      scst_time         w r t s uc_n
+  ObjZ          ObjZ.l
+  Reg_wobj      reg_wobj          r uc_n c
+  Reg_obj       sreg_wobj         w r uc_n c
+  Reg_irec      sreg_irec         w r
+  Reg_ACost     sreg_acost        w r t uc_n
+  User_con      spar_ucsl         w uc_n r t s
+  User_conFXM   spar_ucsm         w uc_n r t s
+  User_DynbM    spar_ucrtp        w uc_n r t p c
+  User_MaxBet   spar_ucmax        w uc_n r p c
+*** Climate module
+  VAR_Climate   CM_SRESULT        w c t
+  Dual_clic     CM_SMAXC_M        w c t
+
+[DimensionTextAll]
+* Gams_set_name  Veda_Tab
+adesc    attr
+uc_n     uc_n
+sysuc    uc_n
+
+[ParentDimensionTextAll]
+* Gams_set_name  Veda_Tab
+prc_desc   r p
+com_desc   r c
+
+[ParentSubSets]
+*  subset  GAMS    VEDA Tab
+* processes
+  DMD DMD     r p
+  PRE PRE     r p
+  PRW PRW     r p
+  PRV PRV     r p
+  REF REF     r p
+  ELE ELE     r p
+  CHP CHP     r p
+  HPL HPL     r p
+  STG RP_STG  r p
+  DISTR DISTR r p
+  IRE RP_IRE  r p
+* commodities
+  NRG  NRG    r c
+  DEM  DEM    r c
+  ENV  ENV    r c
+  MAT  MAT    r c
+  RES  RES    r c
+  COMM COMM   r c
+  TRN  TRN    r c
+  AGR  AGR    r c
+  NE   NE     r c
+  IND  IND    r c
+  ELC+ NRGELC r c
+  HET+ NRGHET r c
+  UC_Const uc_r_each r uc_n
+  UC_Const uc_const  r uc_n
+  UC_DynBD uc_dynbd  r uc_n
+  UC_MarkS uc_marks  r uc_n

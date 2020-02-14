@@ -1,0 +1,56 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* PREP_ext.stc oversees all the added inperpolation activities needed by STC  *
+*   %1 - mod or v# for the source code to be used                             *
+*=============================================================================*
+*-----------------------------------------------------------------------------
+* Preprocess stochastic parameters - Interpolation
+$ BATINCLUDE fillparm S_COM_PROJ 'R' 'C,J,WW' ",'0','0','0'" MILESTONYR 1 'GE 0'
+$ BATINCLUDE fillparm S_COM_TAX 'R' 'C,S,COM_VAR,CUR,J,WW' "" MILESTONYR 1 'GE 0'
+$ BATINCLUDE fillparm S_NCAP_COST 'R' 'P,J,WW' ",'0','0','0'" MILESTONYR 1 'GE 0'
+$ BATINCLUDE prepparm S_CAP_BND 'R' 'P,BD,J,WW' ",'0'" MILESTONYR 'RTP(R,MILESTONYR,P)' 1
+$ BATINCLUDE prepparm S_UC_RHSRT 'ALL_R,UC_N' 'LIM,J,WW' ",'0'" MILESTONYR 1 1
+$ BATINCLUDE prepparm S_UC_RHSRTS 'ALL_R,UC_N' 'TS,LIM,J,WW' "" MILESTONYR 1 1
+$ BATINCLUDE prepparm S_UC_RHST 'UC_N' 'LIM,J,WW' ",'0','0'" MILESTONYR 1 1
+$ BATINCLUDE prepparm S_UC_RHSTS 'UC_N' 'TS,LIM,J,WW' ",'0'" MILESTONYR 1 1
+$IF DEFINED S_DAM_COST $BATINCLUDE prepparm S_DAM_COST 'R' 'C,CUR,J,WW' ",'0'" MILESTONYR 1 EPS 3
+$IF DEFINED S_FLO_FUNC $BATINCLUDE fillparm S_FLO_FUNC 'R' 'P,CG,CG2,J,WW' ",'0'" MILESTONYR 1 'GE 0'
+$IF DEFINED S_NCAP_AFS $BATINCLUDE fillparm S_NCAP_AFS 'R' 'P,TS,J,WW' ",'0','0'" MILESTONYR 1 'GE 0'
+$IF DEFINED S_COM_FR   $BATINCLUDE fillparm S_COM_FR 'R' 'C,TS,J,WW' ",'0','0'" MILESTONYR 1 'GE 0'
+*-----------------------------------------------------------------------------
+$BATINCLUDE recurrin.stc MXPAR
+*-----------------------------------------------------------------------------
+* commodities involved in CUM constraints
+  S_COM_CUM(R,'NET',ALLYEAR(BOHYEAR+BEOH(BOHYEAR)),LL(EOHYEAR+BEOH(EOHYEAR)),C,BD,J,WW) $= S_COM_CUMNET(R,BOHYEAR,EOHYEAR,C,BD,J,WW);
+  S_COM_CUM(R,'PRD',ALLYEAR(BOHYEAR+BEOH(BOHYEAR)),LL(EOHYEAR+BEOH(EOHYEAR)),C,BD,J,WW) $= S_COM_CUMPRD(R,BOHYEAR,EOHYEAR,C,BD,J,WW);
+  OPTION CLEAR=S_COM_CUMPRD,CLEAR=S_COM_CUMNET;
+  S_COM_CUM(R,COM_VAR,ALLYEAR,LL,C,'LO',J,WW)$((S_COM_CUM(R,COM_VAR,ALLYEAR,LL,C,'LO',J,WW) EQ 0)$S_COM_CUM(R,COM_VAR,ALLYEAR,LL,C,'LO',J,WW)) = 0;
+  RC_CUMCOM(R,COM_VAR,ALLYEAR,LL,C) $= SUM((BD,J,WW)$S_COM_CUM(R,COM_VAR,ALLYEAR,LL,C,BD,J,WW),YES);
+  LOOP((R,T,C,S,COM_VAR,CUR,J,WW)$S_COM_TAX(R,T,C,S,COM_VAR,CUR,J,WW),UC_COM('OBJ1',COM_VAR,'LHS',R,'0',C,ANNUAL,'UCN')=1);
+
+* collect transformation tuples
+$IF DEFINED S_FLO_FUNC OPTION RP_FFSGG <= S_FLO_FUNC;
+
+* Activate capacity variables if S_CAP_BND is specified
+  LOOP((R,T,P,BD,J,WW)$S_CAP_BND(R,T,P,BD,J,WW),RTP_VARP(R,T,P) = YES);
+*-----------------------------------------------------------------------------
+$IF DEFINED S_DAM_COST PARAMETER DAM_COST //;
+$IF DEFINED DAM_COST   PARAMETER S_DAM_COST //;
+*-----------------------------------------------------------------------------
+* Set flags for Phased UC_N
+  UC_R_SUM(R,'OBJZ') = YES; UC_R_EACH(R,'OBJZ') = YES; UC_R_SUM(R,'OBJ1') = YES; 
+  UC_T_SUM(R,'OBJZ',T) = YES; UC_T_SUM(R,'OBJ1',MIYR_1) = YES;
+  LOOP((UC_N,WW)$S_UCOBJ(UC_N,WW),UC_RHS(UC_N,'N')$(NOT UC_RHS(UC_N,'N')) = -1);
+* Initialize SW_PARM
+  SW_PARM = CARD(S_COM_PROJ) + CARD(S_CAP_BND) + CARD(S_COM_CUMPRD) + CARD(S_COM_CUMNET);
+  SW_PARM = SW_PARM + CARD(S_CM_CONST) + CARD(S_CM_MAXC);
+* Set flag for detemininstic RHS if none set but is set for some SOW
+  UC_RHS(UC_N,'UP')$((NOT UC_RHS(UC_N,'UP'))$SUM((LIM,J,WW)$S_UC_RHS(UC_N,LIM,J,WW),1)) = INF;
+  UC_RHSR(R,UC_N,'UP')$((NOT UC_RHSR(R,UC_N,'UP'))$SUM((LIM,J,WW)$S_UC_RHSR(R,UC_N,LIM,J,WW),1)) = INF;
+  UC_RHST(UC_N,T,'UP')$((NOT UC_RHST(UC_N,T,'UP'))$SUM((LIM,J,WW)$S_UC_RHST(UC_N,T,LIM,J,WW),1)) = INF;
+  UC_RHSRT(R,UC_N,T,'UP')$((NOT UC_RHSRT(R,UC_N,T,'UP'))$SUM((LIM,J,WW)$S_UC_RHSRT(R,UC_N,T,LIM,J,WW),1)) = INF;
+  UC_RHSTS(UC_N,T,S,'UP')$((NOT UC_RHSTS(UC_N,T,S,'UP'))$SUM((LIM,J,WW)$S_UC_RHSTS(UC_N,T,S,LIM,J,WW),1)) = INF;
+  UC_RHSRTS(R,UC_N,T,S,'UP')$((NOT UC_RHSRTS(R,UC_N,T,S,'UP'))$SUM((LIM,J,WW)$S_UC_RHSRTS(R,UC_N,T,S,LIM,J,WW),1)) = INF;

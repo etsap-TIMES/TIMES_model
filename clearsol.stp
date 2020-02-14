@@ -1,0 +1,33 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* CLEARSOL.stp: Clear solution values for projection years
+*=============================================================================*
+  IF(1%1,
+  RVT(R,VNT(V,T))$RT_PP(R,T) = YES;
+  FIL(LL)=T(LL); LOOP(R, FIL(T)$NO_RT(R,T) = NO);
+  %VAR%_ACT.L(RVT,P,S%SOW%) = 0;
+  %VAR%_FLO.L(RVT,P,C,S%SOW%) = 0;
+  %VAR%_IRE.L(RVT,P,C,S,IE%SOW%) = 0;
+  %VAR%_SIN.L(RVT,P,C,S%SOW%) = 0;
+  %VAR%_SOUT.L(RVT,P,C,S%SOW%) = 0;
+  %VAR%_NCAP.L(RT_PP,P%SOW%) = 0;
+  %VAR%_COMNET.L(RT_PP,C,S%SOW%) = 0;
+  %VAR%_COMPRD.L(RT_PP,C,S%SOW%) = 0;
+  %VAR%_NCAP.L(RT_PP,P%SOW%) = 0;
+  %VAR%_UCT.L(UC_N,T(FIL)%SOW%) = 0;
+  %VAR%_UCTS.L(UC_N,T(FIL),S%SOW%) = 0;
+  %VAR%_UCRT.L(UC_N,RT_PP%SOW%) = 0;
+  %VAR%_UCRTS.L(UC_N,RT_PP,S%SOW%) = 0;
+  %VAR%_SCAP.L(RVT,P%SOW%) = 0;
+  %EQ%G_COMBAL.L(RT_PP,C,S%SWT%) = 0;
+$IFI %CLI%==YES  %VAR%_CLIBOX.L(CM_VAR,LL%SOW%)$CM_LED(LL)=0;
+  EQ_OBJ.M = 0);
+$IF NOT %STAGES%==YES $EXIT
+  VAR_NCAP.L(RT_PP,P) = 0;
+  VAR_UCT.L(UC_N,T(FIL)) = 0;
+  VAR_UCTS.L(UC_N,T(FIL),S) = 0;
+  VAR_UCRT.L(UC_N,RT_PP) = 0;
+  VAR_UCRTS.L(UC_N,RT_PP,S) = 0;

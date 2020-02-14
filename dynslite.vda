@@ -1,0 +1,100 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* dynslite.vda - experimental lite implementation for dynamic timeslice trees
+*=============================================================================*
+$ IF %RTS%==S $EXIT
+$ SET TMP $NORTS(R,T,S)
+  IF(CARD(NORTS),
+$ GOTO %1
+*------------------------------
+$ LABEL PRELEV
+$ IFI %DUC%==YES Abort "TS_OFF cannot be used with DUC";
+* Remove timeslices turned off
+* Bounds+varcosts pre-cleared only
+    ACT_BND(R,T,P,S,BD)%TMP%=0;
+    COM_BNDNET(R,T,C,S,BD)%TMP%=0;
+    COM_BNDPRD(R,T,C,S,BD)%TMP%=0;
+    FLO_BND(R,T,P,CG,S,BD)%TMP%=0;
+    FLO_FR(R,T,P,C,S,L)%TMP% = 0;
+    IRE_BND(R,T,C,S,ALL_R,IE,BD)%TMP%=0;
+    IRE_XBND(R,T,C,S,IE,BD)%TMP%=0;
+    STGIN_BND(R,T,P,C,S,BD)%TMP%=0;
+    STGOUT_BND(R,T,P,C,S,BD)%TMP%=0;
+    COM_BPRICE(R,T,C,S,CUR)%TMP%=0;
+$ LABEL CLEAR
+* Vintage-based cleared selectively
+$ SETLOCAL RTS $(NORTS(R,V,S)+NORTS(R,T,S)$PASTMILE(V))
+    RVP(RTP(R,V,P))$(PRC_TSL(R,P,'ANNUAL') OR NOT PRC_VINT(R,P))=YES;
+    LOOP(MIYR_1(T),
+    FLO_FUNC(RVP(R,V,P),CG,CG2,S)%RTS%=0;
+    FLO_SUM(RVP(R,V,P),CG,C,CG2,S)%RTS%=0;
+    NCAP_AF(RVP(R,V,P),S,BD)%RTS%=0;
+    FLO_SHAR(RVP(R,V,P),C,CG,S,BD)$(RPCS_VAR(R,P,C,'ANNUAL')%RTS%)=0;
+    FLO_ASHAR(RVP(R,V,P),C,CG,S,BD)$(RPS_S2(R,P,'ANNUAL')%RTS%)=0;
+    STG_LOSS(RVP(R,V,P),S)%RTS%=0;
+    IRE_FLO(RVP(R,V,P),C,ALL_R,COM,S)%RTS%=0);
+    ACT_EFF(RVP(R,T,P),CG,S)$((NOT PRC_VINT(R,P))%TMP%)=0;
+    OPTION CLEAR=RVP;
+* Milestonyr-based all cleared
+    COM_IE(R,T,C,S)%TMP%=0;
+    COM_PKFLX(R,T,C,S)%TMP%=0;
+    COM_ELAST(R,T,C,S,L)%TMP%=0;
+    FLO_PKCOI(R,T,P,C,S)%TMP%=0;
+    STG_SIFT(R,T,P,C,S)%TMP%=0;
+    IRE_FLOSUM(R,T,P,C,S,IE,COM,IO)%TMP%=0;
+    UC_ACT(UCN,SIDE,R,T,P,S)%TMP%=0;
+    UC_FLO(UCN,SIDE,R,T,P,C,S)%TMP%=0;
+    UC_IRE(UCN,SIDE,R,T,P,C,S,IE)%TMP%=0;
+    UC_COM(UCN,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)%TMP%=0;
+    UC_RHSRTS(R,UCN,T,S,L)%TMP% = 0;
+$ GOTO FINISH
+*------------------------------
+$ LABEL REDUCE
+* Remove from sets timeslices turned off
+    RTPS_OFF(RTP(R,T,P),S)$PRC_TS(R,P,S) $= NORTS(R,T,S);
+    RTPCS_OUT(RTP(R,T,P),C,S)$RPCS_VAR(R,P,C,S) $= NORTS(R,T,S);
+    RTCS_VARC(R,T,C,S)%TMP% = NO;
+    RCS_COMBAL(R,T,C,S,BD)%TMP% = NO;
+    RCS_COMPRD(R,T,C,S,BD)%TMP% = NO;
+    RHS_COMBAL(R,T,C,S)%TMP% = NO;
+    RHS_COMPRD(R,T,C,S)%TMP% = NO;
+    RTX_MARK(R,T,ITEM,C,BD,S)%TMP% = NO;
+$ GOTO FINISH
+*------------------------------
+$ LABEL POSTLEV
+* After all levelized, re-interpolate coping ANNUAL fallback
+$ SET RESET 0
+    RVP(RTP(R,V,P))$PRC_VINT(R,P)$=PRC_TSL(R,P,'ANNUAL');
+    OPTION FIL<DATAYEAR; DATAYEAR(LL)=LASTLL(LL);
+    FLO_FUNC(R,LL--ORD(LL),P,CG,CG2,ANNUAL)$(FLO_FUNC(R,LL,P,CG,CG2,ANNUAL)$RVP(R,LL,P))=3;
+    FLO_SUM(R,LL--ORD(LL),P,CG,C,CG2,ANNUAL)$(FLO_SUM(R,LL,P,CG,C,CG2,ANNUAL)$RVP(R,LL,P))=3;
+    ACT_EFF(R,LL--ORD(LL),P,CG,ANNUAL)$(ACT_EFF(R,LL,P,CG,ANNUAL)$RVP(R,LL,P))=3;
+$   BATINCLUDE fillparm FLO_FUNC R 'P,CG,CG2,ANNUAL' ",'',''" V 'RVP(R,V,P)' '>0' X_RPGGS X_RPGGS
+$   BATINCLUDE fillparm FLO_SUM R 'P,CG1,C,CG2,ANNUAL' ",''" V 'RVP(R,V,P)' '>0' X_RPGCGS X_RPGCGS
+$   BATINCLUDE fillparm ACT_EFF R 'P,CG,ANNUAL' ",'','',''"  V 'RVP(R,V,P)' '>0' X_RPGS X_RPGS
+    OPTION DATAYEAR<FIL;
+$ GOTO CLEAR
+*------------------------------
+$ LABEL BOUNDS
+* Fix variables turned off to zero with holdfixed
+$ IF %STAGES%==YES $SETLOCAL SWT SW_T(T%SWD%)$
+$ SETLOCAL SWT %SWD%)$(%SWT%RT_PP(R,T)%TMP%
+   OPTION RTC_NET<RHS_COMBAL,RTC_PRD<RHS_COMPRD;
+   %MODEL_NAME%.HOLDFIXED=1;
+   %MODEL_NAME%.SOLVEOPT=1;
+   %VAR%_ACT.FX(RTP_VINTYR(R,V,T,P),S%SWT%$PRC_TS(R,P,S)) = 0;
+   %VAR%_FLO.FX(RTP_VINTYR(R,V,T,P),C,S%SWT%$RPCS_VAR(R,P,C,S)) = 0;
+   %VAR%_IRE.FX(RTP_VINTYR(R,V,T,P),C,S,IE%SWT%$RPCS_VAR(R,P,C,S)) = 0;
+   %VAR%_SIN.FX(RTP_VINTYR(R,V,T,P),C,S%SWT%$RPCS_VAR(R,P,C,S)) = 0;
+   %VAR%_SOUT.FX(RTP_VINTYR(R,V,T,P),C,S%SWT%$RPCS_VAR(R,P,C,S)) = 0;
+   %VAR%_UPS.FX(RTP_VINTYR(R,V,T,P),S,L%SWT%$RPS_UPS(R,P,S)) = 0;
+   %VAR%_UPT.FX(RTP_VINTYR(R,V,T,P),S,UPT%SWT%$RPS_UPS(R,P,S)$RP_DP(R,P)) = 0;
+   %VAR%_UDP.FX(RTP_VINTYR(R,V,T,P),S,BD%SWT%$PRC_TS(R,P,S)$RP_UPR(R,P,BD)) = 0;
+   %VAR%_COMNET.FX(RTC_NET(R,T,C),S%SWT%$COM_TS(R,C,S)) = 0;
+   %VAR%_COMPRD.FX(RTC_PRD(R,T,C),S%SWT%$COM_TS(R,C,S)) = 0;
+*------------------------------
+$ LABEL FINISH
+  );

@@ -1,0 +1,75 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* INITMTY.stc - Extension for Stochastics
+*-----------------------------------------------------------------------------
+* Questions/Comments:
+*-----------------------------------------------------------------------------
+$SETGLOBAL STAGES YES
+*-----------------------------------------------------------------------------
+* Input Control parameters
+  PARAMETER SW_START(J) //;
+  PARAMETER SW_SUBS(J,ALLSOW) //;
+  PARAMETER SW_SPROB(J,ALLSOW) //;
+  PARAMETER SW_PROB(ALLSOW) //;
+  PARAMETER SW_LAMBDA / 0 /;
+* Predefined UC names for tradeoff analysis
+  SET UC_N / OBJZ, OBJ1 /;
+
+* Internal sets and parameters
+  ALIAS (ALLSOW,WW);
+  SET SW_CHILD(J,WW,WW) 'Child SOWs of parent SOW at stage J' //;
+  SET SW_TREE(J,WW,WW)  'Finest level SOWs of SOW at stage J' //;
+  SET SW_COPY(J,ALLSOW) 'Parent SOW of SOWs to be copied' //;
+  SET SW_CPMAP(J,WW,WW) 'Copy map for attributes' //;
+  SET SW_TSTG(LL,J)     'Valid stages J for each period T' //;
+  SET SW_MAP(T,WW,J,WW) 'Map from internal to original SOW' //;
+  SET SW_REV(WW,J,WW)   'Reverse SOW tree' //;
+  SET SUPERYR(T,ALLYEAR) 'SUpremum PERiod YeaR' //;
+  PARAMETER SW_DESC(J,ALLSOW) 'Number of finest level SOWs' //;
+  SCALARS SW_PHASE / 0 /, SW_PARM / 0 /, SW_NORM / 1 /, DOITER / 0 /;
+
+* Which SOWs are available at each period
+  SET SW_T(ALLYEAR,ALLSOW)          'Which SOWs are available at each period'               //;
+  SET SW_TSW(ALLSOW,ALLYEAR,ALLSOW) 'Mapping from finest SOWs to unique SOW at each period' //;
+  SET SW_STAGE(J,ALLSOW)            'Internal SOWs at each stage'                           //;
+  SET SW_UCT(UC_N,T,ALLSOW) //;
+  PARAMETER SW_TPROB(T,ALLSOW) //;
+
+* Stochastic input parameters
+  PARAMETER S_COM_PROJ(REG,ALLYEAR,COM,J,ALLSOW)  'Demand scenario projection'  //;
+  PARAMETER S_CAP_BND(REG,ALLYEAR,PRC,BD,J,ALLSOW) 'Bound on total installed capacity'  //;
+  PARAMETER S_COM_CUMPRD(R,BOHYEAR,EOHYEAR,C,BD,J,ALLSOW) 'Cumulative limit on COMPRD' //;
+  PARAMETER S_COM_CUMNET(R,BOHYEAR,EOHYEAR,C,BD,J,ALLSOW) 'Cumulative limit on COMNET' //;
+  PARAMETER S_COM_TAX(R,ALLYEAR,C,S,COM_VAR,CUR,J,ALLSOW) 'Tax on commodity NET/PRD' //;
+  PARAMETER S_FLO_CUM(R,P,C,ITEM,ITEM,BD,J,ALLSOW) 'Cumulative limit on FLOW' //;
+  PARAMETER S_FLO_FUNC(R,ALLYEAR,P,CG,CG,J,ALLSOW) 'Uncertain multiplier of process transformation';
+  PARAMETER S_NCAP_COST(R,ALLYEAR,P,J,ALLSOW) 'Uncertain multiplier of investment cost' //;
+  PARAMETER S_DAM_COST(R,ALLYEAR,C,CUR,J,ALLSOW) 'Damage costs';
+  PARAMETER S_UC_RHS(UC_N,LIM,J,ALLSOW) 'RHS of user constraint'  //;
+  PARAMETER S_UC_RHSR(ALL_REG,UC_N,LIM,J,ALLSOW) 'RHS of user constraint' //;
+  PARAMETER S_UC_RHST(UC_N,ALLYEAR,LIM,J,ALLSOW) 'RHS of user constraint' //;
+  PARAMETER S_UC_RHSRT(ALL_REG,UC_N,ALLYEAR,LIM,J,ALLSOW) 'RHS of user constraint' //;
+  PARAMETER S_UC_RHSTS(UC_N,ALLYEAR,TS,LIM,J,ALLSOW) 'RHS of user constraint' //;
+  PARAMETER S_UC_RHSRTS(ALL_REG,UC_N,ALLYEAR,TS,LIM,J,ALLSOW) 'RHS of user constraint' //;
+  PARAMETER S_CM_MAXCO2C(ALLYEAR,J,ALLSOW) 'Maximum allowable atmospheric CO2 concentration' //;
+  PARAMETER S_CM_MAXC(ALLYEAR,ITEM,J,ALLSOW) 'Maximum allowable climatic quantity' //;
+  PARAMETER S_CM_CONST(ITEM,J,ALLSOW) //;
+  PARAMETER S_UCOBJ(UC_N,ALLSOW) 'Weight of UC objective component in tradeoff analysis' //;
+  PARAMETER S_NCAP_AFS(R,ALLYEAR,P,S,J,ALLSOW);
+  PARAMETER S_COM_FR(R,ALLYEAR,C,S,J,ALLSOW);
+
+* Internal work sets and parameters
+  PARAMETER S_COM_CUM(R,COM_VAR,ALLYEAR,ALLYEAR,C,BD,J,ALLSOW) 'Cumulative limit on COMPRD' //;
+  SET RTPW(R,ALLYEAR,P,ALLSOW) 'Uncertain SOW by vintage';
+  SET RP_FFSGG(R,P,CG,CG) 'Uncertain transformation groups';
+  SET RP_FFSGGM(R,P,CG,CG,COM_GRP,COM_GRP) 'Map of transformation groups';
+  PARAMETER OBJ_SIC(R,T,P,ALLSOW) 'Uncertainty in investments';
+
+* Reporting
+  PARAMETER SPAR_UCSL(WW,UC_N,*,*,*)  //;
+  PARAMETER CM_SRESULT(ALLSOW,ITEM,ALLYEAR) 'Climate Module basic results' //;
+  PARAMETER CM_SMAXC_M(ALLSOW,ITEM,ALLYEAR) 'Marginals for max constraints' //;
+*-----------------------------------------------------------------------------

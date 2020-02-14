@@ -1,0 +1,125 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* RPTMAIN.stc is the main driver for the report writer for stochastics
+*   %1, %2 - SOW, %SWS%
+*=============================================================================*
+$SET EQS '%EQ%' SET V %VAR%
+*-----------------------------------------------------------------------------
+*  VARIABLES & EQUATIONS
+*-----------------------------------------------------------------------------
+$  BATINCLUDE clearsol.stc DEF
+*-----------------------------------------------------------------------------
+$IF %ETL%==YES  POSITIVE VARIABLES VAR_IC(R,YEAR,PRC)
+  PARAMETERS SW_UNPB(LL,WW), SW_UNPC(LL,WW);
+*-----------------------------------------------------------------------------
+$IF %STEPPED%==+ $SET SOLVEDA 1
+$IFI %SPINES%==YES $SHIFT SHIFT
+$IFI %SPINES%%SOLVEDA%==YES1 $GOTO DETERRED
+*------------------------------------------------------------------------------
+* Reporting parameter declarations
+$ SET SOLVEDA 1
+$ BATINCLUDE rptlite.rpt S WW,
+*------------------------------------------------------------------------------
+  SW_UNPB(SW_T(T,W))=POWER(SW_TPROB(T,W)/SW_NORM,1$SW_PHASE-1); SW_UNPC(T,W) $= SW_UNPB(T,W);
+  SW_UNPB('0',W)=POWER(SW_PROB(W)/SW_NORM,1$SW_PHASE-1$SW_PROB(W));
+$IF %SPINES%==YES SW_UNPC(SW_T) = 1;
+*------------------------------------------------------------------------------
+* Reports based on SOW-specific values
+*------------------------------------------------------------------------------
+
+  LOOP(SOW$SW_PROB(SOW),
+*------------------------------------------------------------------------------
+* Clear results from previous SOW
+$ BATINCLUDE clearsol.stc
+* Get the variable levels
+    VAR_ACT.L(R,V,T,P,S)      $= %VART%_ACT.L(R,V,T,P,S %SWS%);
+    VAR_BLND.L(R,T,COM,C)     $= %VART%_BLND.L(R,T,COM,C %SWS%);
+    VAR_CAP.L(R,T,P)          $= %VART%_CAP.L(R,T,P %2);
+    VAR_COMNET.L(R,T,COM,S)   $= %VART%_COMNET.L(R,T,COM,S %SWS%);
+    VAR_COMPRD.L(R,T,COM,S)   $= %VART%_COMPRD.L(R,T,COM,S %SWS%);
+    VAR_IRE.L(R,V,T,P,C,S,IE) $= %VART%_IRE.L(R,V,T,P,C,S,IE %SWS%);
+    VAR_ELAST.L(R,T,C,S,J,BD) $= %VART%_ELAST.L(R,T,C,S,J,BD %SWS%);
+    VAR_FLO.L(R,V,T,P,C,S)    $= %VART%_FLO.L(R,V,T,P,C,S %SWS%);
+    VAR_NCAP.L(R,T,P)         $= %VART%_NCAP.L(R,T,P %2);
+    VAR_SIN.L(R,V,T,P,C,S)    $= %VART%_SIN.L(R,V,T,P,C,S %SWS%);
+    VAR_SOUT.L(R,V,T,P,C,S)   $= %VART%_SOUT.L(R,V,T,P,C,S %SWS%);
+    VAR_UPS.L(R,V,T,P,S,L)    $= %VART%_UPS.L(R,V,T,P,S,L %SWS%);
+    VAR_UPT.L(R,V,T,P,S,UPT)  $= %VART%_UPT.L(R,V,T,P,S,UPT %SWS%);
+    VAR_UDP.L(R,V,T,P,S,L)    $= %VART%_UDP.L(R,V,T,P,S,L %SWS%);
+$IF DEFINED PRC_RCAP VAR_SCAP.L(R,V,T,P) $= %VART%_SCAP.L(R,V,T,P %2); VAR_SCAP.L(R,V,'0',P) $= %VAR%_SCAP.L(R,V,'0',P,%1);
+$IF %ETL% == YES  OPTION CLEAR=VAR_IC; VAR_IC.L(R,T,P) $= %VART%_IC.L(R,T,P %2);
+
+* Get variable marginals
+    VAR_ACT.M(R,V,T,P,S)    $= %VART%_ACT.M(R,V,T,P,S,W)*SW_UNPB(T%SWS%);
+    VAR_CAP.M(R,T,P)        $= SUM(SW_TSW(%1,T,W),%VAR%_CAP.M(R,T,P,W)*SW_UNPC(T,W));
+    VAR_NCAP.M(R,T,P)       $= SUM(SW_TSW(%1,T,W),%VAR%_NCAP.M(R,T,P,W)*SW_UNPC(T,W));
+    VAR_COMNET.M(R,T,COM,S) $= %VART%_COMNET.M(R,T,COM,S,W)*SW_UNPB(T%SWS%);
+    VAR_COMPRD.M(R,T,COM,S) $= %VART%_COMPRD.M(R,T,COM,S,W)*SW_UNPB(T%SWS%);
+    VAR_FLO.M(R,V,T,P,C,S)  $= %VART%_FLO.M(R,V,T,P,C,S,W)*SW_UNPB(T%SWS%);
+
+* Get equation marginals
+    EQG_COMBAL.M(R,T,C,S)  $= SUM(SW_TSW(SOW,T,W),%EQ%G_COMBAL.M(R,T,C,S,T,W)*SW_UNPB(T,W));
+    EQE_COMBAL.M(R,T,C,S)  $= SUM(SW_TSW(SOW,T,W),%EQ%E_COMBAL.M(R,T,C,S,T,W)*SW_UNPB(T,W));
+    EQE_COMPRD.M(R,T,C,S)  $= SUM(SW_TSW(SOW,T,W),%EQ%E_COMPRD.M(R,T,C,S,T,W)*SW_UNPB(T,W));
+    EQ_PEAK.M(R,T,CG,S)    $= SUM(SW_TSW(SOW,T,W),%EQ%_PEAK.M(R,T,CG,S,T,W)*SW_UNPB(T,W));
+    EQ_IRE.M(R,T,P,C,IE,S) $= SUM(SW_TSW(SOW,T,W),%EQ%_IRE.M(R,T,P,C,IE,S,T,W)*SW_UNPB(T,W));
+    EQE_CPT.M(R,T,P)       $= SUM(SW_TSW(%1,T,W),%EQ%E_CPT.M(R,T,P,T,W)*SW_UNPC(T,W));
+    EQG_COMBAL.L(R,T,C,S)  $= %EQ%G_COMBAL.L(R,T,C,S,T,SOW);
+
+*-----------------------------------------------------------------------------
+* Calculate the reporting parameters
+*-----------------------------------------------------------------------------
+* Calculation of solution values for (due to reduction) substituted flows
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=PAR_FLO,CLEAR=PAR_FLOM;
+$ BATINCLUDE sol_flo.red PAR_FLO '' .L
+$ BATINCLUDE sol_flo.red PAR_FLO M .M
+$ BATINCLUDE sol_ire.rpt
+*-----------------------------------------------------------------------------
+* Objective function
+*-----------------------------------------------------------------------------
+  OPTION CLEAR=COEF_OBJINV;
+$ BATINCLUDE rpt_obj.rpt S SOW, ,SOW %SYSPREFIX%
+*-----------------------------------------------------------------------------
+* Calculation of annual costs
+*-----------------------------------------------------------------------------
+$ BATINCLUDE cost_ann.rpt S SOW,
+*-----------------------------------------------------------------------------
+* Miscellaneous reportings
+  EQN_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD('FX'))  $= SUM(SW_TSW(SOW,T,W),%EQ%E_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD,T,W)*SW_UNPB(T,W));
+  EQN_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BDNEQ(BD)) $= SUM(SW_TSW(SOW,T,W),%EQ%N_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD,T,W)*SW_UNPB(T,W));
+
+$ BATINCLUDE rptmisc.rpt S SOW, ,SOW ,W)*SW_UNPB(T,W) ,SOW)*SW_UNPB('0',SOW
+
+* Non-common reporting
+  SPAR_CAPLO(SOW,RTP(R,T,P))  $= S_CAP_BND(RTP,'LO','1',SOW);
+  SPAR_CAPUP(SOW,RTP(R,T,P))$(S_CAP_BND(RTP,'UP','1',SOW)<INF) $= S_CAP_BND(RTP,'UP','1',SOW);
+*-----------------------------------------------------------------------------
+* ** End of SOW loop **
+*-----------------------------------------------------------------------------
+  );
+  REG_WOBJ(R,ITEM,CUR) $= SUM(W$SREG_WOBJ(W,R,ITEM,CUR),SW_PROB(W)*SREG_WOBJ(W,R,ITEM,CUR));
+$ BATINCLUDE pextlevs.stc "%1"
+  AUXSOW(W) = YES;
+$ GOTO FINISH
+
+$LABEL DETERRED
+*-----------------------------------------------------------------------------
+* Standard Reports based on expected values
+*-----------------------------------------------------------------------------
+$%SW_NOTAGS%
+  SW_UNPB(SW_T) = 1;
+$ BATINCLUDE rptlite.rpt S WW,
+$ SET SOW ',SOW' SET EQ '%EQS%' SET VAR %V%
+$ BATINCLUDE sol_flo.red %V%_FLO .L .L GLOBAL ,SOW $SW_T(T,SOW)
+$ BATINCLUDE sol_ire.rpt GLOBAL ,SOW SUM(SW_T(T,SOW),SW_TPROB(T,SOW)* )
+$ BATINCLUDE pextlevs.stc "%1"
+$ SET SOW '' SET EQ 'EQ' SET VAR VAR
+$IF DEFINED RTP_FFCS $KILL RTP_FFCS
+  OPTION CLEAR=RPC_EMIS,CLEAR=RPC_FFUNC,CLEAR=F_IOSET; SOW(W)=AUXSOW(W);
+$ BATINCLUDE rptlite.rpt S WW, "'1'," NO
+$IF DECLARED RTP_FFCS $CLEAR RTP_FFCS
+$ LABEL FINISH

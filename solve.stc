@@ -1,0 +1,134 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* Solve.stc is the wrapper for solving stochastic problems
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+  SCALAR GDL /0/;
+  PARAMETER WHANDLE(ALLSOW) //;
+*------------------------------------------------------------------------------
+$ SET SOLVEDA 1
+$IFI %MCA%==YES %MODEL_NAME%.number=%MCA1%-1;
+$IF NOT %STAGES%==YES $BATINCLUDE rptlite.rpt S WW,
+$IF %OBMAC%==YES
+$IF NOT %gams.gdir%==%gams.scrdir% GDL=%solvelink.AsyncGrid%;
+*------------------------------------------------------------------------------
+  DOITER = (SUM(SW_T(MIYR_1,WW),1) GT 1) OR SW_PHASE OR (SUM((XPT%SWD%(W)),1)=0);
+$IFI %SPINES%==YES DOITER = 0;
+  IF(DOITER,
+*------------------------------------------------------------------------------
+* Set of deterministic runs if several scenarios at stage 1
+*------------------------------------------------------------------------------
+$  IF %STEPPED%==YES Abort "Cannot use Stepped Mode with Sensitivity/Tradeoff Analysis";
+   CNT = SUM(SW_T(MIYR_1,SOW),1);
+   IF(SW_PHASE, GDL=0;
+     IF(S_UCOBJ('OBJ1','1') GT 0,
+       SW_PHASE=1; DISPLAY "Phase 1 deterministic scenarios.",CNT;
+     ELSE SW_PHASE=-1; DISPLAY "Multiphase tradeoff scenarios.",CNT);
+   ELSE DISPLAY "Decomposed deterministic scenarios!",CNT;
+     IF(GDL,%MODEL_NAME%.solvelink = GDL));
+*  Use MERGE for stochastic, because otherwise bounds for other scenarios get cleared
+   OPTION SOLVEOPT=MERGE;
+  );
+  LOOP(ALLSOW$(SUM(SW_T(MIYR_1,ALLSOW),1)$DOITER),
+     CNT = ORD(ALLSOW); DISPLAY CNT;
+     IF(S_UCOBJ('OBJ1',ALLSOW) EQ 4,
+*  If no user-defined objective, skip Phase 1 copying previous VAR_UC solution if necessary
+$IF NOT %STAGES%==YES LOOP(SOW,SPAR_UCSL(ALLSOW,UC_N,U2,U3,U4) $= SPAR_UCSL(SOW,UC_N,U2,U3,U4));
+     ELSE
+       IF((SW_PHASE EQ -1) AND (ORD(ALLSOW) GT 1),
+*  Set deviation bounds in multiphase
+$IF %STAGES%==YES $BATINCLUDE bnd_ucw.mod '' M
+         LOOP(SOW, Z = S_UC_RHS('OBJ1','N','1',SOW);
+           %VAR%_UC.LO(UC_N('OBJ1')%SOW%)$((Z GE 0)$Z) = %VAR%_UC.L(UC_N%SOW%)-ABS(%VAR%_UC.L(UC_N%SOW%)*Z);
+           %VAR%_UC.UP(UC_N('OBJ1')%SOW%)$((Z GE 0)$Z) = %VAR%_UC.L(UC_N%SOW%)+ABS(%VAR%_UC.L(UC_N%SOW%)*Z));
+         AUXSOW(ALLSOW) = YES;
+       );
+       LOOP(MIYR_1(T),SOW(WW) = SW_TSW(WW,T,ALLSOW);
+            SW_NORM = SW_TPROB(T,ALLSOW));
+$IF NOT %STAGES%==YES $BATINCLUDE sensis.stc
+$      BATINCLUDE solve.mod
+       WHANDLE(ALLSOW)=%MODEL_NAME%.handle;
+$IF %STAGES%==YES $GOTO ENDPHASE1
+       IF(NOT (SW_PARM OR GDL), Z=0;
+$        BATINCLUDE rptlite.rpt S WW, ALLSOW, NO
+$IF DEFINED DAM_COST $BATINCLUDE rpt_dam.mod
+$IF %CLI%==YES $BATINCLUDE rpt_par.cli LOOP(SOW, );
+       ELSEIF NOT GDL,
+* Save VAR_UC solution
+       SPAR_UCSL(SOW,UC_N,'','','') $= VAR_UC.L(UC_N);
+       SPAR_UCSL(SOW,UC_N,R,'','')  $= VAR_UCR.L(UC_N,R);
+       SPAR_UCSL(SOW,UC_N,T,'','')  $= VAR_UCT.L(UC_N,T);
+       SPAR_UCSL(SOW,UC_N,R,T,'')   $= VAR_UCRT.L(UC_N,R,T);
+       SPAR_UCSL(SOW,UC_N,T,S,'')   $= VAR_UCTS.L(UC_N,T,S);
+       SPAR_UCSL(SOW,UC_N,R,T,S)    $= VAR_UCRTS.L(UC_N,R,T,S));
+$LABEL ENDPHASE1
+     );
+  );
+* Reset SOW
+  IF(DOITER,
+   SOW(WW)$(ORD(WW) LE SW_DESC('1','1')) = YES;
+   AUXSOW(WW)$(ORD(WW) GT 1) = NO;
+  );
+*------------------------------------------------------------------------------
+  IF(SW_PARM$SW_PHASE, SW_PHASE = SW_PARM;
+$IF %STAGES%==YES $BATINCLUDE bnd_ucw.mod '' I
+    IF(SW_PARM EQ 2,
+     DISPLAY "Phase 2 determinstic secnarios.";
+     LOOP(ALLSOW$(SUM(SW_T(MIYR_1,ALLSOW),1)$(S_UCOBJ('OBJ1',ALLSOW) GT 0)),
+       CNT = ORD(ALLSOW); DISPLAY CNT;
+       LOOP(MIYR_1,SOW(WW) = SW_TSW(WW,MIYR_1,ALLSOW));
+$IF NOT %STAGES%==YES $BATINCLUDE sensis.stc
+$      BATINCLUDE solve.mod
+$IF %STAGES%==YES $GOTO ENDPHASE2
+$      BATINCLUDE rptlite.rpt S WW, ALLSOW, NO
+$IF DEFINED DAM_COST $BATINCLUDE rpt_dam.mod
+$IF %CLI%==YES $BATINCLUDE rpt_par.cli LOOP(SOW, );
+$LABEL ENDPHASE2
+     );
+* Reset SOW for reporting
+     SOW(WW)$(ORD(WW) LE SW_DESC('1','1')) = YES$(S_UCOBJ('OBJ1',WW) GE 0);
+    ELSE
+* Set deviation bounds for OBJ1 if Single run in Phase 2
+       F = UC_RHS('OBJ1','N');
+       LOOP(SOW, Z = F; Z $= S_UC_RHS('OBJ1','N','1',SOW);
+         %VAR%_UC.LO(UC_N('OBJ1')%SOW%)$((Z GE 0)$Z) = %VAR%_UC.L(UC_N%SOW%)-ABS(%VAR%_UC.L(UC_N%SOW%)*Z);
+         %VAR%_UC.UP(UC_N('OBJ1')%SOW%)$((Z GE 0)$Z) = %VAR%_UC.L(UC_N%SOW%)+ABS(%VAR%_UC.L(UC_N%SOW%)*Z));
+       AUXSOW(WW) = SOW(WW); SOW(WW) = ORD(WW) EQ 1;
+       OPTION SOLVEOPT=REPLACE;
+$      BATINCLUDE solve.mod
+  ));
+  IF(SW_PHASE,SW_PROB(SOW) = EPS);
+*------------------------------------------------------------------------------
+  IF(NOT DOITER, SW_NORM = 1;
+$   BATINCLUDE solve.mod
+  );
+*------------------------------------------------------------------------------
+$IF NOT %OBMAC%==YES $EXIT
+* Load grid solutions if asynchronous
+  DOITER=2*(%MODEL_NAME%.solvelink=GDL)$GDL;
+* Force clear solution if Grid SENSIS Runs
+  REG_FIXT(R)$GDL=MAX(REG_FIXT(R),1);
+  IF(NOT DOITER,OPTION CLEAR=WHANDLE); DUR_MAX=TIMEELAPSED;
+  REPEAT DONE=DOITER;
+    LOOP(ALLSOW$(SW_PROB(ALLSOW)$DOITER),
+      OPTION CLEAR=SOW; SOW(ALLSOW) = YES;
+      F = handlestatus(WHANDLE(ALLSOW));
+      IF(F<>%Handlestatus.Running%,
+        IF(F=%handlestatus.Ready%,
+          Z=WHANDLE(ALLSOW); %MODEL_NAME%.handle=Z;
+$IFI %SENSIS%==YES $BATINCLUDE sensis.stc
+          execute_loadhandle %MODEL_NAME%;
+$IF %STAGES%==YES $GOTO ENDLD
+$BATINCLUDE rptlite.rpt S WW, ALLSOW, NO
+$IF DEFINED DAM_COST $BATINCLUDE rpt_dam.mod
+$IFI %CLI%==YES $BATINCLUDE rpt_par.cli LOOP(SOW, );
+$IFI %MCA%==YES $BATINCLUDE main_ext.mod rpt_ext MCA
+$LABEL ENDLD
+          F=1; DUR_MAX=TIMEELAPSED; DONE=0);
+        IF(F, F=handledelete(WHANDLE(ALLSOW)));
+        WHANDLE(SOW)=0));
+    F=sleep(DONE+card(WHANDLE)*0.3);
+  UNTIL(CARD(WHANDLE)=0 OR TIMEELAPSED-DUR_MAX>10000);

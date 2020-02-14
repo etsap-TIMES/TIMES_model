@@ -1,0 +1,27 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==================================================================*
+* MOD_EQUA.ABS Ancillary Balancing Services equations
+* called from MOD_EQUA.MOD
+*==================================================================*
+$IFI NOT %OBMAC%==YES $EXIT
+  EQ_BS00
+  EQ_BS01
+  EQ_BS02
+  EQ_BS03
+  EQ_BS04
+  EQ_BS05
+  EQ_BS07
+  EQ_BS09
+  EQ_BS10
+  EQ_BS11
+  EQ_BS18
+  EQ_BS19
+  EQ_BS22
+  EQ_BS23
+  EQ_BS24
+  EQ_BS25
+  EQ_BS27
+  EQ_BS28

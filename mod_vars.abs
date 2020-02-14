@@ -1,0 +1,52 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*==================================================================*
+* MOD_VARS.EXT EXTENSION VARIABLES
+* called from MAINDRV.MOD
+*==================================================================*
+
+  POSITIVE VARIABLES
+  %VAR%_COMLV(CLVT,R,YEAR,C,S%SWD%)   Commodity levels
+  %VAR%_BSPRS(R,YEAR,T,P,C,S,L%SWD%)  Balancing services //
+  %VAR%_RLD(R,T,S,ITEM%SWD%)          Reserve-defining load levels
+  ;
+
+  EQUATIONS
+  EQ_BS00(R,T,C,S,ALLSOW)             Overall demand for balancing services
+  EQ_BS01(R,YEAR,C,S,ITEM,L,ALLSOW)   Max and Diff over stochastic & determistic demand
+  EQ_BS02(R,T,S,ITEM,ALLSOW)          Load levels by process category
+  EQ_BS03(R,T,C,S,ALLSOW)             Stochastic demand for balancing services
+  EQ_BS04(R,T,C,S,P,ALLSOW)           Deterministic demand for balancing services
+  EQ_BS05(R,YEAR,T,P,TSL,L,S,ALLSOW)  Minimum online - offline times
+  EQ_BS07(R,YEAR,T,P,S,BD,ALLSOW)     Ramping constraints
+  EQ_BS09(R,YEAR,T,P,S,L,ALLSOW)      Capacity margin constraints - positive
+  EQ_BS10(R,YEAR,T,P,S,ALLSOW)        Capacity margin constraints - negative
+  EQ_BS11(R,YEAR,T,P,C,S,BD,ALLSOW)   Limits for spinning reserve by type
+  EQ_BS18(R,YEAR,T,P,S,BD,ALLSOW)     Lower limits for non-spinning reserve by type
+  EQ_BS19(R,YEAR,T,P,C,S,BD,ALLSOW)   Upper limits for non-spinning reserve by type
+  EQ_BS22(R,YEAR,T,P,S,ALLSOW)        Limit for positive reserve from storage
+  EQ_BS23(R,YEAR,T,P,S,ALLSOW)        Limit for negative reserve from storage
+  EQ_BS24(R,YEAR,T,P,S,ALLSOW)        Limits for negative reserve from end-use
+  EQ_BS25(R,YEAR,T,P,S,ALLSOW)        Limits for positive reserve from end-use
+  EQ_BS27(R,YEAR,T,P,S,ALLSOW)        Maintenance 1
+  EQ_BS28(R,YEAR,T,P,S,ALLSOW)        Maintenance 2
+  ;
+
+* Set minimum exogenous demand
+  BS_CAPACT(R)$(NOT BS_CAPACT(R)) = MAX(0,SMAX(RP_STD(R,P)$GR_GENMAP(R,P,'SI'),PRC_CAPACT(R,P)));
+  BS_CAPACT(R)$(NOT BS_CAPACT(R)) = MAX(0,SMAX(BS_SUPP(RP_STD(R,P)),PRC_CAPACT(R,P)));
+  %VAR%_COMLV.LO('DET',RTCS_VARC(R,T,C,S)%SOW%) $= BS_RTCS('EXOGEN',R,T,C,S)*BS_CAPACT(R);
+  RPT_OPT('RATE','1')$(RPT_OPT('RATE','1')<=0)=SMAX(R,BS_CAPACT(R))$(RPT_OPT('RATE','1')=0);
+
+* Set bounds on reserve flows
+  BS_BNDPRS(RTP,C,S,BDNEQ)$BS_BNDPRS(RTP,C,S,'FX') = 0;
+  LOOP((RTP(R,T,P),C,S,BD)$(BS_RTYPE(R,C)$BS_BNDPRS(RTP,C,S,BD)),
+   %var%_bsprs.LO(RTP_VINTYR(r,v,t,p),c,TS,LNX%SOW%)$(TS_MAP(R,S,TS)$BDLOX(BD)) = BS_BNDPRS(RTP,C,S,BD);
+   %var%_bsprs.UP(RTP_VINTYR(r,v,t,p),c,TS,LNX%SOW%)$(TS_MAP(R,S,TS)$BDUPX(BD)) = BS_BNDPRS(RTP,C,S,BD));
+
+$IFI NOT %OBMAC%==YES $EXIT
+* Spines macros
+$ macro Z_COMLV VAS_COMLV
+$ macro Z_BSPRS VAS_BSPRS

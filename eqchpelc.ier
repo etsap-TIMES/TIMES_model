@@ -1,0 +1,55 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* Equation bounding the electricity production of extraction condensing CHP plant
+* by the available condensing resp. backpressure capacity
+*   %1 - =L= or =E= qualifier
+*   %2 - UP of FX bound for ECT_AFCON/ECT_AFCHP
+*-----------------------------------------------------------------------------
+
+EQ%1_CHPCON(RTP_VINTYR(R,V,T,P)%SWX%)$(%SWTX%ECT_AFCON(R,T,P,'%2')*SUM(RTPCS_VARF(R,T,P,C,TS)$ECT_ELC(R,P,C),1)$ECT_CHP(R,P))..
+
+  SUM(RTPCS_VARF(R,T,P,C,TS)$ECT_ELC(R,P,C),
+* [UR] model reduction %REDUCE% is set in *.run
+$            BATINCLUDE %cal_red% C COM TS P T
+   )
+-
+  SUM(RTPCS_VARF(R,T,P,C,TS)$ECT_DHT(R,P,C), ECT_REH(R,T,P)*
+* [UR] model reduction %REDUCE% is set in *.run
+$            BATINCLUDE %cal_red% C COM TS P T
+   )
+
+  =%1=
+
+* Case I if AFpcg
+* process is not vintaged
+        SUM(RTP_CPTYR(R,MODLYEAR(K),T,P),
+             ECT_AFCON(R,T,P,'%2') * ECT_INP2CON(R,T,P) * COEF_CPT(R,K,T,P) * PRC_CAPACT(R,P) * (%VARM%_NCAP(R,K,P %SWS%)$T(K) + NCAP_PASTI(R,K,P))
+            )$(NOT PRC_VINT(R,P)) +
+
+* process is vintaged
+        (ECT_AFCON(R,T,P,'%2') * ECT_INP2CON(R,T,P) * COEF_CPT(R,V,T,P) * PRC_CAPACT(R,P) * (%VARV%_NCAP(R,V,P %SWS%)$T(V) + NCAP_PASTI(R,V,P))
+        )$PRC_VINT(R,P)
+;
+
+EQ%1_CHPBPT(RTP_VINTYR(R,V,T,P)%SWX%)$(%SWTX%ECT_AFBPT(R,T,P,'%2')*SUM(RTPCS_VARF(R,T,P,C,TS)$ECT_DHT(R,P,C),1)$ECT_CHP(R,P))..
+
+  SUM(RTPCS_VARF(R,T,P,C,TS)$ECT_DHT(R,P,C), ECT_REH(R,T,P)*
+* [UR] model reduction %REDUCE% is set in *.run
+$            BATINCLUDE %cal_red% C COM TS P T
+   )
+
+  =%1=
+
+* Case I if AFpcg
+* process is not vintaged
+        SUM(RTP_CPTYR(R,MODLYEAR(K),T,P),
+             ECT_AFBPT(R,T,P,'%2') * ECT_INP2ELC(R,T,P) * COEF_CPT(R,K,T,P) * PRC_CAPACT(R,P) * (%VARM%_NCAP(R,K,P %SWS%)$T(K) + NCAP_PASTI(R,K,P))
+            )$(NOT PRC_VINT(R,P)) +
+
+* process is vintaged
+        (ECT_AFBPT(R,T,P,'%2') * ECT_INP2ELC(R,T,P) * COEF_CPT(R,V,T,P) * PRC_CAPACT(R,P) * (%VARV%_NCAP(R,V,P %SWS%)$T(V) + NCAP_PASTI(R,V,P))
+        )$PRC_VINT(R,P)
+;

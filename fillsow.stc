@@ -1,0 +1,47 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*******************************************************************************
+* FILLSOW : Fill stochastic parameters
+* Description: Preprocessing of stochastic uncertain data
+* Parameters:
+*      %1 - table name
+*      %2 - control set 1 (before year index)
+*      %3 - control set 2 (after year index)
+*      %4 - Source data years T/LL
+*      %5 - YES/NO for absolute/relative parameters
+*      %6 - PERIOD control (SW_T OR PERIODYR OR SUPERYR)
+*      %7 - YES/NO to copy baseline parameters
+*******************************************************************************
+*$ONLISTING
+$SETLOCAL TAIL ',%3' SETLOCAL STG '' SETLOCAL IX "'0'"
+$IF '%3' == '' $SETLOCAL TAIL ''
+$IF '%4' == '' $SETLOCAL IX '' 
+$IF '%4' =='T' $SETLOCAL STG SW_TSTG(T,J)$
+
+* Clean up stage 1 from invalid SOW:
+  S_%1(%2%4%TAIL%,'1',SOW)$(NOT SAMEAS(SOW,'1')) = 0;
+
+* Set up data indicators
+$IF NOT '%4'=='' S_%1(%2LL--ORD(LL)%TAIL%,J,WW) $= S_%1(%2LL%TAIL%,J,WW);
+  F = CARD(S_%1); 
+
+* Copy parameters from first to other branches when appropriate
+  S_%1(%2%4%TAIL%,J,WW)$(%STG%(NOT S_%1(%2%IX%%TAIL%,J,WW))) $= SUM(SW_CPMAP(J,WW,SOW),S_%1(%2%4%TAIL%,J,SOW));
+
+$IF NOT '%5' == 'YES' $EXIT
+
+* Update data indicators if eventual copy occurred
+$IF NOT '%4'=='' IF(CARD(S_%1)>F, S_%1(%2LL--ORD(LL)%TAIL%,J,WW) $= S_%1(%2LL%TAIL%,J,WW));
+
+* Copy baseline parameters to stage 1, SOW 1:
+$IF '%7'==YES  S_%1(%2%4%TAIL%,'1','1')$(NOT S_%1(%2%IX%%TAIL%,'1','1')) $= %1(%2%4%TAIL%);
+
+* Merge to single stage 1:
+
+$IFI NOT '%4'==LL  LOOP(J$SW_START(J),S_%1(%2%4%TAIL%,'1',WW)$(%STG%%6) $= SUM(SW_REV(WW,J,SOW),S_%1(%2%4%TAIL%,J,SOW)));
+$IFI '%4' == LL    LOOP(SW_TSTG(T,J), S_%1(%2%4%TAIL%,'1',WW)$(%6$SW_T(T,WW)) $= SUM(SW_REV(WW,J,SOW),S_%1(%2%4%TAIL%,J,SOW)));
+
+* Remove flags if LL
+$IF '%4'=='LL' S_%1(%2%IX%%TAIL%,J,WW) = 0;

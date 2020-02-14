@@ -1,0 +1,34 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*============================================================================*
+* MOD_VARS.MSA Variable declarations for MACRO Stand-Alone
+*============================================================================*
+$ BATINCLUDE preppm.msa MSA
+*----------------------------------------------------------------------------
+*  MACRO Related Variables
+
+POSITIVE VARIABLES
+  VAR_K(REG,T)        total capital stock
+  VAR_D(REG,T,COM)    annual energy demands - before aeei adjustments
+  VAR_INV(REG,T)      annual investments
+  VAR_EC(REG,T)       annual energy cost
+  VAR_SP(REG,T,COM)   artificial variable for scaling shadow price of demand
+  VAR_Y(REG,T)        annual economy output (production)
+  VAR_C(REG,T)        annual consumption
+  VAR_DEM(REG,T,COM)  Decoupled demands used in the energy model
+  VAR_CDM(R,ITEM,LL)  climate change damage
+
+* Objective Function Value
+
+VARIABLES
+  VAR_UTIL           discounted log of consumption
+  VAR_NTX(R,T,ITEM)  trade (exports positive)
+;
+OPTION CLEAR=VAR_NTX;
+VAR_CDM.LO(R,'N',XTP) = .01;
+
+* Enable MACRO discount rates if requested
+$IF DEFINED TM_UDF $SETGLOBAL OBJANN YES
+$IF NOT DEFINED TM_UDF OPTION CLEAR=TM_UDF;

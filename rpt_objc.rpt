@@ -1,0 +1,130 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* RPT_OBJC.rpt calculates the objective function coefficients for VAR_NCAP    *
+*=============================================================================*
+* Remove any invalid marginals of OFFed technologies
+  VAR_NCAP.M(RTP_OFF(R,T,P)) = 0; CNT = RPT_OPT('NCAP','1');
+*-------------------------------------------------------------------------------
+* Calculate the effect of a one unit of investment costs to the objective.
+  OPTION CLEAR=PAR_OBJCAP;
+  PAR_OBJCAP(OBJ_ICUR(R,T,P,CUR)) = COR_SALVI(R,T,P,CUR) / OBJ_DIVI(R,T,P) *
+    SUM(OBJ_SUMII(R,T,P,LIFE,K_EOH,JOT), %CAPJD%
+      SUM(INVSPRED(K_EOH,JOT,Y,K), (1-SALV_INV(R,T,P,Y)$OBJ_SUMS(R,T,P)) * OBJ_DISC(R,K,CUR)));
+* If does not carry investment costs, just undiscount with most common inv. spread
+  LOOP(G_RCUR(R,CUR), MY_ARRAY(T)=SUM(PERDINV(T,Y),OBJ_DISC(R,Y,CUR))/LEAD(T); COEF_OBJINV(RTP(R,T,P))$PRC_CAP(R,P)=MY_ARRAY(T));
+  COEF_OBJINV(RTP(R,T,P)) $= SUM(RDCUR(R,CUR)$PAR_OBJCAP(R,T,P,CUR),PAR_OBJCAP(R,T,P,CUR));
+*-------------------------------------------------------------------------------
+$IF %STAGES%==YES $SET BENCOST NO
+$IFI '%BENCOST%'==YES CNT = 1;
+*-------------------------------------------------------------------------------
+* Investment cost coefficient
+  OPTION CLEAR=PAR_OBJCAP;
+  IF(CNT,
+  PAR_OBJCAP(OBJ_ICUR(R,T,P,CUR)) = COR_SALVI(R,T,P,CUR) / OBJ_DIVI(R,T,P) *
+    SUM(OBJ_SUMII(R,T,P,LIFE,K_EOH,JOT), %CAPJD%
+      SUM(INVSPRED(K_EOH,JOT,Y,K), OBJ_DISC(R,K,CUR) *
+        (OBJ_ICOST(R,K,P,CUR) + OBJ_ITAX(R,K,P,CUR) - OBJ_ISUB(R,K,P,CUR)
+$IFI %STAGES%==YES +SUM(SW_TSW(SOW,T,WW)$OBJ_SIC(R,T,P,WW),OBJ_SIC(R,T,P,WW)*OBJ_ICOST(R,K,P,CUR)*(1-SALV_INV(R,T,P,Y)))
+        )));
+
+* Decommissioning costs
+  OPTION CLEAR=PAR_OBJSAL;
+  PAR_OBJSAL(RTP(R,T,P),CUR)$RDCUR(R,CUR) = COR_SALVD(R,T,P,CUR) / OBJ_DIVIII(R,T,P) *
+    SUM(OBJ_SUMIII(R,T,P,LL,K,Y)$OBJ_DCOST(R,T,P,CUR), OBJ_DISC(R,Y,CUR) * OBJ_DCOST(R,K,P,CUR));
+
+  PAR_OBJCAP(RTP(R,T,P),CUR)$PAR_OBJSAL(R,T,P,CUR) = PAR_OBJCAP(R,T,P,CUR) + PAR_OBJSAL(R,T,P,CUR));
+*-------------------------------------------------------------------------------
+* Fixed O&M cost coefficient
+  OPTION CLEAR=PAR_OBJSAL;
+  IF(CNT,
+  PAR_OBJSAL(OBJ_FCUR(R,T,P,CUR)) =
+    SUM(OBJ_SUMIV(K_EOH,R,T,P,JOT,LIFE)$(NOT RTP_ISHPR(R,T,P)),
+       SUM(INVSPRED(K_EOH,JOT,LL,K), OBJ_LIFE(LL,R,JOT,LIFE,CUR) * %CAPWD%
+        (OBJ_FOM(R,K,P,CUR)+OBJ_FTX(R,K,P,CUR)-OBJ_FSB(R,K,P,CUR))) / OBJ_DIVIV(R,T,P)) +
+
+    SUM(OBJ_SUMIV(K_EOH,RTP_ISHPR(R,T,P),JOT,LIFE),
+       SUM((INVSPRED(K_EOH,JOT,LL,K),OPYEAR(LIFE,AGE),Y_EOH(LL+(ORD(AGE)-1))),
+           OBJ_DISC(R,Y_EOH,CUR) * %CAPWD%
+              (
+                OBJ_FOM(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,T,P,'1',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1)) +
+                OBJ_FTX(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,T,P,'2',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1)) -
+                OBJ_FSB(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,T,P,'3',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1))
+              )
+           ) / OBJ_DIVIV(R,T,P));
+
+  PAR_OBJCAP(RTP(R,T,P),CUR)$PAR_OBJSAL(R,T,P,CUR) = PAR_OBJCAP(R,T,P,CUR) + PAR_OBJSAL(R,T,P,CUR));
+*-------------------------------------------------------------------------------
+* Decommissioning Surveillance coefficient
+  PAR_OBJCAP(RTP(R,T,P),CUR)$(OBJ_DLAGC(R,T,P,CUR)$CNT) = PAR_OBJCAP(R,T,P,CUR) +
+        SUM(OBJ_SUMIVS(R,T,P,K,Y), OBJ_DISC(R,Y,CUR) * OBJ_DLAGC(R,K,P,CUR));
+*-------------------------------------------------------------------------------
+* Capacity-related flow cost coefficient
+  OPTION CLEAR=PAR_OBJSAL;
+  PASTSUM(RTP(R,V(TT),P))$CNT =
+    SUM((RPC_CAPFLO(R,V,P,C),RDCUR(R,CUR)),
+* Flows related to investment / decommissioning
+      SUM(VNT(V,T)$(COEF_ICOM(R,V,T,P,C)+COEF_OCOM(R,V,T,P,C)),(COEF_ICOM(R,V,T,P,C)+COEF_OCOM(R,V,T,P,C)) *
+        SUM(RPCS_VAR(R,P,C,TS), RS_FR(R,TS,'ANNUAL') * SUM(TS_ANN(TS,SL),SUM(%TPULSE%(OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR)))))) +
+* Flows related to existing capacity over lifetime
+      SUM((RTP_CPTYR(R,V,T,P),IO)$NCAP_COM(R,V,P,C,IO),
+        COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,IO) *
+        SUM(RPCS_VAR(R,P,C,TS), RS_FR(R,TS,'ANNUAL') * SUM(TS_ANN(TS,SL),SUM(%TPULSE%(OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR))))) *
+        (1 + (MAX(0, E(T)+1-MAX(B(V)+NCAP_ILED(R,V,P)+NCAP_CLAG(R,V,P,C,IO),B(T))) /
+              MAX(.1,E(T)+1-MAX(B(V)+NCAP_ILED(R,V,P),B(T)))-1)$NCAP_CLAG(R,V,P,C,IO)))
+     );
+*-------------------------------------------------------------------------------
+$LABEL SALVAGE
+* Salvage coefficient
+  OPTION CLEAR=PAR_OBJSAL,CLEAR=COEF_RTP;
+  PAR_OBJSAL(RTP(R,T,P),CUR)$RDCUR(R,CUR) =
+*   Cases I - Investment Cost and II - Taxes/Subsidies
+    SUM(OBJ_SUMS(R,T,P), OBJSCC(R,T,P,CUR)) * OBJ_DCEOH(R,CUR) +
+*   Cases III - Decommissioning
+    SUM(OBJ_SUMS3(R,T,P), SALV_DEC(R,T,P,CUR)) * OBJ_DCEOH(R,CUR) +
+*   Cases IV - Decommissioning Surveillance
+      SUM(OBJ_SUMIVS(R,T,P,K,Y)$SALV_INV(R,T,P,K),
+          OBJ_DISC(R,Y,CUR) * OBJ_DLAGC(R,K,P,CUR) * SALV_INV(R,T,P,K));
+
+  COEF_RTP(R,T,P) $= SUM(CUR$PAR_OBJCAP(R,T,P,CUR),ROUND(PAR_OBJCAP(R,T,P,CUR)-PAR_OBJSAL(R,T,P,CUR),7));
+$IFI NOT '%BENCOST%'==YES $GOTO FINISH
+*-------------------------------------------------------------------------------
+* Add range information if available
+  OPTION CLEAR=VAR_NCAPRNG;
+  IF(CNT,
+  execute 'test -s timesrng.inc'
+  IF(NOT ERRORLEVEL,
+   EXECUTE 'GAMS %system.fp%timesrng PS=0';
+   EXECUTE_LOAD 'timesrng',VAR_NCAPRNG;
+  ));
+*-------------------------------------------------------------------------------
+* Calculate CostBen indicators
+  %1PAR_NCAPR(%2RTP(R,T,P),'%3COST') $= COEF_RTP(R,T,P)+PASTSUM(R,T,P);
+  PASTSUM(R,T,P)$%1PAR_NCAPR(%2R,T,P,'%3COST') = VAR_NCAP.M(R,T,P)+EPS;
+  PASTSUM(RTP(R,T,P))$((VAR_NCAPRNG(RTP,'LO') GT -9E9)$(ABS(VAR_NCAP.L(RTP)) LT MICRO)$PASTSUM(RTP)) = MAX(PASTSUM(RTP),-VAR_NCAPRNG(RTP,'LO'));
+  OPTION RVP < PASTSUM;
+  %1PAR_NCAPR(%2RTP(R,T,P),'%3CGAP')$%1PAR_NCAPR(%2RTP,'%3COST') = PASTSUM(RTP)+EPS;
+  %1PAR_NCAPR(%2RVP(R,T,P),RNGLIM) = SUM(RNGMAP(RNGLIM,BD),VAR_NCAPRNG(R,T,P,BD));
+*-------------------------------------------------------------------------------
+* Calculate the net activity benefits
+  BC_INVACT(RTP_VINTYR(R,V,T,P),S)$(PRC_TS(R,P,S)$RVP(R,V,P)) =
+    -ROUND(VAR_ACT.M(R,V,T,P,S)+SMIN(RPC_PG(R,P,C),VAR_FLO.M(R,V,T,P,C,S)*PRC_ACTFLO(R,V,P,C)),7);
+* Calculate the corresponding net NCAP benefits
+  BC_INVTOT(RVP(R,V,P))$(NOT PRC_VINT(R,P)) = PRC_CAPACT(R,P) *
+    SUM((RTP_CPTYR(R,V,T,P),PRC_TS(R,P,S),BDUPX(BD))$COEF_AF(R,V,T,P,S,BD), COEF_CPT(R,V,T,P) * COEF_AF(R,V,T,P,S,BD) *
+       G_YRFR(R,S) * MAX(-INF$BDLOX(BD),BC_INVACT(R,T,T,P,S)));
+  BC_INVTOT(RVP(R,V,P))$PRC_VINT(R,P) = PRC_CAPACT(R,P) *
+    SUM((RTP_VINTYR(R,V,T,P),PRC_TS(R,P,S),BDUPX(BD))$COEF_AF(R,V,T,P,S,BD), COEF_CPT(R,V,T,P) * COEF_AF(R,V,T,P,S,BD) *
+       G_YRFR(R,S) * MAX(-INF$BDLOX(BD),BC_INVACT(R,V,T,P,S)));
+* Add the net activity benefits to the net capacity benefits
+  BC_INVTOT(RVP(R,T,P)) = BC_INVTOT(R,T,P) - VAR_NCAP.M(R,T,P) - SUM(TT$COEF_CPT(R,T,TT,P), COEF_CPT(R,T,TT,P) * VAR_CAP.M(R,TT,P)) +EPS;
+  %1PAR_NCAPR(%2RVP(R,T,P),'%3GGAP') = MAX(-BC_INVTOT(R,T,P),(PASTSUM(R,T,P)-INF$(PASTSUM(R,T,P) LE MICRO)));
+* Normalize and calculate RATIOs
+  %1PAR_NCAPR(%2RTP(R,T,P),SYSUC)$%1PAR_NCAPR(%2R,T,P,SYSUC) = %1PAR_NCAPR(%2R,T,P,SYSUC)/COEF_OBJINV(R,T,P);
+  %1PAR_NCAPR(%2RVP(R,T,P),'%3GRATIO') = 1-ROUND(%1PAR_NCAPR(%2R,T,P,'%3GGAP')/%1PAR_NCAPR(%2R,T,P,'%3COST'),7)+EPS;
+  %1PAR_NCAPR(%2R,T,P,'%3RATIO')$COEF_RTP(R,T,P) = 1-ROUND(%1PAR_NCAPR(%2R,T,P,'%3CGAP')/%1PAR_NCAPR(%2R,T,P,'%3COST'),6)+EPS;
+*-------------------------------------------------------------------------------
+$LABEL FINISH
+  OPTION CLEAR=RVP,CLEAR=PASTSUM;

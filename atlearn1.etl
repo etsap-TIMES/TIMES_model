@@ -1,0 +1,57 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* File      : ATLEARN1.ML
+* Language  : GAMS
+* Programmer: Ad Seebregts, adaped by Gary Goldstein for TIMES
+* Origin    : 02-06-98
+* Last edit : 07-27-01
+* Warning   :
+* Purpose   : generic content of AT output
+* Location  : TIMES directory
+* Called    : at the end of ATLEARN.ETL
+* Output    : <case>.ETL
+*=============================================================================*
+* %1 IS VARIABLE TO BE OUTPUTTED
+* %2 is name of table
+* %3 is prefix of row
+* %4 is 1 if CCAPM is to be output
+* %5 is number of decimals
+
+PUT /"%2 %1"/;
+PUT @63, LOOP(T,PUT T.TL:10);
+IF (%4 GT 0, PUT "CCAPM     % reached";
+   );
+PUT /;
+
+LOOP((TEG,REG)$SEG(REG,TEG),
+     PUT "k",".%3.",TEG.TL:0 '/r.'REG.TL:0, ' ';
+     PUT @30, PRC.TE(TEG):30 @60;
+     LOOP(T,
+          IF (%1.L(REG,T,TEG) GT 0,
+              PUT %1.L(REG,T,TEG):10:%5;
+          ELSE PUT "         0";
+             );
+          IF ((ORD(T) EQ CARD(T)) AND (%4 GT 0),
+              PUT " ",CCAPM(REG,TEG):10:2; PUT (100 - 100*(CCAPM(REG,TEG)-VAR_CCAP.L(REG,T,TEG))/
+                                            (CCAPM(REG,TEG)-CCAP0(REG,TEG))):10:2;
+             );
+         );
+     PUT /;
+* print PRC in TEG cluster
+     IF(%4 EQ 0,
+      LOOP(PRC$(CLUSTER(REG,TEG,PRC) GT 0),
+          PUT "c",".%3.",PRC.TL:0;
+          PUT @30, PRC.TE(PRC):30 @60;
+          LOOP(T,
+               IF (%1.L(REG,T,PRC) GT 0,
+                   PUT %1.L(REG,T,PRC):10:%5;
+               ELSE PUT "         0";
+                  );
+              );
+          PUT /;
+          );
+     );
+    );

@@ -1,0 +1,76 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*============================================================================*
+*  EQETL.ETL technological change equations, with clusters
+*============================================================================*
+*$ONLISTING
+*-----------------------------------------------------------------------------
+* Cumulative capacity definition
+* [AL] May-2006: Added COEF_RPTI multiplier; It is also added to EQ_IC1 and EQ_IC2.
+%EQ%_CUINV(%R_T%,TEG %SWT%)$(RTP(R,T,TEG)*SEG(R,TEG)) .. 
+    %VAR%_CCAP(R,T,TEG %SOW%) =E= SUM(RTP(R,V(MILESTONYR),TEG)$(ORD(MILESTONYR) LE ORD(T)), 
+              %VARV%_NCAP(R,V,TEG %SWS%) * COEF_RPTI(R,V,TEG)) + CCAP0(R,TEG);
+
+* Cumulative Capacity Interpolation
+%EQ%_CC(RTP(%R_T%,TEG) %SWT%)$SEG(R,TEG) .. 
+    %VAR%_CCAP(R,T,TEG %SOW%) =E= SUM(KP$((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1)), %VAR%_LAMBD(R,T,TEG,KP %SOW%));
+
+* Force sum of binary variables delta to 1
+%EQ%_DEL(RTP(%R_T%,TEG) %SWT%)$SEG(R,TEG) .. 
+    SUM(KP$((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1)), %VAR%_DELTA(R,T,TEG,KP %SOW%)) =E= 1;
+
+* Cumulative Cost Interpolation
+%EQ%_COS(RTP(%R_T%,TEG) %SWT%)$SEG(R,TEG) .. 
+    %VAR%_CCOST(R,T,TEG %SOW%) =E= SUM(KP$((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1)), %VAR%_LAMBD(R,T,TEG,KP %SOW%)*BETA(R,KP,TEG) + %VAR%_DELTA(R,T,TEG,KP %SOW%)*ALPH(R,KP,TEG));
+
+* Constraints on lambda
+%EQ%_LA1(RTP(%R_T%,TEG),KP %SWT%)$(((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1))$SEG(R,TEG)) .. 
+    %VAR%_LAMBD(R,T,TEG,KP %SOW%) =G= CCAPK(R,KP-1,TEG)*%VAR%_DELTA(R,T,TEG,KP %SOW%);
+
+%EQ%_LA2(RTP(%R_T%,TEG),KP %SWT%)$(((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1))$SEG(R,TEG)) .. 
+    %VAR%_LAMBD(R,T,TEG,KP %SOW%) =L= CCAPK(R,KP,TEG)*%VAR%_DELTA(R,T,TEG,KP %SOW%);
+
+* Additional constraints to improve solution time
+* %EQ%_EXPE1(RTP(%R_T%,TEG),KP %SWT%)$((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1)) .. 
+*    SUM(KP2$((ORD(KP2) LE ORD(KP))$(ORD(KP2) GE 2)), %VAR%_DELTA(R,T,TEG, KP2 %SOW%)) =G= 
+*    SUM(KP2$(ORD(KP2) LE ORD(KP)$(ORD(KP2) GE 2)),   %VAR%_DELTA(R,T+1,TEG, KP2 %SOW%));
+ %EQ%_EXPE1(RTP(R,V(T-1),TEG),KP %SWT%)$(((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1))$SEG(R,TEG)) .. 
+    SUM(KP2$((ORD(KP2) LE ORD(KP))$(ORD(KP2) GE 2)), %VARV%_DELTA(R,V,TEG,KP2 %SWS%))
+        =G= SUM(KP2$(ORD(KP2) LE ORD(KP)$(ORD(KP2) GE 2)), %VAR%_DELTA(R,T,TEG, KP2 %SOW%));
+
+* %EQ%_EXPE2(RTP(%R_T%,TEG),KP %SWT%)$(((ORD(KP) GE 2) AND (NOT (E(T) EQ MIYR_VL)))$(ORD(KP) LE SEG(R,TEG)+1)) .. 
+*    SUM(KP2$(ORD(KP2) GE ORD(KP)), %VAR%_DELTA(R,T,TEG, KP2)) =L= SUM(KP2$(ORD(KP2) GE ORD(KP)), %VAR%_DELTA(R,T+1,TEG, KP2));
+ %EQ%_EXPE2(RTP(R,V(T-1),TEG),KP %SWT%)$(((ORD(KP) GE 2)$(ORD(KP) LE SEG(R,TEG)+1))$SEG(R,TEG)) .. 
+    SUM(KP2$(ORD(KP2) GE ORD(KP)), %VARV%_DELTA(R,V,TEG,KP2 %SWS%))
+        =L= SUM(KP2$(ORD(KP2) GE ORD(KP)), %VAR%_DELTA(R,T,TEG, KP2 %SOW%));
+
+
+* Investments 1st period
+* %EQ%_IC1(RTP(R,T,TEG))$(YEARVAL(T) EQ MIYR_V1) .. %VAR%_IC(R,T,TEG %SOW%) =E= %VAR%_CCOST(R,T,TEG %SOW%) - CCOST0(R,TEG);
+ %EQ%_IC1(TL_START(%R_T%,TEG) %SWT%)$SEG(R,TEG) .. 
+    %VAR%_IC(R,T,TEG %SOW%)*COEF_RPTI(R,T,TEG) =E= %VAR%_CCOST(R,T,TEG %SOW%) - CCOST0(R,TEG);
+
+* Investments other periods
+*%EQ%_IC2(RTP(R,T,TEG))$(YEARVAL(T) GT MIYR_V1) .. %VAR%_IC(R,T,TEG) =E= %VAR%_CCOST(R,T,TEG)- %VAR%_CCOST(R,T-1,TEG);
+%EQ%_IC2(RTP(%R_T%,TEG) %SWT%)$((NOT TL_START(R,T,TEG))$SEG(R,TEG)) ..
+    %VAR%_IC(R,T,TEG %SOW%)*COEF_RPTI(R,T,TEG) =E= %VAR%_CCOST(R,T,TEG %SOW%) - SUM(V(T-1),%VARV%_CCOST(R,V,TEG %SWS%));
+
+* Salvage of learning investments: Handled in TIMES by EQOBSALV.mod
+
+* Coupling equation for key in TEG to cluster TCH's, only if TCH in cluster TEG and TEG NE TCH
+%EQ%_CLU(RTP(%R_T%,TEG) %SWT%)$NTCHTEG(R,TEG) .. 
+   %VAR%_NCAP(R,T,TEG %SOW%) =E=
+   SUM(PRC$(RTP(R,T,PRC) * CLUSTER(R,TEG,PRC)), CLUSTER(R,TEG,PRC) * %VAR%_NCAP(R,T,PRC %SOW%));
+
+*-----------------------------------------------------------------------------
+* new clustering equation
+%EQ%_MRCLU(RTP(%R_T%,TEG) %SWT%)$TL_RP_KC(R,TEG) ..
+   %VAR%_NCAP(R,T,TEG %SOW%) =E= 
+   SUM(TL_RP_CT(REG,P)$RTP(REG,T,P), TL_MRCLUST(R,TEG,REG,P) * %VAR%_NCAP(REG,T,P %SOW%));
+
+*-----------------------------------------------------------------------------
+
+*$OFFLISTING
+DISPLAY CCOST0;

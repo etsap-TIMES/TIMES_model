@@ -1,0 +1,181 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* EQOBJVAR - the variable O&M, flow and commodity direct costs
+*  %1 - mod or prefix
+*  %2 - '1', or J(UNCD1),
+*  %3 - '2', or J(UNCD1),
+*  %4 - T OR Y_EOH
+*  %5 - SUM or ''
+*------------------------------------------------------------------------------
+$IFI '%1'==MOD $GOTO LEGACY
+$IFI '%5'==''  $SET TPULSE '' SET TMP ''
+$IFI %STAGES%==YES Z=SUM(W(SOW),SW_PROB(W));
+*------------------------------------------------------------------------------
+  OPTION CLEAR=%1_ACTC,CLEAR=%1_COMC,CLEAR=%1_FLOC;
+*------------------------------------------------------------------------------
+* Costs based on overall activity of process
+*------------------------------------------------------------------------------
+
+  %1_ACTC(%2RTP_VINTYR(R,V,T,P),%PGPRIM%,CUR)$(RDCUR(R,CUR)$OBJ_ACOST(R,T,P,CUR)) =
+      %5(%TPULSE% OBJ_ACOST(R,%4,P,CUR)) *
+      SUM(PRC_TS(R,P,S), VAR_ACT.L(R,V,T,P,S) * POWER(RS_STGAV(R,S),1$RP_STG(R,P)));
+  %1_ACTC(%3RTP_VINTYR(R,V,T,P),C(%PGPRIM%),CUR)$RPC_CUR(R,P,C,CUR) =
+      SUM(RP_UPS(R,P,TSL,L('UP')),%5(%TPULSE% ACT_CSTUP(R,V,P,TSL,CUR))*SUM(TS_GROUP(R,TSL,S),RS_STGPRD(R,S)*VAR_UPS.L(R,V,T,P,S,L))) +
+      SUM(RP_UPT(R,P,UPT,'UP'),%5(%TPULSE% ACT_CSTSD(R,V,P,UPT,'FX',CUR)*SUM(TS_GROUP(R,TSL,S)$RP_DPL(R,P,TSL),RS_STGPRD(R,S)*VAR_UPT.L(R,V,T,P,S,UPT)))) +
+      SUM(RP_UPR(R,P,BDNEQ(BD)),%5(%TPULSE% ACT_CSTRMP(R,V,P,BD,CUR))*SUM(PRC_TS(R,P,S),RS_STGPRD(R,S)*VAR_UDP.L(R,V,T,P,S,BD)));
+
+*------------------------------------------------------------------------------
+* Commodity added costs and sub/tax
+*------------------------------------------------------------------------------
+  %1_COMC(%2R,T,C,CUR)$RDCUR(R,CUR) $=
+        SUM(RHS_COMBAL(R,T,C,S), VAR_COMNET.L(R,T,C,S) * %5(%TPULSE% OBJ_COMNT(R,%4,C,S,'COST',CUR))) +
+        SUM(RHS_COMPRD(R,T,C,S), VAR_COMPRD.L(R,T,C,S) * %5(%TPULSE% OBJ_COMPD(R,%4,C,S,'COST',CUR)));
+  %1_COMC(%3R,T,C,CUR)$RDCUR(R,CUR) $=
+        SUM(RHS_COMBAL(R,T,C,S), VAR_COMNET.L(R,T,C,S) * %5(%TPULSE% (OBJ_COMNT(R,%4,C,S,'TAX',CUR)+OBJ_COMNT(R,%4,C,S,'SUB',CUR)))) +
+        SUM(RHS_COMPRD(R,T,C,S), VAR_COMPRD.L(R,T,C,S) * %5(%TPULSE% (OBJ_COMPD(R,%4,C,S,'TAX',CUR)+OBJ_COMPD(R,%4,C,S,'SUB',CUR))));
+$IFI %STAGES%==YES
+  %1_COMC(%3RTC(R,T,C),CUR)$RDCUR(R,CUR) $= SUM((RTCS_VARC(RTC,S),COM_VAR,SW_TSW(SOW,T,W))$S_COM_TAX(RTC,S,COM_VAR,CUR,'1',W),(%5(%TMP%S_COM_TAX(R,%4,C,S,COM_VAR,CUR,'1',W))*(VAR_COMPRD.L(RTC,S)$(ORD(COM_VAR)=2)+VAR_COMNET.L(RTC,S)$UC_NAME(COM_VAR))+%1_COMC(J,RTC,CUR)*G_YRFR(R,S))*SW_PROB(W)/Z);
+
+*------------------------------------------------------------------------------
+* Commodity costs associated with imports/exports from outside study area
+*------------------------------------------------------------------------------
+  %1_FLOC(%2RTP_VINTYR(R,V,T,P),C,CUR)$(RDCUR(R,CUR)$RPC(R,P,C)$RP_IRE(R,P)) $=
+        SUM((RTPCS_VARF(R,T,P,C,S),RPC_IREIO(R,P,C,IE,'OUT')), %5(%TPULSE% OBJ_IPRIC(R,%4,P,C,S,IE,CUR)) * PAR_IRE(R,V,T,P,C,S,IE));
+
+*------------------------------------------------------------------------------
+* Flow level costs
+*------------------------------------------------------------------------------
+
+  %1_FLOC(%2RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'COST')$RP_FLO(R,P)) =
+     SUM(RTPCS_VARF(R,T,P,C,S),
+         SUM(TS_ANN(S,TS),%5(%TPULSE% (OBJ_FCOST(R,%4,P,C,TS,CUR)+OBJ_FDELV(R,%4,P,C,TS,CUR)))) * PAR_FLO(R,V,T,P,C,S));
+
+  %1_FLOC(%2RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'COST')$RPC_STG(R,P,C)) =
+     SUM(RPCS_VAR(R,P,C,S),
+         SUM(TS_ANN(S,TS),%5(%TPULSE% (VAR_SIN.L(R,V,T,P,C,S)*OBJ_FCOST(R,%4,P,C,TS,CUR)+VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P)*OBJ_FDELV(R,%4,P,C,TS,CUR)))));
+
+  %1_FLOC(%2RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'COST')$RP_IRE(R,P)) =
+     %1_FLOC(J,R,V,T,P,C,CUR) +
+     SUM(RTPCS_VARF(R,T,P,C,S),
+      SUM(TS_ANN(S,TS),%5(%TPULSE% (OBJ_FCOST(R,%4,P,C,TS,CUR) + OBJ_FDELV(R,%4,P,C,TS,CUR)))) *
+      (
+         SUM(RPC_IRE(R,P,C,IE), PAR_IRE(R,V,T,P,C,S,IE)) +
+         SUM(IO$F_INOUTS(R,V,T,P,C,S,IO),F_INOUTS(R,V,T,P,C,S,IO))
+      ));
+
+* handle the fact that commodity costs may be associated with capacity
+  %1_FLOC(%2R,V,T,P,C,CUR)$(VNT(V,T)$OBJ_VFLO(R,P,C,CUR,'COST')$RPC_CAPFLO(R,V,P,C)) =
+      %1_FLOC(J,R,V,T,P,C,CUR) +
+      SUM(ANNUAL(S),
+$        BATINCLUDE cal_caps.mod T 'SUM(TS_ANN(TS,SL),%5(%TPULSE%(OBJ_FCOST(R,%4,P,C,SL,CUR)+OBJ_FDELV(R,%4,P,C,SL,CUR))))' TS .L
+        );
+
+*------------------------------------------------------------------------------
+* Flow level tax/sub
+*------------------------------------------------------------------------------
+
+  %1_FLOC(%3RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'TAX')$RP_FLO(R,P)) =
+     SUM(RTPCS_VARF(R,T,P,C,S),
+         SUM(TS_ANN(S,TS),%5(%TPULSE% OBJ_FTAX(R,%4,P,C,TS,CUR))) * PAR_FLO(R,V,T,P,C,S));
+
+  %1_FLOC(%3RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'TAX')$RP_IRE(R,P)) =
+     SUM(RTPCS_VARF(R,T,P,C,S),
+      SUM(TS_ANN(S,TS),%5(%TPULSE% OBJ_FTAX(R,%4,P,C,TS,CUR))) *
+      (
+         SUM(RPC_IRE(R,P,C,IE), PAR_IRE(R,V,T,P,C,S,IE)) +
+         SUM(IO$F_INOUTS(R,V,T,P,C,S,IO),F_INOUTS(R,V,T,P,C,S,IO))
+      ));
+
+* handle the fact that commodity costs may be associated with capacity
+  %1_FLOC(%3R,V,T,P,C,CUR)$(VNT(V,T)$OBJ_VFLO(R,P,C,CUR,'TAX')$RPC_CAPFLO(R,V,P,C)) =
+      %1_FLOC(J,R,V,T,P,C,CUR) +
+      SUM(ANNUAL(S),
+$        BATINCLUDE cal_caps.mod T 'SUM(TS_ANN(TS,SL),%5(%TPULSE% OBJ_FTAX(R,%4,P,C,SL,CUR)))' TS .L
+        );
+
+*------------------------------------------------------------------------------
+* Commodity blending costs
+*------------------------------------------------------------------------------
+  %1_COMC(%2R,T,BLE,CUR)$RDCUR(R,CUR) = %1_COMC(J,R,T,BLE,CUR) +
+     SUM(BLE_OPR(R,BLE,OPR), %5(%TPULSE% OBJ_BLNDV(R,%4,BLE,OPR,CUR)) * VAR_BLND.L(R,T,BLE,OPR));
+
+*------------------------------------------------------------------------------
+$EXIT
+$LABEL LEGACY
+*==============================================================================
+* Legacy reporting (by every year and timeslice, discounted):
+* Generate Variable cost formulas summing over all active indexes by region and currency
+*===============================================================================
+
+*------------------------------------------------------------------------------
+* Overall activity of a process based costs
+*------------------------------------------------------------------------------
+ LOOP(T,
+        PAR_OBJACT(R,V,Y_EOH,P,S,CUR)$(PERIODYR(T,Y_EOH)*RTP_VINTYR(R,V,T,P)*PRC_TS(R,P,S)) =
+          OBJ_DISC(R,Y_EOH,CUR) * OBJ_ACOST(R,Y_EOH,P,CUR) * VAR_ACT.L(R,V,T,P,S) * POWER(RS_STGAV(R,S),1$RP_STG(R,P))
+     );
+
+*------------------------------------------------------------------------------
+* Commodity added costs and sub/tax
+*------------------------------------------------------------------------------
+ LOOP(T,
+       PAR_OBJCOM(R,Y_EOH,C,S,CUR)$PERIODYR(T,Y_EOH) $=
+         SUM(RHS_COMBAL(R,T,C,S), OBJ_DISC(R,Y_EOH,CUR) * VAR_COMNET.L(R,T,C,S) * SUM(COSTYPE,OBJ_COMNT(R,Y_EOH,C,S,COSTYPE,CUR))) +
+         SUM(RHS_COMPRD(R,T,C,S), OBJ_DISC(R,Y_EOH,CUR) * VAR_COMPRD.L(R,T,C,S) * SUM(COSTYPE,OBJ_COMPD(R,Y_EOH,C,S,COSTYPE,CUR)));
+     );
+
+*------------------------------------------------------------------------------
+* Commodity costs/tax/sub associated with imports/exports from outside study area (external regions)
+*------------------------------------------------------------------------------
+ LOOP(T,
+       PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR)$((PERIODYR(T,Y_EOH)*RTPCS_VARF(R,T,P,C,S)*RTP_VINTYR(R,V,T,P))$RP_IRE(R,P)) $=
+         SUM(RPC_IREIO(R,P,C,IE,'OUT'), OBJ_DISC(R,Y_EOH,CUR) * OBJ_IPRIC(R,Y_EOH,P,C,S,IE,CUR) * PAR_IRE(R,V,T,P,C,S,IE));
+     );
+
+*------------------------------------------------------------------------------
+* Flow level costs/tax/sub
+*------------------------------------------------------------------------------
+ LOOP(T,
+       PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR)$(PERIODYR(T,Y_EOH)*RTPCS_VARF(R,T,P,C,S)*RTP_VINTYR(R,V,T,P)*RP_FLO(R,P)) =
+
+         OBJ_DISC(R,Y_EOH,CUR) * PAR_FLO(R,V,T,P,C,S) *
+         SUM(TS_ANN(S,TS),OBJ_FCOST(R,Y_EOH,P,C,TS,CUR) + OBJ_FDELV(R,Y_EOH,P,C,TS,CUR) + OBJ_FTAX(R,Y_EOH,P,C,TS,CUR))
+     );
+
+ LOOP(T,
+       PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR)$(SUM(OBJ_VFLO(R,P,C,CUR,UC_COST),1)$(PERIODYR(T,Y_EOH)*RTPCS_VARF(R,T,P,C,S)*RTP_VINTYR(R,V,T,P)$RP_IRE(R,P))) =
+
+         PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR) +
+         OBJ_DISC(R,Y_EOH,CUR) *
+         SUM(TS_ANN(S,TS),OBJ_FCOST(R,Y_EOH,P,C,TS,CUR) + OBJ_FDELV(R,Y_EOH,P,C,TS,CUR) + OBJ_FTAX(R,Y_EOH,P,C,TS,CUR)) *
+         (
+           SUM(RPC_IRE(R,P,C,IE), PAR_IRE(R,V,T,P,C,S,IE)) +
+           SUM(IO$F_INOUTS(R,V,T,P,C,S,IO),F_INOUTS(R,V,T,P,C,S,IO))
+         )
+     );
+
+* handle the fact that commodity costs may be associated with capacity
+ LOOP(T,
+       PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR)$(PERIODYR(T,Y_EOH)*RPCS_VAR(R,P,C,S)*VNT(V,T)*RPC_CAPFLO(R,V,P,C)) =
+         PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR) +
+         OBJ_DISC(R,Y_EOH,CUR) *
+         (
+$          BATINCLUDE cal_caps.mod T 'SUM(TS_ANN(TS,SL),OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR))' TS .L
+         )
+     );
+
+*------------------------------------------------------------------------------
+* Commodity blending costs
+*------------------------------------------------------------------------------
+   PAR_OBJBLE(R,Y_EOH,BLE,CUR)$RDCUR(R,CUR) = OBJ_DISC(R,Y_EOH,CUR) *
+        SUM((BLE_OPR(R,BLE,OPR),PERIODYR(T,Y_EOH)), OBJ_BLNDV(R,Y_EOH,BLE,OPR,CUR) * VAR_BLND.L(R,T,BLE,OPR));
+
+* Check that the Calculated objective components are equal to those Derived by the solver:
+OBJ_C = SUM((R,V,Y_EOH,P,S,CUR)$PAR_OBJACT(R,V,Y_EOH,P,S,CUR),PAR_OBJACT(R,V,Y_EOH,P,S,CUR))+
+   SUM((R,V,Y_EOH,P,C,S,CUR)$PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR),PAR_OBJFLO(R,V,Y_EOH,P,C,S,CUR))+
+   SUM((R,Y_EOH,C,S,CUR)$PAR_OBJCOM(R,Y_EOH,C,S,CUR),PAR_OBJCOM(R,Y_EOH,C,S,CUR));
+OBJ_D = SUM(RDCUR(R,CUR),SUM(OBV,SUM_OBJ('OBJVAR',OBV)*VAR_OBJ.L(R,OBV,CUR)));
+DISPLAY OBJ_C,OBJ_D;

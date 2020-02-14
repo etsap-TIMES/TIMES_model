@@ -1,0 +1,63 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* PEXTLEVS.stc: Get the expected values
+*  %1 - SOW control
+*  %2 - Period control
+*=============================================================================*
+* Clear results from previous
+$ BATINCLUDE clearsol.stc
+*---------------------------------------------------------------------
+* Get the sum of weighted Marginals
+  EQG_COMBAL.M(R,T%2,C,S) $= SUM(SW_T(T,W), %EQ%G_COMBAL.M(R,T,C,S,T,W));
+  EQE_COMBAL.M(R,T%2,C,S) $= SUM(SW_T(T,W), %EQ%E_COMBAL.M(R,T,C,S,T,W));
+  EQE_COMPRD.M(R,T%2,C,S) $= SUM(SW_T(T,W), %EQ%E_COMPRD.M(R,T,C,S,T,W));
+  EQ_PEAK.M(R,T%2,CG,S)   $= SUM(SW_T(T,W), %EQ%_PEAK.M(R,T,CG,S,T,W));
+  EQ_IRE.M(R,T%2,P,C,IE,S) $= SUM(SW_T(T,W), %EQ%_IRE.M(R,T,P,C,IE,S,T,W));
+  EQE_CPT.M(R,T%2,P)      $= SUM(SW_T(T,%1),  %EQ%E_CPT.M(R,T,P,T,%1));
+  EQN_UCRTP.M(UC_N,R,T%2,P,UC_GRPTYPE,BD('FX'))  $= SUM(SW_T(T,W), %EQ%E_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD,T,W));
+  EQN_UCRTP.M(UC_N,R,T%2,P,UC_GRPTYPE,BDNEQ(BD)) $= SUM(SW_T(T,W), %EQ%N_UCRTP.M(UC_N,R,T,P,UC_GRPTYPE,BD,T,W));
+
+* Get the expected Levels
+  VAR_ACT.L(R,V,T%2,P,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_ACT.L(R,V,T,P,S,W));
+  VAR_BLND.L(R,T%2,COM,C) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_BLND.L(R,T,COM,C,W));
+  VAR_COMNET.L(R,T%2,COM,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_COMNET.L(R,T,COM,S,W));
+  VAR_COMPRD.L(R,T%2,COM,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_COMPRD.L(R,T,COM,S,W));
+  VAR_IRE.L(R,V,T%2,P,C,S,IE) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_IRE.L(R,V,T,P,C,S,IE,W));
+  VAR_ELAST.L(R,T%2,C,S,J,BD) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_ELAST.L(R,T,C,S,J,BD,W));
+  VAR_FLO.L(R,V,T%2,P,C,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_FLO.L(R,V,T,P,C,S,W));
+  VAR_SIN.L(R,V,T%2,P,C,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_SIN.L(R,V,T,P,C,S,W));
+  VAR_SOUT.L(R,V,T%2,P,C,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_SOUT.L(R,V,T,P,C,S,W));
+  VAR_UPS.L(R,V,T%2,P,S,L) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_UPS.L(R,V,T,P,S,L,W));
+  VAR_CUMCOM.L(R,C,COM_VAR,YEAR,LL)$RC_CUMCOM(R,COM_VAR,YEAR,LL,C) $= SUM(W, SW_PROB(W)*%VAR%_CUMCOM.L(R,C,COM_VAR,YEAR,LL,W));
+  VAR_CUMFLO.L(RPC,YEAR,LL)$RPC_CUMFLO(RPC,YEAR,LL) $= SUM(W, SW_PROB(W)*%VAR%_CUMFLO.L(RPC,YEAR,LL,W));
+$IF DEFINED %VAR%_DAM  VAR_DAM.L(R,T%2,C,BD,J) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_DAM.L(R,T,C,BD,J,W));
+$IF %TIMESED% == YES   VAR_OBJELS.L(R,BD,CUR)  $= SUM(W, SW_PROB(W)*%VAR%_OBJELS.L(R,BD,CUR,W));
+  VAR_CAP.L(R,T%2,P)  $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_CAP.L(R,T,P,%1));
+  VAR_NCAP.L(R,T%2,P) $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_NCAP.L(R,T,P,%1));
+  VAR_SCAP.L(R,V,T%2,P) $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_SCAP.L(R,V,T,P,%1));
+
+  VAR_UC.L(UC_N) $= SUM(W, SW_PROB(W)*%VAR%_UC.L(UC_N,W));
+  VAR_UCR.L(UC_N,R) $= SUM(W, SW_PROB(W)*%VAR%_UCR.L(UC_N,R,W));
+  VAR_UCT.L(UC_N,T) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_UCT.L(UC_N,T,W));
+  VAR_UCRT.L(UC_N,R,T) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_UCRT.L(UC_N,R,T,W));
+  VAR_UCTS.L(UC_N,T,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_UCTS.L(UC_N,T,S,W));
+  VAR_UCRTS.L(UC_N,R,T,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_UCRTS.L(UC_N,R,T,S,W));
+  VAR_OBJ.L(R,OBV,CUR) $= SUM(W, SW_PROB(W)*%VAR%_OBJ.L(R,OBV,CUR,W));
+
+* Get the sum of weighted Marginals
+  VAR_ACT.M(R,V,T%2,P,S) $= SUM(SW_T(T,W), %VAR%_ACT.M(R,V,T,P,S,W));
+  VAR_COMNET.M(R,T%2,COM,S) $= SUM(SW_T(T,W), %VAR%_COMNET.M(R,T,COM,S,W));
+  VAR_COMPRD.M(R,T%2,COM,S) $= SUM(SW_T(T,W), %VAR%_COMPRD.M(R,T,COM,S,W));
+  VAR_CUMFLO.M(R,P,C,YEAR,LL) $= SUM(W, %VAR%_CUMFLO.M(R,P,C,YEAR,LL,W));
+  VAR_CAP.M(R,T%2,P)     $= SUM(SW_T(T,%1), %VAR%_CAP.M(R,T,P,%1));
+  VAR_NCAP.M(R,T%2,P)    $= SUM(SW_T(T,%1), %VAR%_NCAP.M(R,T,P,%1));
+
+  VAR_UC.M(UC_N) $= SUM(W, %VAR%_UC.M(UC_N,W));
+  VAR_UCR.M(UC_N,R) $= SUM(W, %VAR%_UCR.M(UC_N,R,W));
+  VAR_UCT.M(UC_N,T) $= SUM(SW_T(T,W), %VAR%_UCT.M(UC_N,T,W));
+  VAR_UCRT.M(UC_N,R,T) $= SUM(SW_T(T,W), %VAR%_UCRT.M(UC_N,R,T,W));
+  VAR_UCTS.M(UC_N,T,S) $= SUM(SW_T(T,W), %VAR%_UCTS.M(UC_N,T,S,W));
+  VAR_UCRTS.M(UC_N,R,T,S) $= SUM(SW_T(T,W), %VAR%_UCRTS.M(UC_N,R,T,S,W));

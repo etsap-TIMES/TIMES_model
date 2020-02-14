@@ -1,0 +1,64 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* INITMTY.VDA has all the EMPTY declarations for system & user data           *
+*=============================================================================*
+$SETGLOBAL VDA YES
+*=============================================================================
+* User Input attributes in the VDA extension
+*-----------------------------------------------------------------------------
+* Process transformation parameters:
+  PARAMETERS
+  VDA_FLOP(REG,ALLYEAR,PRC,CG,S)     'General process transformation parameter'
+  ACT_FLO(REG,ALLYEAR,PRC,CG,S)      'General process transformation parameter'//
+  VDA_EMCB(REG,ALLYEAR,COM,COM)      'Combustion emission parameter (aka EMI_comb)' //
+  VDA_CEH(REG,ALLYEAR,PRC)           'The slope of pass-out turbine (alias NCAP_CEH)' //
+  FLO_EMIS(REG,ALLYEAR,PRC,CG,COM,S) 'General process emission parameter' //
+  FLO_EFF(REG,ALLYEAR,PRC,CG,COM,S)  'General process flow-relation parameter' //;
+*-----------------------------------------------------------------------------
+* Commodity-dependent availabilities:
+$ SET MX ,SEASON, WEEKLY, DAYNITE
+  SET STL / SET.S%MX% /;
+  PARAMETERS
+  NCAP_AFAC(REG,ALLYEAR,PRC,CG)      'Annual availability of capacity for commodity group CG' //
+  NCAP_AFC(REG,ALLYEAR,PRC,CG,STL)   'Availability of capacity for commodity group CG'
+  NCAP_AFCS(REG,ALLYEAR,PRC,CG,TS)   'Availability of capacity for commodity group CG'//;
+*-----------------------------------------------------------------------------
+* Dynamic UC variable bounds (UC_DYNBND user defined)
+  SET UC_DYNBND(UC_N,BD) 'Dynamic process-wise UC bounds' //;
+*-----------------------------------------------------------------------------
+* Activity efficiency and dispatching options
+  PARAMETERS
+  ACT_EFF(REG,YEAR,PRC,CG,TS) 'Activity efficiency for process' //
+  ACT_UPS(R,ALLYEAR,P,S,L)    'Max. ramp rate, fraction of capacity per hour'
+  ACT_MINLD(R,ALLYEAR,P)      'Minimum stable operation level' //
+  ACT_LOSPL(R,ALLYEAR,P,L)    'Fuel consumption increase at minimum load' //
+  ACT_CSTPL(R,ALLYEAR,P,CUR)  'Partial load cost penalty' //
+  ACT_MAXNON(R,LL,P,UPT)      'Max. non-operational time before transition to next stand-by condition, by start-up type, in hours' //
+  ACT_SDTIME(R,LL,P,UPT,BD)   'Duration of start-up (BD=UP) and shut-down BD=LO) phases, by start-up type, in hours' //
+  ACT_LOSSD(R,LL,P,UPT,BD)    'Efficiency at one hour from start-up (BD=UP) or at one hour to end of shut-down (BD=LO)' //
+  STG_MAXCYC(R,YEAR,P)        'Maximum number of storage cycles over lifetime' //;
+*-----------------------------------------------------------------------------
+* Special: Risk parameters & reporting options
+  PARAMETER UC_ACTBET(UC_N,ALL_REG,ALLYEAR,PRC);
+  PARAMETER UC_FLOBET(UC_N,ALL_REG,ALLYEAR,PRC,CG);
+  PARAMETER RPT_OPT(ITEM,J) //;
+  PARAMETER PRC_REACT(R,ALLYEAR,P) 'Reactance of transmission line';
+  PARAMETER COM_CSTBAL(R,ALLYEAR,C,S,ITEM,CUR) 'Cost on specific component of node balance';
+  PARAMETER GR_GENLEV(R,C) 'Grid connection category for electricity generation commodity'//;
+  PARAMETER GR_DEMFR(R,ALLYEAR,C,S) 'Fraction of total electricity demand allocated to grid node' //;
+  PARAMETER GR_ENDFR(R,ALLYEAR,C,CG) 'Fraction of sectoral electricity demand allocated to grid node' //;
+  PARAMETER GR_GENFR(R,ALLYEAR,C,ITEM) 'Fraction of electricity generation type allocated to grid node'//;
+  PARAMETER GR_GENMAP(R,P,ITEM) 'Mapping of technology to generation type' //;
+  PARAMETER GR_XBND(R,ALLYEAR) 'Maximum level of net imports to / exports from region' //;
+  PARAMETER GR_THMIN(R,LL,P) 'Thermal minimum level' //;
+  PARAMETER GR_VARGEN(R,S,ITEM,BD) 'Variance in type of generation';
+*-----------------------------------------------------------------------------
+* Predefined items
+  SET ALL_REG / IMPEXP /;
+  SET COM_GRP / IMP, EXP /;
+  SET ITEM / OBJ /, UC_NAME / ANNUAL %MX% /;
+  SET UC_N /%SYSPREFIX%SOLVE_STATUS 'Model solution status code'/;
+*-----------------------------------------------------------------------------

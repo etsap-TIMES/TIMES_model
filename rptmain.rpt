@@ -1,0 +1,283 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*---------------------------------------------------------------
+* RPTMAIN.RPT
+*
+* Output routine
+*    - creating flat dump for VEDA3 and paramaters for VEDA4
+*GG* VEDABE 'V4' override to avoid PUT related code (e.g., File & SOLSUBV calls)
+*---------------------------------------------------------------
+* Output routine for IER extensions
+*---------------------------------------------------------------
+*  - VAR_FLO/VAR_IRE are replaced by the parameters PAR_FLO/PAR_IRE
+*    which contain the values of the flow variables in the reduced model
+*    plus the recalculated values of substituted flows
+*  - calculation of annual cost terms
+*
+*-----------------------------------------------------------------------
+* Declarations
+ PARAMETER PAR_CAPL(R,T,P);
+ PARAMETER PAR_CAPM(R,T,P);
+ PARAMETER PAR_PASTI(R,T,P);
+ PARAMETER PAR_CAPLO(R,T,P);
+ PARAMETER PAR_CAPUP(R,T,P);
+ PARAMETER PAR_NCAPL(R,ALLYEAR,P);
+ PARAMETER PAR_NCAPM(R,ALLYEAR,P);
+ PARAMETER PAR_ACTL(REG,ALLYEAR,ALLYEAR,PRC,ALL_TS);
+ PARAMETER PAR_ACTM(REG,ALLYEAR,ALLYEAR,PRC,ALL_TS);
+ PARAMETER PAR_COMPRDL(R,ALLYEAR,C,S);
+ PARAMETER PAR_COMPRDM(R,ALLYEAR,C,S);
+ PARAMETER PAR_COMNETL(R,ALLYEAR,C,S);
+ PARAMETER PAR_COMNETM(R,ALLYEAR,C,S);
+ PARAMETER PAR_COMBALEM(R,ALLYEAR,C,S);
+ PARAMETER PAR_COMBALGM(R,ALLYEAR,C,S);
+ PARAMETER PAR_PEAKM(R,ALLYEAR,COM_GRP,S);
+ PARAMETER PAR_UCLOM(UC_N,*,*,*);
+ PARAMETER PAR_UCUPM(UC_N,*,*,*);
+ PARAMETER PAR_UCFXM(UC_N,*,*,*);
+ PARAMETER F_IN(R,ALLYEAR,T,P,C,S);
+ PARAMETER F_OUT(R,ALLYEAR,T,P,C,S);
+ PARAMETER F_INOUT(R,ALLYEAR,T,P,C,IO);
+ PARAMETER F_INOUTS(R,ALLYEAR,T,P,C,TS,IO);
+ SET F_IOSET(R,ALLYEAR,T,P,C,TS,IO);
+
+ PARAMETERS
+   TOT_INV(R,ALLYEAR,CUR)  'Total annual disocunted investment costs'      //
+   TOT_DEC(R,ALLYEAR,CUR)  'Total annual disocunted decommissioning costs' //
+   TOT_FIX(R,ALLYEAR,CUR)  'Total annual disocunted FOM costs'             //
+   TOT_SAL(R,ALLYEAR,CUR)  'Total annual disocunted salvage value'         //
+   TOT_LAT(R,ALLYEAR,CUR)  'Total annual disocunted late costs'            //
+   TOT_ACT(R,ALLYEAR,CUR)  'Total annual disocunted variable costs'        //
+   TOT_COM(R,ALLYEAR,CUR)  'Total annual disocunted commodity costs'       //
+   TOT_FLO(R,ALLYEAR,CUR)  'Total annual disocunted flow costs'            //
+   TOT_BLE(R,ALLYEAR,CUR)  'Total annual disocunted blending costs'        //
+   TOT_OBJ(R,ALLYEAR,CUR)  'Annual discounted objective value '            //;
+
+*-----------------------------------------------------------------------
+* Calculation of solution values for (due to reduction) substituted flows
+*------------------------------------------------------------------------
+$ BATINCLUDE sol_flo.red PAR_FLO '' .L
+$ BATINCLUDE sol_flo.red PAR_FLO M .M
+
+* IRE auxiliary flows summed up from all IE flows
+  LOOP((RPC_IRE(R,P,COM,IE),RPCS_VAR(R,P,COM,TS)),F_IOSET(RTP_VINTYR(R,V,T,P),C,TS,IO)$IRE_FLOSUM(R,T,P,COM,TS,IE,C,IO) = RC(R,C));
+$ BATINCLUDE sol_ire.rpt
+
+*---------------------------------------------------------------
+* Calculation of annual cost terms
+*---------------------------------------------------------------
+$   BATINCLUDE eqobjinv.rpt
+$   BATINCLUDE eqobjfix.rpt mod
+$   BATINCLUDE eqobsalv.rpt rpt
+$   BATINCLUDE eqobjvar.rpt mod
+$   BATINCLUDE eqobjels.rpt PAR_OBJELS(R,Y_EOH,C,CUR) Y_EOH OBJ_DISC(R,Y_EOH,CUR)*
+
+*------------------------------------------------------------------------
+* Include explicit EPS values for zero flows
+*------------------------------------------------------------------------
+$IF NOT %SUPZERO%==YES
+ PAR_FLO(RTP_VINTYR(R,V,T,P),C,S)$(RTPCS_VARF(R,T,P,C,S)*RP_FLO(R,P)*(NOT RPC_NOFLO(R,P,C))) $= EPS$(NOT PAR_FLO(R,V,T,P,C,S));
+          ;
+$IF NOT %SUPZERO%==YES
+ PAR_IRE(RTP_VINTYR(R,V,T,P),C,TS,IMPEXP)$(RTPCS_VARF(R,T,P,C,TS)$RPC_IRE(R,P,C,IMPEXP)) $= EPS$(NOT PAR_IRE(R,V,T,P,C,TS,IMPEXP));
+          ;
+*---------------------------------------------------------------------
+* Annual discounted objective values by cost type(INV, FIX, VAR etc.)
+*---------------------------------------------------------------------
+
+* Total investment costs
+     TOT_INV(R,ALLYEAR,CUR)=SUM(RTP(R,V,P),PAR_OBJINV(R,V,ALLYEAR,P,CUR));
+* Total decommissioning costs
+     TOT_DEC(R,ALLYEAR,CUR)=SUM(RTP(R,V,P),PAR_OBJDEC(R,V,ALLYEAR,P,CUR));
+* Total fix costs
+     TOT_FIX(R,ALLYEAR,CUR)=SUM(RTP(R,V,P),PAR_OBJFIX(R,V,ALLYEAR,P,CUR));
+* Total salvage value
+     TOT_SAL(R,V,CUR)=-SUM(P,PAR_OBJSAL(R,V,P,CUR));
+* Total late revenues
+     TOT_LAT(R,ALLYEAR,CUR)=-SUM(P,PAR_OBJLAT(R,ALLYEAR,P,CUR));
+* Total variable costs
+     TOT_ACT(R,ALLYEAR,CUR)=SUM((RTP_VINTYR(R,V,T,P),TS)$PERIODYR(T,ALLYEAR),PAR_OBJACT(R,V,ALLYEAR,P,TS,CUR));
+* Total flow related costs
+     TOT_FLO(R,ALLYEAR,CUR) = SUM((RTP_VINTYR(R,V,T,P),C,TS)$PERIODYR(T,ALLYEAR),PAR_OBJFLO(R,V,ALLYEAR,P,C,TS,CUR));
+* Total commodity related costs
+     TOT_COM(R,ALLYEAR,CUR)=SUM((C,TS),PAR_OBJCOM(R,ALLYEAR,C,TS,CUR));
+* Total blending related costs
+     TOT_BLE(R,ALLYEAR,CUR)=SUM((C),PAR_OBJBLE(R,ALLYEAR,C,CUR));
+* Total yearly objective value
+TOT_OBJ(R,ALLYEAR,CUR) = TOT_INV(R,ALLYEAR,CUR) +
+                         TOT_DEC(R,ALLYEAR,CUR) +
+                         TOT_FIX(R,ALLYEAR,CUR) +
+                         TOT_SAL(R,ALLYEAR,CUR) +
+                         TOT_LAT(R,ALLYEAR,CUR) +
+                         TOT_ACT(R,ALLYEAR,CUR) +
+                         TOT_FLO(R,ALLYEAR,CUR) +
+                         TOT_COM(R,ALLYEAR,CUR) +
+                         TOT_BLE(R,ALLYEAR,CUR);
+
+**Aggregate Undiscounted Costs w/out CUR
+PARAMETER TOT_OBJV(R,ALLYEAR) //;
+TOT_OBJV(R,T) $= SUM(CUR,TOT_OBJ(R,T,CUR)/OBJ_DISC(R,T,CUR));
+
+* Discounted objective value by region
+PARAMETER REG_OBJ(REG) //;
+REG_OBJ(R) = SUM((CUR,ALLYEAR),TOT_OBJ(R,ALLYEAR,CUR));
+
+*---------------------------------------------------------------------
+
+* calculate discounting for the period
+PARAMETER VDA_DISC(R,ALLYEAR) //;
+* [AL] The MARKAL undiscounting method is not sufficiently accurate for TIMES
+*VDA_DISC(R,T) =  SUM(CUR,OBJ_DISC(R,T,CUR))*D(T);
+LOOP(RDCUR(R,CUR), VDA_DISC(R,T) =  SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR)););
+
+* Scenario index not supported in current version, use 1
+SOW('1') = YES;
+
+*---------------------------------------------------------------------
+* Output of VAR_ACT
+*---------------------------------------------------------------------
+
+PAR_ACTL(RTP_VINTYR(R,V,T,P),S)$PRC_TS(R,P,S) = EPS;
+PAR_ACTL(R,V,T,P,S)                          $= VAR_ACT.L(R,V,T,P,S);
+PAR_ACTM(R,V,T,P,S)$VAR_ACT.M(R,V,T,P,S) = VAR_ACT.M(R,V,T,P,S)/VDA_DISC(R,T);
+
+*---------------------------------------------------------------------
+* Output of VAR_CAP
+*---------------------------------------------------------------------
+
+RTP_CAPYR(RTP_CPTYR(R,TT,T,P))$VAR_NCAP.L(R,TT,P) = YES;
+RTP_CAPYR(RTP_CPTYR(R,PYR,T,P))$NCAP_PASTI(R,PYR,P) = YES;
+
+PAR_PASTI(RTP(R,T,P)) = SUM(RTP_CAPYR(R,PYR,T,P),COEF_CPT(R,PYR,T,P)*NCAP_PASTI(R,PYR,P));
+PAR_CAPL(RTP(R,T,P))  = SUM(RTP_CAPYR(R,TT,T,P), COEF_CPT(R,TT,T,P) *VAR_NCAP.L(R,TT,P)) +
+                        PAR_PASTI(R,T,P);
+
+PAR_CAPM(RTP(R,T,P))                               $= VAR_CAP.M(R,T,P)*(1/VDA_DISC(R,T));
+PAR_CAPLO(RTP(R,T,P))                              $= CAP_BND(R,T,P,'LO');
+PAR_CAPUP(RTP(R,T,P))$(CAP_BND(R,T,P,'UP') NE INF) $= CAP_BND(R,T,P,'UP');
+
+PAR_NCAPL(R,V,P) $= VAR_NCAP.L(R,V,P) ;
+
+* [UR]: undiscounting of dual variable of VAR_NCAP
+PAR_NCAPM(R,T,P)$(VAR_NCAP.M(R,T,P)*COEF_OBJINV(R,T,P)) = VAR_NCAP.M(R,T,P)/COEF_OBJINV(R,T,P);
+
+*---------------------------------------------------------------------
+* Output of VAR_FLO
+* - split by in/out
+*---------------------------------------------------------------------
+* emission tied to CAP/INV
+F_INOUT(RTP_VINTYR(R,V,T,P),C,'IN')$RPC_CAPFLO(R,T,P,C)  = COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,'IN') * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) +
+                                                           (COEF_ICOM(R,V,T,P,C) * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)));
+F_INOUT(RTP_VINTYR(R,V,T,P),C,'OUT')$RPC_CAPFLO(R,T,P,C) = COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,'OUT') * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) +
+                                                           (COEF_OCOM(R,V,T,P,C) * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)));
+
+* Blending flows *** PENDING!!! Code below from EQCOMBAL ***
+*PARAMETER F_BLND(R,T,C,TS,IO)  //;
+*  SUM(OPR$BLE_OPR(R,C,OPR),
+*    RTCS_TSFR(R,T,C,S,'ANNUAL') * BLE_BAL(R,T,C,OPR) * VAR_BLND(R,T,C,OPR)
+*  ) +
+* emissions due to blending operations
+*  SUM(BLE_ENV(R,COM,BLE,OPR),
+*      ENV_BL(R,COM,BLE,OPR,T) * VAR_BLND(R,T,BLE,OPR)
+*  ) +
+
+*---------------------------------------------------------------------
+* Process flows
+*---------------------------------------------------------------------
+* Flow by IN/OUT
+* main flows & emissions
+F_IN(R,V,T,P,C,S)$TOP(R,P,C,'IN')   $= PAR_FLO(R,V,T,P,C,S);
+F_OUT(R,V,T,P,C,S)$TOP(R,P,C,'OUT') $= PAR_FLO(R,V,T,P,C,S);
+* IRE flows
+* [UR] maybe exports as negativ values for net imports in primary energy balance ?
+F_IN(R,V,T,P,C,S)                   $= PAR_IRE(R,V,T,P,C,S,'EXP');
+F_OUT(R,V,T,P,C,S)                  $= PAR_IRE(R,V,T,P,C,S,'IMP');
+* Aux flows & emissions tied to INV/CAP
+F_IN(R,V,T,P,C,'ANNUAL')$F_INOUT(R,V,T,P,C,'IN')   = F_IN(R,V,T,P,C,'ANNUAL')+F_INOUT(R,V,T,P,C,'IN');
+F_OUT(R,V,T,P,C,'ANNUAL')$F_INOUT(R,V,T,P,C,'OUT') = F_OUT(R,V,T,P,C,'ANNUAL')+F_INOUT(R,V,T,P,C,'OUT');
+* IRE Aux flows & emissions
+F_IN(R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'IN')   = F_IN(R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'IN');
+F_OUT(R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'OUT') = F_OUT(R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'OUT');
+* Storage in/output flows
+F_IN(R,V,T,P,C,S)                   $= VAR_SIN.L(R,V,T,P,C,S);
+F_OUT(R,V,T,P,C,S)                  $= VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P);
+
+*---------------------------------------------------------------------
+* Annual undiscounted costs by process/commodity w/out CUR
+*---------------------------------------------------------------------
+PARAMETER CST_INVV(R,ALLYEAR,ALLYEAR,P)      //;
+PARAMETER CST_DECV(R,ALLYEAR,ALLYEAR,P)      //;
+PARAMETER CST_FIXV(R,ALLYEAR,ALLYEAR,P)      //;
+PARAMETER CST_SALV(R,ALLYEAR,P)              //;
+PARAMETER CST_LATV(R,ALLYEAR,P)              //;
+PARAMETER CST_ACTV(R,ALLYEAR,ALLYEAR,P,TS)   //;
+PARAMETER CST_FLOV(R,ALLYEAR,ALLYEAR,P,C,TS) //;
+PARAMETER CST_COMV(R,ALLYEAR,C,TS)           //;
+PARAMETER CST_ELSV(R,ALLYEAR,C)              //;
+
+LOOP(CUR,
+CST_INVV(RTP_CPTYR(R,V,T,P))      $= PAR_OBJINV(R,V,T,P,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_DECV(RTP_CPTYR(R,V,T,P))      $= PAR_OBJDEC(R,V,T,P,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_SALV(R,V,P)                   $= PAR_OBJSAL(R,V,P,CUR);
+CST_LATV(RTP(R,T,P))              $= PAR_OBJLAT(R,T,P,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_FIXV(RTP_CPTYR(R,V,T,P))      $= PAR_OBJFIX(R,V,T,P,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_ACTV(RTP_VINTYR(R,V,T,P),TS)  $= PAR_OBJACT(R,V,T,P,TS,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_ELSV(RTC(R,T,C))              $= PAR_OBJELS(R,T,C,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_FLOV(RTP_VINTYR(R,V,T,P),C,TS) $= PAR_OBJFLO(R,V,T,P,C,TS,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_COMV(RTC(R,T,C),TS)           $= PAR_OBJCOM(R,T,C,TS,CUR)*(1/OBJ_DISC(R,T,CUR));
+);
+
+*--------------------------------------------------------------------------
+* Production (PRD) and Difference between production and consumption (NET)
+*--------------------------------------------------------------------------
+
+PAR_COMPRDL(R,T,C,S) $= VAR_COMPRD.L(R,T,C,S);
+PAR_COMPRDM(R,T,C,S) $= VAR_COMPRD.M(R,T,C,S)*(1/VDA_DISC(R,T));
+PAR_COMNETL(R,T,C,S) $= VAR_COMNET.L(R,T,C,S);
+PAR_COMNETM(R,T,C,S) $= VAR_COMNET.M(R,T,C,S)*(1/VDA_DISC(R,T));
+
+*--------------------------------------------------------------------------
+* Undiscounted annual shadow price of commodity balance and peaking equation
+*--------------------------------------------------------------------------
+
+PAR_COMBALEM(R,T,C,S) $= EQE_COMBAL.M(R,T,C,S)*(1/VDA_DISC(R,T));
+PAR_COMBALGM(R,T,C,S) $= EQG_COMBAL.M(R,T,C,S)*(1/VDA_DISC(R,T));
+PAR_PEAKM(R,T,CG,S)   $= EQ_PEAK.M(R,T,CG,S)*(1/VDA_DISC(R,T));
+
+*--------------------------------------------------------------------------
+* Shadow prices of user constraints
+*--------------------------------------------------------------------------
+* Note: undiscounting only done for user constraints having region and period as index
+
+$IF '%VAR_UC%'==YES $GOTO UC_VAR
+
+$ BATINCLUDE par_uc.rpt FXM EQE
+$ BATINCLUDE par_uc.rpt LOM EQG
+$ BATINCLUDE par_uc.rpt UPM EQL
+
+$GOTO UC_DONE
+$LABEL UC_VAR
+
+PAR_UCFXM(UC_N,'NONE','NONE','NONE') $= VAR_UC.M(UC_N);
+PAR_UCFXM(UC_N,R,'NONE','NONE')      $= VAR_UCR.M(UC_N,R);
+PAR_UCFXM(UC_N,'NONE',T,'NONE')      $= VAR_UCT.M(UC_N,T);
+PAR_UCFXM(UC_N,R,T,'NONE')           $= VAR_UCRT.M(UC_N,R,T)*(1/VDA_DISC(R,T));
+PAR_UCFXM(UC_N,'NONE',T,S)           $= VAR_UCTS.M(UC_N,T,S);
+PAR_UCFXM(UC_N,R,T,S)                $= VAR_UCRTS.M(UC_N,R,T,S)*(1/VDA_DISC(R,T));
+
+$LABEL UC_DONE
+
+OPTION CLEAR = F_INOUT;
+OPTION CLEAR = F_INOUTS;
+OPTION CLEAR = F_IOSET;
+
+*[AL] Added new regional total discounted cost parameter
+ PARAMETER REG_WOBJ(REG,ITEM,CUR)     //;
+ REG_WOBJ(R,'INV',CUR) = SUM(OBV,SUM_OBJ('OBJINV',OBV)*VAR_OBJ.L(R,OBV,CUR))-VAR_OBJ.L(R,'OBJSAL',CUR);
+ REG_WOBJ(R,'FIX',CUR) = SUM(OBV,SUM_OBJ('OBJFIX',OBV)*VAR_OBJ.L(R,OBV,CUR));
+ REG_WOBJ(R,'VAR',CUR) = SUM(OBV,SUM_OBJ('OBJVAR',OBV)*VAR_OBJ.L(R,OBV,CUR));
+ REG_WOBJ(R,'ELS',CUR) = EPS
+$IF %TIMESED% == YES  +VAR_OBJELS.L(R,'LO',CUR)-VAR_OBJELS.L(R,'UP',CUR)
+ ;

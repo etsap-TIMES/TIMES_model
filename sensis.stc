@@ -1,0 +1,36 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* sensis.stc Wrapper for sensitivity analysis parameters
+*=============================================================================*
+$IFI %MCA%==YES $BATINCLUDE main_ext.mod coef_ext MCA 
+*------------------------------------------------------------------------------
+* Clear deterministic parameter if to be set from uncertain
+$IF %CLI%==YES OPTION CLEAR=CM_MAXC;
+$IF DEFINED RTP_FFCS OPTION CLEAR=RTP_FFCS;
+* Cumulative variable bounds
+ VAR_CUMFLO.LO(R,P,C,ALLYEAR,LL) = 0;
+ VAR_CUMFLO.UP(R,P,C,ALLYEAR,LL) = INF;
+ VAR_CUMCOM.LO(R,C,COM_VAR,ALLYEAR,LL) = 0;
+ VAR_CUMCOM.UP(R,C,COM_VAR,ALLYEAR,LL) = INF;
+*------------------------------------------------------------------------------
+  LOOP(SOW,
+$   BATINCLUDE bnd_ucw.mod '' I
+$   BATINCLUDE bnd_set.mod %VAR%_CAP 'R,T,P' CAP_BND RTP(RT_PP(R,T),P) '' I
+* Cumulative variable bounds
+    VAR_CUMFLO.LO(R,P,C,YEAR,LL)$S_FLO_CUM(R,P,C,YEAR,LL,'LO','1',SOW) = S_FLO_CUM(R,P,C,YEAR,LL,'LO','1',SOW)*(1/%CUFSCAL%)*(FLO_CUM(R,P,C,YEAR,LL,'N')+1);
+    VAR_CUMFLO.UP(R,P,C,YEAR,LL)$S_FLO_CUM(R,P,C,YEAR,LL,'UP','1',SOW) = S_FLO_CUM(R,P,C,YEAR,LL,'UP','1',SOW)*(1/%CUFSCAL%)*(FLO_CUM(R,P,C,YEAR,LL,'N')+1);
+    S_COM_CUM(RC_CUMCOM(R,COM_VAR,YEAR,LL,C),L('LO'),'1',SOW)$(NOT S_COM_CUM(RC_CUMCOM,L,'1',SOW)) = -INF$SUM((RTC(R,T,C),ANNUAL(S)),MIN(0,COM_BNDPRD(RTC,S,L)$DIAG(COM_VAR,'PRD')+COM_BNDNET(RTC,S,L)$DIAG(COM_VAR,'NET')+1-1));
+    VAR_CUMCOM.LO(R,C,COM_VAR,YEAR,LL)$S_COM_CUM(R,COM_VAR,YEAR,LL,C,'LO','1',SOW) = S_COM_CUM(R,COM_VAR,YEAR,LL,C,'LO','1',SOW)*(1/%CUCSCAL%)*(COM_CUM(R,COM_VAR,YEAR,LL,C,'N')+1);
+    VAR_CUMCOM.UP(R,C,COM_VAR,YEAR,LL)$S_COM_CUM(R,COM_VAR,YEAR,LL,C,'UP','1',SOW) = S_COM_CUM(R,COM_VAR,YEAR,LL,C,'UP','1',SOW)*(1/%CUCSCAL%)*(COM_CUM(R,COM_VAR,YEAR,LL,C,'N')+1);
+
+$IF DEFINED RTP_FFCS RTP_FFCS(R,T,P,CG,COM_GRP)$RP_FFSGG(R,P,CG,COM_GRP) =
+$IF DEFINED RTP_FFCS   SUM((RP_FFSGGM(R,P,CG,COM_GRP,CG1,CG2),SW_TSW(SOW,T,W)),PROD(SW_MAP(T,W,J,WW)$S_FLO_FUNC(R,T,P,CG1,CG2,J,WW),S_FLO_FUNC(R,T,P,CG1,CG2,J,WW))-1);
+$IF %CLI%==YES CM_MAXC(ALLYEAR,ITEM) $= S_CM_MAXC(ALLYEAR,ITEM,'1',SOW);
+  );
+*------------------------------------------------------------------------------
+ IF(SW_PHASE=2,SPAR_UCSL(SOW,UC_N,U2,U3,U4)=0);
+ IF(CARD(REG_FIXT)=0,EQ_OBJ.M$(%MODEL_NAME%.SOLVEOPT<>1)=0; OPTION SOLVEOPT=REPLACE);
+$ BATINCLUDE clearsol.stp $EQ_OBJ.M
