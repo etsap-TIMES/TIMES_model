@@ -1,0 +1,2217 @@
+*** For older log entries, see Version-Old.rar ***
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.0
+-----------------------------------------------------------------------------------------
+Date: 25-Mar-2010 [AL]:
+ Bug fix: fixed reporting bug when both SENSIS and RPT_FLOTS were used
+ New Features:
+ - cumulative process flow bound equations
+ - cumulative activity, flow and commodity variables can be referred to in TID UCs
+ New input attributes:
+  ACT_CUM(r,p,y1,y2,bd)  -  Bound on cumulative process activity
+  FLO_CUM(r,p,c,y1,y2,bd)  -  Bound on cumulative process flow
+  UC_CUMACT(uc_n,r,p,y1,y2)  -  Coefficient for cumulative process activity
+  UC_CUMFLO(uc_n,r,p,c,y1,y2)  -  Coefficient for cumulative process flow
+  UC_CUMCOM(uc_n,r,com_var,c,y1,y2) - Coefficient for cumulative commodity PRD/NET
+  S_FLO_CUM(r,p,c,y1,y2,bd,stage,sow) - Bound on cumulative process flow/activity
+
+Modified files:
+INITSYS.mod   : Increased version number to 3.0.0
+initmty.mod   : Added declarations for new attributes
+ppmain.mod    : Moved definition of MIYR_L from coef_obj.mod
+                Added pre-processing of cumulative parameters with BOH/EOH support
+                Allow STGTSS conversion storage; can be enabled using a multicom-PG
+coef_obj.mod  : Moved definition of MIYR_L to ppmain.mod (cosmetic move)
+mod_vars.mod  : Added new variables for cumulative flows and commodity NET/PRD
+eqdeclr.mod   : Added new EQ_CUMFLO equation & changed CUMNET/CUMPRD equations
+eqmain.mod    : Added new EQ_CUMFLO equation & changed CUMNET/CUMPRD equations; Changed EQUSERCO call parameters
+eqcumcom.mod  : Changed equation to be "slack"-variable based
+equserco.mod  : Changed handling of call parameters to facilitate cumulative variable terms
+uc_flo.mod    : Added term for VAR_CUMFLO cumulative flow variables
+uc_compd.mod  : Added term for VAR_CUMCOM cumulative commodity variables
+bnd_ucv.mod   : Added control to clearing of free lower bounds (GAMS tweak)
+mod_equa.mod  : Added new EQ_CUMFLO equation & changed CUMNET/CUMPRD equations
+rptmain.mod   : Changed directives to be case independent
+rptlite.rpt   : Added reporting of VAR_CUMFLO levels and marginals; fixed bug when SENSIS+RPT_FLOTS
+spoint.mod    : Added initialization of cumulative variables
+solve.stp     : Added/modified the hadling of cumulative equations
+initmty.stc   : Added declaration of new S_FLO_CUM attribute plus a new internal attribute
+prep_ext.stc  : Updated handling of S_COM_CUMxxx attributes with BOH/EOH support
+stages.stc    : Added processing of S_FLO_CUM attribute
+fillsow.stc   : Added clearing of leftover TS indicators
+sensis.stc    : Added update of bounds for cumulative variables
+rptmain.stc   : Added reporting of VAR_CUMFLO marginals
+solsetv.v3    : Added reporting of VAR_CUMFLO levels and marginals
+eqcaflac.vda  : Add TOP control to storage case to support conversion storage
+times2veda.vdd: Added reporting of VAR_CUMFLO levels and marginals
+times2veda_stc.vdd: Added reporting of VAR_CUMFLO marginals
+
+Added files:
+eqcumflo.mod  : New equation for cumulative process flows
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.1
+-----------------------------------------------------------------------------------------
+Date: 9-May-2010 [AL]:
+1) New versions of reporting routines for ANSWER
+2) Added new parameter G_OFFTHD(ALLYEAR) for defining threshold for OFF ranges
+3) Better handling of cumulative constraints in stepped mode or shorter horizons
+4) Added support for reporting EQ_IRE marginals
+5) Added support for IE options 4/5 and constant labels in filparam
+6) Cosmetic improvements
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.0.1
+initmty.mod   : (2),(3)
+ppmain.mod    : (2)
+pp_off.mod    : (2)
+filparam.gms  : (5)
+mod_equa.mod  : (6)
+rptmain.mod   : (1)
+rptlite.rpt   : (4)
+rptmain.stc   : (4)
+solve.stp     : (3)
+solputta.ans  : (1)
+solsubta.ans  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.2
+-----------------------------------------------------------------------------------------
+Date: 19-May-2010 [AL]:
+1) New feature: The N bound may be used for identifying a MULTI multiplier for horizon-dependent cumulative constraints
+2) New feature: The UC_TIME attribute may be used for defining horizon- and period-length-dependent RHS constants
+3) Fixed small bug related to cost reporting under the SOLVEDA 1 option
+4) Experimental support for using the LO reservoir for CH4 and N2O
+5) Other small improvements
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.0.2
+initmty.mod   : (2)
+ppmain.mod    : (1)
+preppm.mod    : (2)
+filparam.gms  : (5)
+coef_obj.mod  : (1)
+eqcumflo.mod  : (1)
+eqcumcom.mod  : (1)
+equserco.mod  : (2)
+rpt_obj.mod   : (3)
+initmty.cli   : (4)
+coef_ext.cli  : (4)
+equ_ext.cli   : (5)
+sensis.stc    : (1)
+solve.stp     : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.3
+-----------------------------------------------------------------------------------------
+Date: 24-May-2010 [AL]:
+1) Added new feature: Support for dynamic process-wise equations more directly
+2) Changed QA log to display labels in full by flexible fields
+3) Fixed MACRO support
+4) Added default COEF_OBJINV values for all PRC_CAP
+5) Performance improvements
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.0.3
+initmty.mod   : (2)
+ppmain.mod    : (5)
+eqflomrk.mod  : (5)
+eqmain.mod    : (3)
+bndmain.mod   : (3)
+initmty.vda   : (1)
+init_ext.vda  : (1)
+prep_ext.vda  : (1)
+ppm_ext.vda   : (1)
+equ_ext.vda   : (1)
+mod_ext.vda   : (1)
+rptlite.rpt   : (1)
+rpt_objc.rpt  : (4)
+solve.stp     : (1)
+times2veda.vdd: (1)
+
+Added file:
+equcrtp.vda   : Implementation of new dynamic process-wise equations
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.4
+-----------------------------------------------------------------------------------------
+Date: 20-Jul-2010 [AL]:
+1) Added aggregated calculation of gross benefit/cost indicators (GGAP, GRATIO)
+2) Added support for one-sided storage flows in commodity-balance equations
+3) Added support for FLO_SHAR(r,y,p,c,'ACT',ts,bd) for timeslice storage
+   -- by using upper bound 1 you can limit the output flow to the maximum discharge
+4) Added support for including storage flows in peaking constraints (using PKNO+PKCNT)
+5) Added reporting of dynamic process bound and EQ_IRE marginals, and COM_AGG aggregated outputs
+6) Fixed use of FIXBOH with SENSIS/STAGES
+7) Miscellaneous small fixes and improvements
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.0.4 (e)
+ppmain.mod    : (2)
+pp_reduce.mod : (3)
+pp_lvlpk.mod  : (4)
+eqcombal.mod  : (2)
+eqpeak.mod    : (4)
+eqcumflo.mod  : (7)
+eqcapvac.mod  : (7)
+pp_clean.mod  : (1)
+rptlite.rpt   : (5)
+rpt_objc.rpt  : (1)
+rpt_dam.mod   : (7)
+prep_ext.stc  : (7)
+bnd_ucw.stc   : (7)
+rptmain.stc   : (5)
+solve.stp     : (6)
+ppm_ext.vda   : (7)
+eqashar.vda   : (3)
+times2veda.vdd: (5)
+
+Added files:
+cal_stgn.mod  : (2), new version or cal_stg.mod
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.5
+-----------------------------------------------------------------------------------------
+Date: 24-Aug-2010 [AL]:
+ 1) New reporting attribute Cap_New: lumpsum investments and commissioned capacity
+ 2) Improved handling of fractional and negative ILED
+ 3) Added support for referencing capacity commissioned in period in UC_CAP
+ 4) Minor improvements related to cost indicators and performance
+
+Modified files:
+INITSYS.mod   : Increased version number to 3.0.5
+ppmain.mod    : (2)
+preppm.mod    : (4)
+coef_obj.mod  : (4)
+eqobjinv.mod  : (2),(4)
+eqobjfix.mod  : (4)
+eqobsalv.mod  : (4)
+eqobjvar.mod  : (4)
+uc_ncap.mod   : (3)
+rptlite.rpt   : (1)
+rptmain.stc   : (1)
+rpt_obj.rpt   : (4)
+rpt_objc.rpt  : (4)
+cost_ann.rpt  : (1)
+solputta.ans  : (1)
+solsetv.v3    : (1)
+times2veda.vdd: (1)
+
+Removed files:
+solputv.v3    : Obsolete, not supported
+solcostv.v3   : Obsolete, not supported
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.6
+-----------------------------------------------------------------------------------------
+Date: 30-Aug-2010 [AL]:
+ 1) Added New UC_ATTR modifier NEWFLO for referring to the flows of newly installed capacity only (vintaged)
+ 2) Changed FLO_EMIS to be more general, supporting flow relationships between any flows
+ 3) Added a currency conversion utility based on user-defined conversion tables G_CUREX and R_CUREX
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.0.6
+initsys.mod   : (1)
+initmty.mod   : (3)
+ppmain.mod    : (3)
+preppm.mod    : (3)
+eqptrans.mod  : (2)
+uc_act.mod    : (1)
+uc_flo.mod    : (1)
+uc_ire.mod    : (1)
+pp_qack.mod   : (2)
+pp_prelv.vda  : (2)
+ppm_ext.vda   : (2)
+
+Added file:
+curex.gms     : Implementation of Currency conversions
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.0.7
+-----------------------------------------------------------------------------------------
+Date: 4-Oct-2010 [AL]:
+ 1) Changed declarations of Damage parameters to circumvent bug in GAMS 23.0 < 23.x < 23.5
+ 2) Fixed small buglet in fixed costs for Case 2b, and in alternative ALT and LIN formulations
+ 3) Amended the calculation of IDC in Case 2b (improved accuracy under changing discount rates)
+ 4) Fixed reporting of User_Maxbet in UC_R_EACH case, with reference to the regional Max
+ 5) Cosmetic improvement
+
+Modified files:
+INITSYS.mod   : Increased version number to 3.0.7
+ppmain.mod    : (2)
+coef_cpt.mod  : (5)
+eqobjinv.mod  : (3)
+eqobjfix.mod  : (2)
+eqdamage.mod  : (1)
+rptlite.rpt   : (4)
+prep_ext.stc  : (1)
+rptmain.stc   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.1.0 (e)
+-----------------------------------------------------------------------------------------
+Date: 8-Dec-2010 [AL]:
+ 1) Added support for Oblong Objective Accounting, which improves STD/MOD formulations
+    - Set to YES by default when MOD activated; disable by expicit NO setting
+    - Can also be recommended for users of STD/AUTO
+ 2) Full review of all objective formulations with small additional improvemenents
+ 3) Added support for LO bound availablility factors
+ 4) Added FLO_EFF as an alias for FLO_EMIS (supports now any commodities)
+ 5) Added support for using PRC_PKNO/NCAP_PKCNT for import flows
+ 6) Some cleanup of obsolete stuff / cosmetic tweak
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.1.0
+initmty.mod   : (1),(2),(6)
+ppmain.mod    : (1),(2),(3),(6)
+preppm.mod    : (6)
+coef_cpt.mod  : (1),(2),(3)
+coef_obj.mod  : (6)
+eqdeclr.mod   : (3)
+eqmain.mod    : (3)
+eqcapact.mod  : (3)
+eqpeak.mod    : (5)
+eqobj.mod     : (1),(2)
+eqobjinv.mod  : (1),(2)
+eqobjfix.mod  : (1),(2)
+eqobsalv.mod  : (1),(2)
+eqobjfix.rpt  : (1),(2)
+eqobsalv.rpt  : (1),(2)
+mod_equa.mod  : (3)
+rptlite.rpt   : (6)
+rpt_obj.rpt   : (1),(2)
+rpt_objc.rpt  : (1),(2)
+cost_ann.rpt  : (1),(2)
+coef_alt.lin  : (1),(2)
+coef_vc.lin   : (1),(2)
+solve.stp     : (1),(2)
+rptmain.stc   : (6)
+initmty.vda   : (4)
+init_ext.vda  : (4)
+pp_prelv.vda  : (6)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.1.1
+-----------------------------------------------------------------------------------------
+Date: 5-Jan-2011 [AL]:
+ 1) Fixed small bug related to reporting of IRE_FLOSUM flows under stochastic mode
+ 2) Changed to provide support for using explicit zero discount factor
+ 3) Small performance improvements
+ 4) Fixed small discrepancy between code and documentation
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.1.1
+initmty.mod   : (3)
+timslice.mod  : (3)
+preshape.gms  : (4)
+ppmain.mod    : (3)
+pp_lvlff.mod  : (3)
+pp_lvlfs.mod  : (3)
+coef_obj.mod  : (2)
+pp_qack.mod   : (3)
+init_ext.vda  : (3)
+ppm_ext.vda   : (3)
+coef_ext.vda  : (2)
+pp_actef.vda  : (3)
+rptmain.stc   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.1.2
+-----------------------------------------------------------------------------------------
+Date: 14-Mar-2011 [AL]: Various small improvements
+ 1) Small improvements to peak constraints generation; now possible at any TSLVL with UD-CG
+ 2) Removed superfluous RS_TREE entries for zero YRFR timeslices
+ 3) Added support for re-generation of reports from previous solution as well as entirely fixed horizon
+ 4) Added support for using NCAP_BND(N) for (re-)defining PRC_NOFF ranges
+ 5) Added new reporting parameter Reg_ACost (regional total annualized costs)
+ 6) Fixed small bug when using EXT_EOH together with interpolation options for CM_MAXC
+ 7) Fixed problem with using zero probablilities for some branches under stochastic mode
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.1.2
+initmty.mod   : (4)
+maindrv.mod   : (3)
+ppmain.mod    : (1)
+timslice.mod  : (2)
+eqdeclr.mod   : (3)
+eqpeak.mod    : (1)
+mod_equa.mod  : (3)
+spoint.mod    : (3)
+solve.stp     : (3)
+rptlite.rpt   : (5)
+cost_ann.rpt  : (5)
+solsetv.v3    : (5)
+initmty.vda   : (5)
+init_ext.vda  : (4)
+rpt_ext.cli   : (7)
+coef_ext.cli  : (6),(7)
+rptmain.stc   : (7)
+times2veda.vdd: (5)
+times2veda_stc.vdd: (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.1.5
+-----------------------------------------------------------------------------------------
+Date: 19-May-2011 [AL]: Various small improvements
+ 1) Fixed support for using NRG as the PG for TSS/IPS storage
+ 2) Added support for uncertain inv. costs and process transformation
+ 3) Cosmetic cleanup of obsolete stuff
+ 4) Storage improvements: different input/output supported for both IPS/TSS, flaw in TSS activity costs fixed
+ 5) Constant objective term related to RESID processes now consistent under OBLONG/ALT/LIN
+ 6) Fixed TIMES-MACRO compliance broken due to RVPT introduced in v3.0.5
+ 7) Fixed NCAP_AFC support for single-commodity storage (broken in v3.0.4)
+
+Modified files: (reason)
+INITSYS.mod   : Increased version number to 3.1.5
+initmty.mod   : (3)
+maindrv.mod   : (2),(3)
+ppmain.mod    : (1),(4)
+preppm.mod    : (3)
+timslice.mod  : (4)
+coef_obj.mod  : (2)
+eqmain.mod    : (2),(6)
+eqobjinv.mod  : (2),(5)
+eqobjfix.mod  : (2),(5)
+eqobsalv.mod  : (2)
+eqobjvar.mod  : (3),(4)
+eqobjinv.rpt  : (2),(6)
+eqobsalv.rpt  : (2)
+eqptrans.mod  : (2)
+eqflomrk.mod  : (3)
+eqstgtss.mod  : (4)
+eqstgips.mod  : (4)
+eqstgips.lin  : (4)
+cal_fflo.mod  : (2)
+cal_nored.red : (2)
+cal_red.red   : (2)
+equserco.mod  : (2)
+uc_flo.mod    : (2)
+uc_compd.mod  : (2)
+eqbndcst.mod  : (2)
+sol_flo.red   : (2)
+rpt_obj.rpt   : (2)
+rpt_objc.rpt  : (2)
+cost_ann.rpt  : (2)
+init_ext.vda  : (2)
+pp_prelv.vda  : (3)
+ppm_ext.vda   : (2),(7)
+pp_actef.vda  : (2)
+coef_ext.vda  : (2)
+ucbet.vda     : (2)
+coef_alt.lin  : (2),(5)
+initmty.stc   : (2)
+prep_ext.stc  : (2)
+stages.stc    : (2)
+sensis.stc    : (2)
+
+Added file:
+setglobs.gms  : Safe-setting of some global controls
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.2.0
+-----------------------------------------------------------------------------------------
+Date: 7-Jul-2011 [AL]: Introducing early and lumpy retirements; small other improvements
+ 1) Implementation of early retirements
+ 2) Implementation of lumpy retirements
+ 3) Added support for using FLO_FUNCX with ACT_FLO parameters (VDA_FLOP/PRC_ACTFLO)
+ 4) Fixed salvage reporting when both RPOINT and FIXBOH
+ 5) Added optional reporting of value flows for processes
+ 6) Added support for using group commodities as the derived commodity in FLO_EFF
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.2.0
+initmty.mod   : (1),(2)
+maindrv.mod   : (2)
+setglobs.gms  : (1)
+preppm.mod    : (1)
+ppmain.mod    : (1)
+eqobj.mod     : (1)
+eqobjfix.mod  : (1)
+eqobsalv.mod  : (1)
+eqcpt.mod     : (1)
+eqcapact.mod  : (1)
+eqpeak.mod    : (1)
+cal_cap.mod   : (1)
+cal_caps.mod  : (1)
+mod_equa.mod  : (1)
+mod_vars.mod  : (1)
+spoint.mod    : (4)
+solve.mod     : (2)
+rptlite.rpt   : (1)
+cost_ann.rpt  : (1)
+rptmain.stc   : (1)
+prep_ext.vda  : (1)
+ppm_ext.vda   : (3)
+pp_prelv.vda  : (6)
+eqcaflac.vda  : (1)
+coef_ext.vda  : (1)
+solve.stp     : (1)
+mod_vars.dsc  : (2)
+equ_ext.dsc   : (2)
+prepret.dsc   : (1),(2)
+solputta.ans  : (1)
+solsetv.v3    : (5)
+times2veda.vdd: (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.0
+-----------------------------------------------------------------------------------------
+Date: 22-Sep-2011 [AL]: Introducing new features for stochastic mode
+ 1) Added a new SPINES variant for modeling recurring stochastics
+ 2) Added new uncertain parameter S_COM_FR
+ 3) Added new uncertain parameter S_NCAP_AFS
+ 4) Generalized FLO_FR to support flow fractions of total under parent
+ 5) Added a few QA_CHECKs for execution errors
+ 6) Added option for using NCAP_BND('N') for defining exact process start year
+ 7) Small improvements to early retirements
+ 8) Rearranging and cleanup of some code
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.0
+initmty.mod   : (1),(2),(3)
+maindrv.mod   : (1)
+setglobs.gms  : (1)
+ppmain.mod    : (1),(6)
+preppm.mod    : (6)
+eqdeclr.mod   : (1),(8)
+eqmain.mod    : (1),(3)
+eqobj.mod     : (1),(8)
+eqobjvar.mod  : (1)
+eqcapact.mod  : (3)
+eqcombal.mod  : (2)
+eqpeak.mod    : (1)
+eqflofr.mod   : (4)
+eqcumcom.mod  : (8)
+eqcumflo.mod  : (1),(8)
+eqstgips.mod  : (1)
+eqbndcst.mod  : (8)
+eqdamage.mod  : (8)
+equserco.mod  : (1)
+mod_equa.mod  : (1)
+mod_vars.mod  : (1)
+pp_qack.mod   : (5)
+spoint.mod    : (8)
+bndmain.mod   : (8)
+bnd_elas.mod  : (2)
+rptmain.mod   : (1)
+rptlite.rpt   : (8)
+initmty.stc   : (2),(3)
+prep_ext.stc  : (2),(3)
+stages.stc    : (1),(2),(3)
+sensis.stc    : (8)
+solve.stc     : (1)
+rptmain.stc   : (1)
+init_ext.vda  : (6)
+prep_ext.vda  : (6)
+coef_ext.vda  : (6)
+equcrtp.vda   : (8)
+eqashar.vda   : (8)
+eqcaflac.vda  : (3)
+equ_ext.vda   : (1)
+solve.stp     : (1)
+equ_ext.dsc   : (1)
+prepret.dsc   : (7)
+solputta.ans  : (7)
+times2veda.vdd: (8)
+
+Added files:
+rptmisc.rpt   : (8)
+clearsol.stc  : (1),(8)
+pextlevs.stc  : (1)
+bnd_cum.mod   : (8)
+bnd_ire.vda   : (8)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.1
+-----------------------------------------------------------------------------------------
+Date: 24-Oct-2011 [AL]: Maintenance update: small fixes
+1) Fixed assignment of balance type for 'N' type commodities
+2) Generalize S_FLO_FUNC to apply to IRE_FLOSUM as well
+3) Fixed levelising of IRE_FLOSUM/FLO_EMIS specified on 'ACT' of trade process
+4) Updated SOLPUTTA.ANS
+5) Fixed obsolete clear in eqobsalv.rpt
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.1
+ppmain.mod    : (1),(2),(3)
+eqobjvar.mod  : (2)
+cal_ire.mod   : (2)
+rpt_obj.rpt   : (2)
+cost_ann.rpt  : (2)
+eqobsalv.rtp  : (5)
+rptmisc.rpt   : (2)
+pp_prelv.vda  : (2)
+solputta.ans  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.2
+-----------------------------------------------------------------------------------------
+Date: 10-Jan-2012 [AL]: Improvements into the TIMES-MACRO code plus MERGE link
+1) Added support for linking the MERGE code
+2) Improvements into MACRO code performance
+3) Cleanup and updating of MACRO routine interface up-to-date
+4) Imporved MACRO calibration behavior with zero Base Year marginals
+5) Fixed bug in MACRO calibration routine
+6) Added optional reporting of topology indicators
+7) Added auto-activation switch for DSC
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.2
+initmty.mod   : (7)
+maindrv.mod   : (1)
+coef_obj.mod  : (3)
+rptlite.rpt   : (6)
+initmty.tm    : (1)
+eqobj.tm      : (2),(3)
+eqobjinv.tm   : (2)
+eqobjfix.tm   : (2)
+eqobsalv.tm   : (3)
+eqobjvar.tm   : (2)
+bnd_macro.tm  : (1)
+mod_vars.tm   : (3)
+mod_equa.tm   : (3)
+eqmacro.tm    : (2),(4)
+rptmain.tm    : (3)
+ddfnew.gms    : (4),(5)
+ddfnew0.gms   : (4),(5)
+initmty.dsc   : (7)
+prep_ext.dsc  : (7)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.3
+-----------------------------------------------------------------------------------------
+Date: 13-Mar-2012 [AL]: Improvements into storage variable cost accounting + small fixes
+1) Fixed activity cost and losses accounting for DAYNITE storage
+2) Added support for using FLO_COST and FLO_DELIV for storage flows (Cost for Charge, Deliv for Discharge)
+3) Fixed problem in ANSWER reporting under stochastic mode
+4) Improved small aspects in Merge linking
+5) Fixed small problems in TIMES-MACRO cost accounting and DDF calibration
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.3
+timslice.mod  : (1)
+eqobjvar.mod  : (2)
+spoint.mod    : (4)
+eqstgtss.mod  : (1)
+rptmain.mod   : (4)
+cost_ann.rpt  : (1),(2)
+eqobjinv.tm   : (5)
+eqobjfix.tm   : (5)
+rptmain.tm    : (5)
+ddfnew.gms    : (5)
+solputta.ans  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.4
+-----------------------------------------------------------------------------------------
+Date: 24-Apr-2012 [AL]: Improvements into storage modeling; fix into FIXBOH
+1) Added support for generalized storage processes
+2) Fixed capact equations for storage at non-PRC_TS timeslices
+3) Added support for input-based NCAP_AFC for storage
+4) Added parameter for the number of WEEKLY storage cycles
+5) Fixed small solution leak when using FIXBOH
+6) Fixed SENSIS mode that was broken since v3.3.2
+7) Cosmetic cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.4
+initmty.mod   : (7)
+globals.def   : (4)
+ppmain.mod    : (1),(7)
+timslice.mod  : (1),(4)
+pp_lvlfs.mod  : (7)
+eqdeclr.mod   : (1)
+eqcapact.mod  : (1),(2)
+eqcaflac.vda  : (1),(3)
+eqstgtss.mod  : (1)
+eqstgaux.mod  : (1)
+eqstgin.mod   : (1)
+bnd_stg.mod   : (1)
+mod_equa.mod  : (1)
+init_ext.vda  : (7)
+ppm_ext.vda   : (3)
+rptlite.rpt   : (6)
+rptmisc.rpt   : (5)
+solve.stp     : (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.5
+-----------------------------------------------------------------------------------------
+Date: 12-Jun-2012 [AL]: Small improvements into time-stepped TIMES & DSC
+1) Added support for combining flexible fixing of first periods with TIMESTEP
+2) Added support for semi-continuous VAR_NCAP (new investments)
+3) Cosmetic cleanup/improvement
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.5
+initmty.mod   : (1)
+maindrv.mod   : (1)
+eqactbnd.mod  : (1)
+eqblnd.mod    : (1)
+eqbndcom.mod  : (1)
+eqcombal.mod  : (1)
+eqdamage.mod  : (1)
+eqflobnd.mod  : (1)
+eqflofr.mod   : (1)
+eqflomrk.mod  : (1)
+eqpeak.mod    : (1)
+eqstgin.mod   : (1)
+eqstgout.mod  : (1)
+equcrtp.vda   : (1)
+equ_ext.dsc   : (1)
+equ_ext.etl   : (1)
+rptmain.rpt   : (3)
+sol_flo.red   : (3)
+solve.stp     : (1)
+*.dsc         : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.6
+-----------------------------------------------------------------------------------------
+Date: 1-Jul-2012 [AL]: Support for power flow equations added (still experimental)
+1) Added support for powerflow equations
+2) Other minor improvement / cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.6
+cal_ire.mod   : (2)
+eqcombal.mod  : (2)
+eqpeak.mod    : (2)
+initmty.vda   : (1)
+init_ext.vda  : (1)
+prep_ext.vda  : (1),(2)
+ppm_ext.vda   : (1),(2)
+pp_prelv.vda  : (1)
+equ_ext.vda   : (1)
+eqcaflac.vda  : (1),(2)
+mod_ext.vda   : (1)
+eqobj.tm      : (2)
+
+Added files:
+powerflo.vda  : Implementation of powerflo equations
+
+Deleted files:
+timesmacro2veda.vdd : No longer needed - the standard vdd will work
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.7
+-----------------------------------------------------------------------------------------
+Date: 13-Jul-2012 [AL]: Small improvements
+1) Integration of SHAPE/MULTI processing for NCAP_AF/AFS
+2) Added support for currency-dependent discount rates for Damage costs
+3) Other minor improvement / cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.7
+initmty.mod   : (1),(3)
+ppmain.mod    : (1),(3)
+pp_reduce     : (3)
+preppm.mod    : (1)
+preshape.gms  : (1)
+fillvint.gms  : (3)
+coef_cpt.mod  : (1)
+coef_ptr.mod  : (3)
+pp_shapr.mod  : (1)
+eqdamage.mod  : (2)
+pp_qack.mod   : (3)
+rpt_dam.mod   : (2)
+rptlite.rpt   : (2)
+initmty.vda   : (3)
+init_ext.vda  : (3)
+prep_ext.vda  : (1)
+
+Deleted files:
+pp_multi.mod: No longer needed
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.3.8
+-----------------------------------------------------------------------------------------
+Date: 18-Aug-2012 [AL]: Small reporting improvements
+1) Added reporting of forcing by main GHG emission type
+2) Added reporting of retirements under VEDA
+3) Improved optional reporting of topology indicators
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.3.8
+rptlite.rpt   : (2),(3)
+rptmisc.rpt   : (2)
+solsetv.v3    : (3)
+initmty.cli   : (1)
+rpt_par.cli   : (1)
+solputta.ans  : (2)
+*.vdd         : (3)
+
+Deleted files:
+*.zzz: Obsolete
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.0
+-----------------------------------------------------------------------------------------
+Date: 30-Nov-2012 [AL]: TIMES-MACRO and Grid modeling enhancements
+1) Implementation of MACRO Decomposition Algorithm with soft-linked MSA
+2) Improvements into original TIMES-MACRO + linkages to soft-linked MSA
+3) Further improvements into power flow modeling
+4) Added regional annual damage cost reporting
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.0
+initmty.mod   : (1),(2)
+ppmain.mod    : (2)
+maindrv.mod   : (1)
+coef_obj.mod  : (2)
+eqobj.mod     : (1)
+eqobjinv.mod  : (2)
+eqobjfix.mod  : (2)
+cal_ire.mod   : (3)
+eqpeak.mod    : (3)
+mod_vars.mod  : (3)
+mod_equa.mod  : (1)
+rptmain.mod   : (1)
+solsetv.v3    : (1),(2)
+initmty.tm    : (2)
+prep_ext.tm   : (2)
+ppmain.tm     : (2)
+mod_vars.tm   : (2)
+eqdeclr.tm    : (2)
+eqmacro.tm    : (2)
+eqobj.tm      : (2)
+eqobjfix.tm   : (2)
+eqobjinv.tm   : (2)
+eqobjvar.tm   : (2)
+mod_equa.tm   : (2)
+bnd_macro.tm  : (2)
+rptmain.tm    : (2)
+initmty.vda   : (3)
+prep_ext.vda  : (3)
+pp_prelv.vda  : (3)
+coef_ext.vda  : (3)
+mod_ext.vda   : (3)
+powerflo.vda  : (3)
+rpt_dam.cli   : (4)
+times2veda.vdd: (1),(2)
+solputta.ans  : (1),(2)
+
+Added files   : (reason)
+eqobjann.tm   : (1),(2)
+initmty.msa   : (1)
+mod_vars.msa  : (1)
+equ_ext.msa   : (1)
+rpt_ext.msa   : (1)
+solprep.msa   : (1)
+solvcoef.msa  : (1)
+solve.msa     : (1)
+ddfupd.msa    : (1)
+writeddf.msa  : (1)
+
+Deleted files:
+eqobsalv.tm   : Obsolete
+ddfnew.gms    : Obsolete
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.1
+-----------------------------------------------------------------------------------------
+Date: 31-Dec-2012 [AL]: Small improvements
+1) runtime licence support
+2) climate module improvements
+3) PRC_CG QA check refined under RELAX_PRC_CG
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.1
+spoint.mod    : (1)
+eqmain.mod    : (1)
+mod_equa.mod  : (1)
+pp_qack.mod   : (3)
+mod_ext.vda   : (1)
+initmty.cli   : (2)
+coef_ext.cli  : (2)
+equ_ext.cli   : (2)
+mod_vars.cli  : (2)
+rpt_par.cli   : (2)
+
+Deleted files :
+putdset.v3    : obsolete
+solsubv.v3    : obsolete
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.2
+-----------------------------------------------------------------------------------------
+Date: 24-Feb-2013 [AL]: Small improvements mainly to reporting routines
+1) Small improvements and fixes to reporting issues for MSA/TM
+2) Changed VEDA-BE reporting of Reg_Wobj, introduced system label prefix
+3) Optional reporting of levelized costs and electricity supply by energy source
+4) Cosmetic improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.2
+initmty.mod   : (2),(4)
+ppmain.mod    : (4)
+pp_lvlpk.mod  : (4)
+coef_obj.mod  : (4)
+eqcombal.mod  : (4)
+eqpeak.mod    : (4)
+eqobjels.mod  : (4)
+eqdeclr.mod   : (4)
+rptmain.mod   : (4)
+rptlite.rpt   : (2),(3)
+rptmain.rpt   : (2),(4)
+rpt_obj.rpt   : (2)
+rpt_objc.rpt  : (2),(3)
+cost_ann.rpt  : (4)
+rptmisc.rpt   : (3),(4)
+eqobjels.rpt  : (4)
+eqobsalv.rpt  : (4)
+eqdamage.mod  : (4)
+rpt_dam.mod   : (4)
+rpt_ext.cli   : (4)
+rptmain.stc   : (3),(4)
+initmty.msa   : (1)
+mod_vars.msa  : (1)
+equ_ext.msa   : (1)
+rpt_ext.msa   : (1)
+solprep.msa   : (1)
+solvcoef.msa  : (1)
+solve.msa     : (1)
+writeddf.msa  : (1)
+initmty.tm    : (1)
+ppmain.tm     : (1)
+eqmacro.tm    : (1)
+eqobj.tm      : (1)
+eqobjann.tm   : (4)
+rptmain.tm    : (1),(4)
+solsetv.v3    : (2),(3)
+solputta.ans  : (1),(3),(4)
+*.vdd         : (2),(3)
+
+Added files:
+sol_ire.rpt   : IRE flow solution parameters
+par_uc.rpt    : UC dual solution parameters
+solsysd.v3    : define system labels
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.3
+-----------------------------------------------------------------------------------------
+Date: 23-Apr-2013 [AL]: Maintenance release
+1) Improved handling of PASTI installed within horizon
+2) Fixed small defect in RTCS_FR definition
+3) Fixed small defect in flow reductions
+4) Cosmetic improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.3
+initmty.mod   : (4)
+ppmain.mod    : (1),(2),(4)
+pp_qafs.mod   : (4)
+pp_qack.mod   : (4)
+coef_cpt.mod  : (1)
+coef_obj.mod  : (1),(4)
+err_stat.mod  : (4)
+eqobj.*       : (4)
+eqobjinv.*    : (1),(4)
+bndmain.mod   : (4)
+wrtbprice.mod : (4)
+coef_alt.lin  : (1),(4)
+init_ext.vda  : (1),(4)
+prep_ext.vda  : (1),(4)
+ppm_ext.vda   : (1),(3),(4)
+coef_ext.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.4
+-----------------------------------------------------------------------------------------
+Date: 19-July-2013 [AL]: Small improvements
+1) Added support for defining PRC_PKNO & PRC_PKAF via NCAP_PKCNT I/E
+2) Added forcing function updating, removed taxes/subsidies, and fixed reporting problem in MSA
+3) Added removal of redundant FLO_MARK equations
+4) Added parameter for default IE-options: IE_DEFAULT
+5) Removed unused corridor process concept
+6) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.4
+initmty.mod   : (4),(6)
+ppmain.mod    : (5),(6)
+preppm.mod    : (4),(6)
+prepparm.gms  : (4)
+pp_reduce.red : (5)
+coef_nio.mod  : (6)
+coef_obj.mod  : (6)
+fillcost.gms  : (6)
+eqdeclr.mod   : (6)
+eqmain.mod    : (6)
+eqflobnd.mod  : (6)
+eqflomrk.mod  : (3)
+eqire.mod     : (5)
+equserco.mod  : (6)
+cal_ire.mod   : (5)
+sol_ire.rpt   : (5)
+cost_ann.rpt  : (5)
+rptmisc.rpt   : (6)
+rptmain.rpt   : (6)
+init_ext.vda  : (1)
+prep_ext.vda  : (6)
+pp_prelv.vda  : (6)
+ppm_ext.vda   : (6)
+pp_actef.vda  : (6)
+eqashar.vda   : (6)
+ucbet.vda     : (5)
+coef_ext.cli  : (2)
+solve.stp     : (5)
+initmty.msa   : (6)
+solprep.msa   : (2)
+solve.msa     : (2)
+rpt_ext.msa   : (2)
+ppmain.tm     : (6)
+rptmain.tm    : (6)
+eqobjann.tm   : (2)
+solputta.ans  : (6)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.5
+-----------------------------------------------------------------------------------------
+Date: 9-Sep-2013 [AL]: New alias/shortcut attributes
+1) Added shortcut NCAP_START(r,p)=y for PRC_NOFF(r,p,BOH,y-1)
+2) Added alias ACT_FLO for VDA_FLOP
+3) Added support for net import peak contribution when PKNO and by capacity when PKAF
+4) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.5
+initmty.mod   : (1),(4)
+ppmain.mod    : (1),(3)
+pp_lvlpk.mod  : (3)
+pp_reduce.red : (3)
+eqmain.mod    : (4)
+eqactbnd.mod  : (4)
+eqbndcom.mod  : (4)
+equserco.mod  : (4)
+cal_ire.mod   : (3)
+eqpeak.mod    : (3)
+pp_dumpd.mod  : (4)
+rptmisc.rpt   : (3)
+initmty.vda   : (2),(4)
+init_ext.vda  : (1),(2)
+prep_ext.vda  : (4)
+pp_prelv.vda  : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.4.9
+-----------------------------------------------------------------------------------------
+Date: 20-Dec-2013 [AL]: New OBJ reporting parameter + small fixes
+1) Added new reporting parameters Cost_NPV and Time_NPV for VEDA-BE
+2) Added split of inv. costs according to hurdle rate
+3) Fixed support of multiple currencies in TIMES-MACRO
+4) Fixed small reporting issues for damage costs
+5) Fixed small reporting issue for LUMPINV
+6) Added support for levelized annual cost reporting
+7) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.4.9
+initmty.mod   : (7)
+ppmain.mod    : (7)
+preppm.mod    : (7)
+eqobjfix.mod  : (7)
+mod_vars.mod  : (7)
+coef_obj.mod  : (6)
+coef_ext.vda  : (6)
+rptlite.rpt   : (1),(2),(6)
+rpt_obj.rpt   : (1),(2),(6)
+rpt_objc.rpt  : (1)
+cost_ann.rpt  : (1),(2),(5),(6)
+eqobjfix.rpt  : (7)
+eqobjvar.rpt  : (1),(7)
+eqdamage.mod  : (4)
+rpt_dam.mod   : (1),(4)
+eqobj.tm      : (3)
+eqobjann.tm   : (3)
+solsetv.v3    : (1)
+solputta.ans  : (2)
+times2veda.vdd: (1)
+times2veda_stc.vdd: (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.5.0
+-----------------------------------------------------------------------------------------
+Date: 4-Feb-2014 [AL]: Added new parameters and equations related to residual load curves
+1) Added residual load curve stuff
+2) Fixed small issues in CAPACT/CAFLAC equations
+3) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.5.0
+timslice.mod  : (2)
+coef_cpt.mod  : (2)
+mod_vars.mod  : (3)
+eqdeclr.mod   : (3)
+eqcapact.mod  : (2)
+eqobj.mod     : (3)
+mod_equa.mod  : (3)
+pp_qack.mod   : (1)
+prep_ext.vda  : (1)
+ppm_ext.vda   : (2)
+coef_ext.vda  : (1)
+equ_ext.vda   : (1),(2)
+eqcaflac.vda  : (2)
+mod_ext.vda   : (1)
+
+Added file:
+resloadc.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.5.1
+-----------------------------------------------------------------------------------------
+Date: 5-Mar-2014 [AL]: Maintenance release
+1) Fixed a rare special case in reduction
+2) Fixed small past investment cost issues
+3) Fixed zero demand issue in MSA
+4) Cosmetic maintenance changes
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.5.1
+coef_obj.mod  : (2)
+eqobjinv.mod  : (2)
+eqobjvar.mod  : (4)
+ppm_ext.vda   : (1)
+equ_ext.msa   : (3)
+solve.msa     : (3)
+eqobj.tm      : (4)
+eqobjann.tm   : (4)
+
+Added file:
+eqobjcst.tm   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.6.0
+-----------------------------------------------------------------------------------------
+Date: 1-Apr-2014 [AL]: Introduce TS-dynamic UC equations
+1) Added support for TS-dynamic UC equations
+2) Fixed reporting bug when SOLVEDA=1 and UC slacks not used
+3) Fixed bug in currency conversion
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.6.0
+initmty.mod   : (1)
+ppmain.mod    : (1)
+timslice.mod  : (1)
+curex.gms     : (3)
+eqdeclr.mod   : (1)
+equserco.mod  : (1)
+equcwrap.mod  : (1)
+uc_act.mod    : (1)
+uc_flo.mod    : (1)
+uc_ire.mod    : (1)
+uc_comnt.mod  : (1)
+uc_compd.mod  : (1)
+mod_vars.mod  : (1)
+mod_equa.mod  : (1)
+bnd_ucw.mod   : (1)
+spoint.mod    : (1)
+recurrin.stc  : (1)
+rptlite.rpt   : (2)
+par_uc.rpt    : (1),(2)
+initmty.vda   : (1)
+init_ext.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.6.1
+-----------------------------------------------------------------------------------------
+Date: 20-May-2014 [AL]: Fix for generalized STS storage
+1) Fixed TSLVL bug in STS storage
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.6.1
+eqstgtss.mod  : (1)
+eqstgin.mod   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.7.0
+-----------------------------------------------------------------------------------------
+Date: 1-Aug-2014 [AL]: Introduce dynamic ramping constraints
+1) Added dedicated ramping constraints
+2) Added flow-based max. availability factors
+3) Cosmetic improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.7.0
+initmty.mod   : (1)
+maindrv.mod   : (3)
+ppmain.mod    : (3)
+dumpsol.mod   : (3)
+dumpsol1.mod  : (3)
+bnd_act.mod   : (3)
+pp_reduce.red : (3)
+coef_cpt.mod  : (3)
+rptmisc.rpt   : (3)
+initmty.vda   : (1)
+init_ext.vda  : (1)
+prep_ext.vda  : (1)
+ppm_ext.vda   : (2)
+equ_ext.vda   : (1)
+eqcaflac.vda  : (2)
+mod_ext.vda   : (1)
+
+Added file:
+eqactups.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.7.1
+-----------------------------------------------------------------------------------------
+Date: 1-Oct-2014 [AL]: Maintenance release
+1) Fixed numerical problems in the MSA algorithm
+2) Fixed S_FLO_FUNC support under SPINES
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.7.1
+solvcoef.msa  : (1)
+equ_ext.msa   : (1)
+solve.msa     : (1)
+sol_flo.red   : (2)
+sol_ire.rpt   : (2)
+rptmain.stc   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.8.1
+-----------------------------------------------------------------------------------------
+Date: 6-Nov-2014 [AL]: Support for CBA analysis in MSA
+1) Added market & non-market damages for CBA analysis in MSA
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.8.1
+*.msa         : (1)
+*.cli         : (1)
+
+Added files:
+preppm.msa    : (1)
+forcupd.cli   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.8.2
+-----------------------------------------------------------------------------------------
+Date: 4-Dec-2014 [AL]: Maintenance release
+1) Fixed reporting of cum constraint marginals in time-stepped mode
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.8.2
+solve.stp     : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.8.3
+-----------------------------------------------------------------------------------------
+Date: 9-Jan-2015 [AL]: Small improvements
+1) Added support for timeslice-specific NCAP_AFC
+2) Added support for CHP modeling via CDME/BPME
+3) Added support for levelized FLO_FR bounds
+4) Cosmetic improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.8.3
+initmty.mod   : (1),(2),(4)
+maindrv.mod   : (4)
+ppmain.mod    : (2)
+preppm.mod    : (2)
+preponly.mod  : (1)
+pp_chp.mod    : (2)
+coef_cpt.mod  : (1)
+coef_csv.mod  : (4)
+pp_qack.mod   : (2)
+eqdeclr.mod   : (3)
+eqflofr.mod   : (3)
+eqcapact.mod  : (1)
+eqcapvac.mod  : (1)
+eqmain.mod    : (4)
+rptlite.rpt   : (4)
+cost_ann.rpt  : (4)
+initmty.vda   : (4)
+init_ext.vda  : (2)
+prep_ext.vda  : (2)
+pp_prelv.vda  : (2)
+ppm_ext.vda   : (1)
+coef_ext.vda  : (3)
+equ_ext.vda   : (4)
+eqcaflac.vda  : (1)
+eqactups.vda  : (1)
+eqashar.vda   : (4)
+resloadc.vda  : (1)
+ppmain.tm     : (4)
+equ_ext.etl   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.8.4
+-----------------------------------------------------------------------------------------
+Date: 10-Apr-2015 [AL]: Maintenance release
+1) Fixed problem with damage cost under MSA
+2) Reinstate support for TIMESTEP with SPINES
+3) Fixed handling of negative ILED with COEF_ICOM
+4) Fixed potential exec error under MSA+CLI
+5) Cosmetic improvement / cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.8.4
+ppmain.mod    : (3)
+coef_nio.mod  : (3)
+spoint.mod    : (5)
+eqobj.mod     : (5)
+eqobjinv.mod  : (5)
+eqobjfix.mod  : (5)
+eqobsalv.mod  : (5)
+eqbndcst.mod  : (5)
+rptmain.rpt   : (5)
+eqobjfix.rpt  : (5)
+initmty.stc   : (2)
+solve.stc     : (2)
+rptmain.stc   : (2)
+clearsol.stc  : (2)
+solve.stp     : (2)
+initmty.cli   : (5)
+forcupd.cli   : (4)
+pp_actef.vda  : (5)
+ppm_ext.vda   : (5)
+initmty.msa   : (5)
+preppm.msa    : (1)
+initmty.tm    : (5)
+eqobj.tm      : (5)
+initmty.ier   : (5)
+rpt_chp.ier   : (5)
+initmty.dsc   : (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.8.5
+-----------------------------------------------------------------------------------------
+Date: 10-May-2015 [AL]: Maintenance release
+1) Added reporting of VAR_CUMCST levels
+2) Added support for fixing initial periods with MSA
+3) Fixed div/0 error when zero NCAP_DRATE/ELIFE
+4) Cosmetic improvements / cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.8.5
+maindrv.mod   : (2)
+eqobj.mod     : (4)
+eqobjinv.mod  : (3)
+eqdamage.mod  : (2)
+coef_alt.lin  : (4)
+rptlite.rpt   : (1)
+rpt_obj.rpt   : (3)
+rptmisc.rpt   : (1)
+solsetv.v3    : (1)
+solve.stp     : (2)
+initmty.msa   : (2)
+preppm.msa    : (4)
+solvcoef.msa  : (2)
+solve.msa     : (2)
+writeddf.msa  : (2)
+times2veda.vdd: (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.8.6
+-----------------------------------------------------------------------------------------
+Date: 19-Jun-2015 [AL]: Maintenance release
+1) Fixed reporting bug that manifested only when using ACT_UPS(FX)
+2) Added support for referring to online capacity: UC_ATTR(CAP,ONLINE)
+   - modifier ignored for processes that have no ACT_UPS(FX) defined
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.8.6
+uc_cap.mod    : (2)
+sol_flo.red   : (1)
+coef_ext.vda  : (2)
+equ_ext.vda   : (2)
+eqcaflac.vda  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.0
+-----------------------------------------------------------------------------------------
+Date: 10-Oct-2015 [AL]: Major release with new equations/variables
+1) Added linear dispatch features (may be subject to changes)
+2) Fixed G_DYEAR to default to 1st Milestone
+3) Fixed small bugs in shaping of NCAP_AFS and residual load curves
+4) Added reporting of PRC_MARK marginals
+5) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.0
+globals.def   : (2)
+initmty.mod   : (1)
+maindrv.mod   : (5)
+ppmain.mod    : (5)
+timslice.mod  : (1)
+preppm.mod    : (1)
+pp_chp.mod    : (5)
+curex.gms     : (1)
+coef_cpt.mod  : (1),(3)
+coef_obj.mod  : (2)
+pp_qack.mod   : (1)
+spoint.mod    : (1)
+mod_vars.mod  : (1)
+eqobj.mod     : (5)
+eqobjinv.mod  : (1)
+eqobjfix.mod  : (5)
+eqobsalv.mod  : (5)
+eqobjvar.mod  : (1)
+uc_cap.mod    : (1)
+bndmain.mod   : (5)
+rptlite.rpt   : (1),(4)
+rpt_obj.rpt   : (5)
+cost_ann.rpt  : (1)
+eqobjvar.rpt  : (1)
+rptmisc.rpt   : (1),(4)
+initmty.vda   : (1)
+init_ext.vda  : (1)
+prep_ext.vda  : (1)
+ppm_ext.vda   : (1)
+pp_actef.vda  : (1)
+coef_ext.vda  : (1)
+equ_ext.vda   : (1)
+eqactups.vda  : (1)
+eqcaflac.vda  : (1)
+eqashar.vda   : (5)
+resloadc.vda  : (1),(3)
+mod_ext.vda   : (1)
+solve.stp     : (1)
+clearsol.stp  : (5)
+stages.stc    : (5)
+recurrin.stc  : (1)
+pextlevs.stc  : (1)
+clearsol.stc  : (1),(5)
+rptmain.stc   : (1)
+prepret.dsc   : (5)
+solputta.ans  : (1),(4)
+times2veda.vdd: (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.1
+-----------------------------------------------------------------------------------------
+Date: 29-Dec-2015 [AL]: Maintenance release
+1) Added QA checks for commodities/processes at invalid timeslice levels
+2) Added elimination of ANNUAL CAPACT(UP/LO) equations if AFA(FX) specified
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.1
+initmty.mod   : (3)
+ppmain.mod    : (1)
+coef_cpt.mod  : (2)
+init_ext.vda  : (3)
+pp_qack.mod   : (3)
+eqashar.vda   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.2
+-----------------------------------------------------------------------------------------
+Date: 18-Mar-2016 [AL]: Maintenance release
+1) Fixed bug related to NCAP_AFS(FX) being used for PRC_TS without NCAP_AF
+2) Auto-generation of missing members of PCG for storage
+3) Fixed bug related to using WAVER with early retirements
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.2
+initmty.mod   : (4)
+ppmain.mod    : (2),(4)
+coef_cpt.mod  : (1)
+uc_ire.mod    : (4)
+pp_qack.mod   : (4)
+prepret.dsc   : (3)
+initmty.vda   : (4)
+init_ext.vda  : (3)
+prep_ext.vda  : (3)
+coef_ext.vda  : (3)
+equ_ext.vda   : (4)
+eqcaflac.vda  : (4)
+eqashar.vda   : (4)
+solsetv.v3    : (4)
+initmty.etl   : (4)
+coef_ext.etl  : (4)
+equ_ext.etl   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.3
+-----------------------------------------------------------------------------------------
+Date: 1-May-2016 [AL]: Maintenance release
+1) Added support for IE option 5/15 for PRC_RESID
+2) Added support for CHP reduction operation
+3) Preparations for the UCO extension (forthcoming)
+4) Other cosmetic improvements for consistency with the updated documentation
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.3
+initmty.mod   : (3)
+maplists.def  : (4)
+pp_chp.mod    : (2)
+eqobjvar.mod  : (3)
+eqbndcst.mod  : (4)
+pp_qack.mod   : (4)
+solve.mod     : (3)
+initmty.vda   : (3)
+init_ext.vda  : (1),(3)
+prep_ext.vda  : (1),(3)
+initmty.cli   : (4)
+coef_ext.cli  : (4)
+equ_ext.cli   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.5
+-----------------------------------------------------------------------------------------
+Date: 7-Jun-2016 [AL]: Maintenance release
+1) Small improvements into the linear dispatching features
+2) Cosmetic changes for improved consistency with the documentation update
+3) Small improvement to EQ_CAPFLO for storage
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.5
+initmty.mod   : (2)
+ppmain.mod    : (2)
+timslice.mod  : (1)
+preppm.mod    : (1),(2)
+curex.gms     : (2)
+pp_shapr.mod  : (2)
+pp_reduce.red : (2)
+fillcost.gms  : (2)
+coefmain.mod  : (2)
+mod_vars.mod  : (1)
+eqobj.mod     : (2)
+eqcumflo.mod  : (2)
+eqcumcom.mod  : (2)
+eqdamage.mod  : (2)
+eqobjinv.mod  : (2)
+eqobjfix.mod  : (2)
+eqobjvar.mod  : (1)
+eqbndcst.mod  : (2)
+bndmain.mod   : (1)
+bnd_cum.mod   : (2)
+spoint.mod    : (1)
+eqobjinv.rpt  : (2)
+eqobjfix.rpt  : (2)
+eqobjvar.rpt  : (1)
+rpt_obj.rpt   : (2)
+rpt_objc.rpt  : (2)
+cost_ann.rpt  : (2)
+init_ext.vda  : (2)
+prep_ext.vda  : (1),(3)
+eqcaflac.vda  : (3)
+equ_ext.vda   : (1)
+eqactups.vda  : (1)
+mod_ext.vda   : (1)
+prepret.dsc   : (2)
+coef_ext.cli  : (2)
+equ_ext.cli   : (2)
+coef_alt.lin  : (2)
+recurrin.stc  : (1)
+clearsol.stc  : (1)
+rptmain.stc   : (1)
+pextlevs.stc  : (1),(2)
+solve.stp     : (2)
+eqobj.tm      : (2)
+eqobjann.tm   : (2)
+rpt_ext.msa   : (2)
+solputta.ans  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.7
+-----------------------------------------------------------------------------------------
+Date: 1-Jul-2016 [AL]: Pre-release for v4.0
+1) Enhanced unit cmmitment features, including MIP option (added ACT_CSTSD, ACT_CSTRMP, ACT_MAXNON, ACT_SDTIME, ACT_LOSSD)
+2) Added optional Functional Depreciation Rate for Salvage accounting (added NCAP_FDR)
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.7
+initmty.mod   : (1),(2)
+preppm.mod    : (1),(2)
+curex.gms     : (3)
+setglobs.gms  : (3)
+mod_vars.mod  : (1)
+coef_ptr.mod  : (3)
+cal_cap.mod   : (3)
+eqobjvar.mod  : (1)
+eqobsalv.mod  : (2)
+eqpeak.mod    : (3)
+eqcombal.mod  : (3)
+spoint.mod    : (1)
+bndmain.mod   : (1)
+eqobjvar.rpt  : (1)
+solve.stp     : (1)
+stages.stc    : (3)
+recurrin.stc  : (1)
+clearsol.stc  : (1)
+rptmain.stc   : (1)
+initmty.vda   : (1)
+prep_ext.vda  : (1)
+mod_ext.vda   : (1)
+equ_ext.vda   : (1)
+coef_ext.vda  : (1)
+eqactups.vda  : (1)
+eqlducs.vda   :+(1)
+initmty.dsc   : (1)
+init_ext.dsc  : (1)
+initmty.tm    : (3)
+eqmrkcom.ier  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 3.9.8
+-----------------------------------------------------------------------------------------
+Date: 2-Aug-2016 [AL]: Maintenance release (second pre-release for v4.0)
+1) Fixed flaw in special EQ(l)_ASHAR defined for CG=ACT
+2) Fixed bug in fixed cost accounting with standard objective (introduced in v3.9.5)
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 3.9.8
+initmty.mod   : (3)
+ppmain.mod    : (3)
+preppm.mod    : (3)
+curex.gms     : (3)
+pp_chp.mod    : (3)
+eqcapvac.mod  : (3)
+eqobjfix.mod  : (2)
+uc_flo.mod    : (3)
+uc_ire.mod    : (3)
+pp_lvlpk.mod  : (3)
+eqlducs.vda   : (3)
+eqashar.vda   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.0.0
+-----------------------------------------------------------------------------------------
+Date: 1-Sep-2016 [AL]: Major Release - announce Dispatching and Unit Commitment Features
+1) Cleaned up new unit commitment features
+2) Corrected reporting of LUMPINV under MID_YEAR
+3) Added support for defining RL-TP in GR_VARGEN
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.0.0
+initmty.mod   : (4)
+readbprice.mod: (4)
+ppmain.mod    : (4)
+coef_ptr.mod  : (4)
+pp_qafs.mod   : (4)
+pp_qack.mod   : (4)
+rptlite.rpt   : (4)
+cost_ann.rpt  : (2)
+init_ext.vda  : (4)
+ppm_ext.vda   : (4)
+pp_actef.vda  : (4)
+eqlducs.vda   : (1)
+eqashar.vda   : (4)
+resloadc.vda  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.0.1
+-----------------------------------------------------------------------------------------
+Date: 9-Nov-2016 [AL]: Maintenance release
+1) Improved handling of OFF specification when no capacity
+2) Improved reporting of electricity by source
+3) Cosmetic improvement/cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.0.1
+ppmain.mod    : (1),(3)
+rptmisc.rpt   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.1.0
+-----------------------------------------------------------------------------------------
+Date: 30-Jan-2017 [AL]: Introducing TIMES-Micro
+1) Pilot implementation of TIMES-Micro
+2) Cosmetic improvements/cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.1.0
+initmty.mod   : (1)
+maindrv.mod   : (1)
+setglobs.gms  : (1)
+ppmain.mod    : (1)
+preppm.mod    : (1)
+eqdeclr.mod   : (1)
+eqobj.mod     : (1)
+eqobjels.mod  : (1)
+eqcombal.mod  : (1),(2)
+eqpeak.mod    : (1),(2)
+bndmain.mod   : (1)
+bnd_elas.mod  : (1)
+pp_qack.mod   : (1)
+pp_qaput.mod  : (2)
+mod_equa.mod  : (1)
+solve.mod     : (1)
+eqobjels.rpt  : (1)
+rpt_obj.rpt   : (1)
+recurrin.stc  : (1)
+prep_ext.tm   : (2)
+eqmacro.tm    : (2)
+bnd_macro.tm  : (2)
+mod_vars.tm   : (1),(2)
+
+Added files:
+pp_micro.mod  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.1.1
+-----------------------------------------------------------------------------------------
+Date: 28-Feb-2017 [AL]: Maintenance release
+1) Fixed climate temperature reporting under stochastic climate sensitivity
+2) Ensure commodity balance for exclusively capacity-related flows
+3) Performance improvements under stochastic mode
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.1.1
+eqdamage.mod  : (3)
+bnd_act.mod   : (3)
+coef_ext.vda  : (2)
+initmty.cli   : (3)
+coef_ext.cli  : (3)
+equ_ext.cli   : (3)
+rpt_ext.cli   : (1)
+rpt_par.cli   : (3)
+initmty.stc   : (3)
+stages.stc    : (3)
+fillsow.stc   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.1.2
+-----------------------------------------------------------------------------------------
+Date: 30-Mar-2017 [AL]: Retrofitting and life-extension
+1) Added retrofitting and life-extension: PRC_REFIT(r,prc,p)
+2) Added stochastic support for grid modeling features
+3) Fixed last period reporting of retired capacity
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.1.2
+initmty.mod   : (1),(4)
+ppmain.mod    : (4)
+timslice.mod  : (4)
+mod_vars.mod  : (4)
+eqdeclr.mod   : (1)
+eqmain.mod    : (4)
+eqobsalv.mod  : (1)
+mod_equa.mod  : (1)
+cost_ann.rpt  : (2)
+rptmisc.rpt   : (3)
+prepret.dsc   : (1)
+solve.stp     : (1)
+ppm_ext.vda   : (4)
+powerflo.vda  : (2)
+recurrin.stc  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.1.3
+-----------------------------------------------------------------------------------------
+Date: 5-Jun-2017 [AL]: Maintenance release
+1) Fixed uncertain damage cost reporting for climate variables
+2) Fixed stochastic damage cost accounting under stochastic climate sensitivity
+3) Fixed retirement cost accounting under NLP MACRO
+4) Minor/cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.1.3
+initmty.mod   : (4)
+coef_obj.mod  : (4)
+eqdeclr.mod   : (2)
+bnd_ire.vda   : (4)
+eqobjvar.mod  : (4)
+eqobjcst.tm   : (3)
+eqobjann.tm   : (3)
+eqdamage.mod  : (2)
+rpt_obj.rpt   : (4)
+eqobjvar.rpt  : (4)
+rpt_dam.mod   : (1)
+prepret.dsc   : (3)
+coef_ext.cli  : (2)
+rpt_ext.cli   : (2)
+prep_ext.stc  : (2)
+stages.stc    : (2)
+recurrin.stc  : (4)
+rptmain.stc   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.1.4
+-----------------------------------------------------------------------------------------
+Date: 26-Jul-2017 [AL]: Maintenance release
+1) Auto-define -INF bounds for VAR_CUMCOM if neg. enabled
+2) Allow ANNUAL charging profiled with COM_FR for NST
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.1.4
+ppmain.mod    : (2)
+bnd_cum.mod   : (1)
+pp_qack.mod   : (3)
+rptlite.rpt   : (3)
+cost_ann.rpt  : (3)
+rptmain.rpt   : (3)
+eqobsalv.rpt  : (3)
+equ_ext.etl   : (3)
+mod_vars.etl  : (3)
+pp_chp.ier    : (3)
+equ_ext.ier   : (3)
+eqchpelc.ier  : (3)
+eqmrkcom.ier  : (3)
+rpt_ext.ier   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.1.6
+-----------------------------------------------------------------------------------------
+Date: 22-Nov-2017 [AL]: Maintenance release
+1) Added option for forcing refitted capacity equal to retired
+2) Fixed reporting of retired RESIDual capacity
+3) Fixed bug when COM_FR defined for an ANNUAL level commodity only at the ANNUAL level
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.1.6
+ppmain.mod    : (1),(3)
+prepret.dsc   : (1)
+rptmisc.rpt   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.0
+-----------------------------------------------------------------------------------------
+Date: 7-Jan-2018 [AL]: Intorducing NCAP_CPX & Grid Computing
+1) Added NCAP_CPX implementation for shaping capacity transfer
+2) Added support for using grid computing facility under sensitivity analysis
+3) Added support for always retrieving solution + status code reporting to VEDA-BE
+4) Fixed small u*x compatibility issues
+5) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.0
+initmty.mod   : (1)
+maindrv.mod   : (4)
+ppmain.mod    : (5)
+preppm.mod    : (1)
+preponly.mod  : (5)
+coef_obj.mod  : (1)
+coef_ptr.mod  : (1)
+coefmain.mod  : (1)
+eqobjinv.mod  : (5)
+equserco.mod  : (5)
+uc_com.mod    : (5)
+pp_qack.mod   : (5)
+eqobsalv.mod  : (1)
+eqobjfix.mod  : (1)
+eqobjann.tm   : (1)
+solve.mod     : (5)
+err_stat.mod  : (3)
+rptlite.rpt   : (3)
+rpt_obj.rpt   : (1),(5)
+cost_ann.rpt  : (1)
+eqobjfix.rpt  : (1)
+eqlducs.vda   : (4)
+prepret.dsc   : (5)
+solve.stc     : (2)
+sensis.stc    : (2)
+clearsol.stp  : (2)
+
+Added files   : (1)
+coef_shp.mod  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.1
+-----------------------------------------------------------------------------------------
+Date: 2-Feb-2018 [AL]: Introduce S_COM_TAX + Maintenance
+1) Added new uncertain parameter S_COM_TAX(r,y,c,s,type,cur,j,sow)
+2) Added QA check warnings for inconsistent CAP_BNDs and G_YRFRs
+3) Fixed bug in processing of FLO_SUB/FLO_TAX when both defined on the same flow
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.1
+initmty.mod   : (2)
+ppmain.mod    : (2)
+timslice.mod  : (2)
+preppm.mod    : (3)
+eqobj.mod     : (1)
+eqobjvar.mod  : (1)
+coefmain.mod  : (1)
+coef_obj.mod  : (1)
+coef_alt.lin  : (1)
+pp_qaput.mod  : (2)
+rptlite.rpt   : (2)
+rptmisc.rpt   : (2)
+rpt_obj.rpt   : (1)
+eqobjvar.rpt  : (1)
+prep_ext.vda  : (2)
+coef_ext.vda  : (4)
+eqobj.tm      : (4)
+rptmain.tm    : (4)
+initmty.stc   : (1)
+prep_ext.stc  : (1)
+stages.stc    : (1)
+rptmain.stc   : (1)
+rpt_par.cli   : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.2
+-----------------------------------------------------------------------------------------
+Date: 7-Mar-2018 [AL]: Maintenance release
+1) Fixed issues when using PRC_REFIT with time-stepped mode
+2) Ignore superfluous UC_ACT/CAP/NCAP entries
+3) Minor improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.2
+initmty.mod   : (1)
+ppmain.mod    : (1),(2)
+eqmain.mod    : (3)
+bnd_ucw.mod   : (3)
+bnd_ucv.mod   : (3)
+cost_ann.rpt  : (3)
+prepret.dsc   : (1)
+solve.stp     : (1)
+prep_ext.vda  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.3
+-----------------------------------------------------------------------------------------
+Date: 7-Apr-2018 [AL]: Maintenance release
+1) Improved several specifics of FIXBOH runs
+2) Added support for nested CES demand functions
+3) Miscellaneous small improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.3
+initmty.mod   : (1),(2)
+maindrv.mod   : (3)
+pp_micro.mod  : (2)
+eqdeclr.mod   : (1)
+eqobjels.mod  : (2)
+eqcombal.mod  : (2)
+bndmain.mod   : (1)
+bnd_act.mod   : (1)
+bnd_elas.mod  : (2)
+pp_qack.mod   : (2)
+rptlite.rpt   : (1)
+rptmisc.rpt   : (1)
+initmty.vda   : (1)
+solsetv.v3    : (3)
+solve.stp     : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.4
+-----------------------------------------------------------------------------------------
+Date: 7-May-2018 [AL]: Maintenance release
+1) Fixed bug related to certain dynamic UCs under FIXBOH runs
+2) Improved support for nested CES demand functions
+3) Added reporting of EQ(l)_ACTBND duals
+4) Added reporting of lump-sum investment taxes/subsidies
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.4
+initmty.mod   : (3)
+solve.stp     : (1)
+pp_micro.mod  : (2)
+eqdeclr.mod   : (3)
+bnd_elas.mod  : (2)
+rptlite.rpt   : (4)
+rpt_obj.rpt   : (4)
+cost_ann.rpt  : (4)
+rptmisc.rpt   : (3)
+clearsol.stc  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.6
+-----------------------------------------------------------------------------------------
+Date: 6-Jul-2018 [AL]: Maintenance release
+1) Preparations for Monte Carlo Analysis
+2) Fixed reporting of stochastic lump-sum investments and taxes
+3) Fixed FOM accounting when both early retirements and NCAP_CPX
+4) Fixed error due to GAMS change & cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.6
+initmty.mod   : (1)
+main_ext.mod  : (1)
+ppmain.mod    : (4)
+spoint.mod    : (1)
+pp_reduce.red : (4)
+rptlite.rpt   : (4)
+eqobjvar.rpt  : (2)
+rpt_obj.rpt   : (2)
+cost_ann.rpt  ; (3)
+rptmisc.rpt   : (3)
+eqlducs.vda   : (4)
+prepret.dsc   : (3)
+solve.stp     : (1),(4)
+stages.stc    : (1)
+solve.stc     : (1)
+sensis.stc    : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.7
+-----------------------------------------------------------------------------------------
+Date: 12-Sep-2018 [AL]: Maintenance release
+1) Fixed old bug in UC_CLI processing
+2) Improved handling of cumulative commodity constraints
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.7
+eqobjinv.mod  : (3)
+eqobjfix.mod  : (3)
+uc_cli.mod    : (1)
+sensis.stc    : (2)
+solve.stp     : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.2.9
+-----------------------------------------------------------------------------------------
+Date: 2-Nov-2018 [AL]: Maintenance release
+1) Added UC_MarkS category into BE reporting
+2) Added elimination of superfluous CUMCOM equations
+3) Fixed problems intoroduced in Macro variants
+4) Removed invalid reference to storage flows
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.2.9
+initmty.mod   : (3)
+maindrv.mod   : (3)
+coef_obj.mod  : (4)
+eqflomrk.mod  : (1)
+eqobsalv.mod  : (3)
+bnd_cum.mod   : (2)
+solve.stp     : (3)
+solve.msa     : (3)
+solsetv.v3    : (1)
+mod_vars.msa  : (3)
+equ_ext.msa   : (3)
+solprep.msa   : (3)
+rptmain.tm    : (3)
+eqobj.tm      : (3)
+eqobjann.tm   : (3)
+rptmain.stc   : (3)
+times2veda.vdd: (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.0
+-----------------------------------------------------------------------------------------
+Date: 9-Jan-2019 [AL]: Introducing demand response by load-shifting
+1) Added new input parameter STG_SIFT and set of new equations for load shifting
+2) Added optional reporting of load levels for process flows
+3) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.0
+initmty.mod   : (1)
+maplists.def  : (3)
+ppmain.mod    : (1)
+timslice.mod  : (1)
+preppm.mod    : (1)
+pp_reduce.red : (3)
+init_ext.vda  : (1)
+prep_ext.vda  : (1)
+pp_prelv.vda  : (3)
+ppm_ext.vda   : (3)
+equ_ext.vda   : (1)
+mod_ext.vda   : (1)
+eqactups.vda  : (1)
+powerflo.vda  : (3)
+rptmisc.rpt   : (2)
+rptlite.rpt   : (2)
+solsetv.v3    : (2)
+solve.stc     : (3)
+pextlevs.stc  : (3)
+times2veda.vdd: (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.1
+-----------------------------------------------------------------------------------------
+Date: 9-Feb-2019 [AL]: Maintenance release
+1) Added error clearing if DATAGDX saved after domain violations
+2) Fixed bug in NCAP_CDME processing
+3) Fixed error when using TIMESED with STAGES
+4) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.1
+preppm.mod    : (1)
+prepxtra.mod  : (1)
+fillvint.gms  : (4)
+pp_chp.mod    : (2)
+bnd_elas.mod  : (3)
+eqfloshr.mod  : (4)
+eqobjels.mod  : (3)
+solve.stp     : (4)
+eqactups.vda  : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.2
+-----------------------------------------------------------------------------------------
+Date: 9-Mar-2019 [AL]: Maintenance release
+1) Added support for varying timeslice cycles
+2) Added reporting of EQG_COMBAL levels under stochastic
+3) Added support for emissions on auxiliary storage flows
+4) Cosmetic improvements & cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.2
+initmty.mod   : (1)
+ppmain.mod    : (1)
+timslice.mod  : (1)
+pp_reduce.red : (4)
+eqstgaux.mod  : (3)
+eqstgaux.lin  : (3)
+init_ext.vda  : (4)
+pp_prelv.vda  : (3)
+ppm_ext.vda   : (3)
+pp_actef.vda  : (1)
+eqashar.vda   : (4)
+eqactups.vda  : (1)
+eqlducs.vda   : (1)
+times2veda_stc: (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.3
+-----------------------------------------------------------------------------------------
+Date: 9-Apr-2019 [AL]: Maintenance release
+1) Fixed minor reporting issue under MACRO
+2) Preparation for supporting dynamic timeslice trees
+3) Added PCG auto-repair of storage converted to ANNUAL
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.3
+initmty.mod   : (2)
+ppmain.mod    : (3)
+eqpeak.mod    : (2)
+eqptrans.mod  : (2)
+eqstgtss.mod  : (2)
+rpt_obj.rpt   : (1)
+cost_ann.rpt  : (1)
+rptmisc.rpt   : (1)
+powerflo.vda  : (2)
+resloadc.vda  : (2)
+eqcaflac.vda  : (2)
+coef_alt.lin  : (1)
+solve.stp     : (2)
+solprep.msa   : (1)
+rptmain.tm    : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.5
+-----------------------------------------------------------------------------------------
+Date: 27-Jul-2019 [AL]: Maintenance release
+1) Improved Data-Only GDX (can be later used as input)
+2) Allow for making PRD as a timeslice
+3) Allow for larger MAXSOW (above 1800)
+4) Fixed bug when DUC and DSCAUTO activated simultaneously
+5) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.5
+initmty.mod   : (1),(4)
+setglobs.gms  : (1)
+ppmain.mod    : (2)
+prepxtra.mod  : (1)
+eqactups.vda  : (5)
+eqlducs.vda   : (4)
+clearsol.stp  : (5)
+prepret.dsc   : (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.6
+-----------------------------------------------------------------------------------------
+Date: 6-Sep-2019 [AL]: Maintenance release
+1) Fixed division by zero when very long time-span of RESID
+2) Added support for asymmetric load shifting constraints
+3) Improved UC_FLO consistency under DYNTS
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.6
+ppmain.mod    : (2)
+eqobjinv.mod  : (1)
+eqactups.vda  : (2)
+uc_flo.mod    : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.7
+-----------------------------------------------------------------------------------------
+Date: 1-Oct-2019 [AL]: Maintenance release
+1) Improved QA checks against undefined currencies
+2) Preparations for the ABS extension
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.7
+filparam.gms  : (3)
+coef_obj.mod  : (1)
+pp_qack.mod   : (1)
+initmty.vda   : (2)
+init_ext.vda  : (2)
+prep_ext.vda  : (2)
+coef_ext.vda  : (2)
+equ_ext.vda   : (2)
+mod_ext.vda   : (2)
+eqactups.vda  : (2)
+eqlducs.vda   : (2)
+powerflo.vda  : (2)
+recurrin.stc  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.3.8
+-----------------------------------------------------------------------------------------
+Date: 1-Nov-2019 [AL]: Maintenance release
+1) Added filtering of data when domain violations
+2) Added clearing of EQ_COMBAL levels when FIXBOH
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.3.8
+initmty.mod   : (1)
+ppmain.mod    : (1)
+fillvint.gms  : (3)
+setglobs.gms  : (1)
+pp_qack.mod   : (1)
+init_ext.vda  : (3)
+eqactups.vda  : (3)
+clearsol.stp  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.4.0
+-----------------------------------------------------------------------------------------
+Date: 9-Jan-2019 [AL]: Major release; Added Open Source License
+1) 1st release of the ABS extension (Ancillary Balancing Services)
+2) Added option for reporting flows of given commodity types at ANNUAL
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.4.0
+maplists.def  : (1)
+pp_micro.mod  : (3)
+bnd_elas.mod  : (3)
+bnd_flo.mod   : (3)
+eqmain.mod    : (3)
+uc_cap.mod    : (1)
+pp_prelv.vda  : (3)
+eqactups.vda  : (1)
+rptmisc.rpt   : (1),(2)
+rptlite.rpt   : (1),(2)
+
+Added files:
+*.ABS       : ABS extension
+LICENSE.txt : GPLv3 License
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.4.1
+-----------------------------------------------------------------------------------------
+Date: 9-Feb-2019 [AL]: Minor release
+1) Added experimental implementation for dynamic timeslice trees
+2) Fixed small Linux compatibility issues
+3) Small improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.4.1
+initmty.mod   : (2)
+setglobs.gms  : (2)
+pp_reduce.red : (1)
+pp_qafs.mod   : (3)
+mod_vars.mod  : (3)
+eqmain.mod    : (3)
+bndmain.mod   : (1),(3)
+pp_prelev.vda : (1)
+ppm_ext.vda   : (1)
+equ_ext.vda   : (3)
+resloadc.vda  : (3)
+ucbet.vda     : (3)
+sensis.stc    : (1) 
+
+Added file:
+dynslite.vda  : (1)
