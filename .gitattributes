@@ -1,3 +1,5 @@
+# do not attempt any end-of-line conversion
+* -text
 # These files are in the GAMS language
 *.gms linguist-language=GAMS
 *.mod linguist-language=GAMS
