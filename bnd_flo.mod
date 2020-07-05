@@ -13,7 +13,7 @@
   %VAR%_FLO.UP(R,V,T,P,C,S%SWD%) = INF;
 
 * assign from user data
-  FLO_BND(R,T,P,C,S,'LO')$((FLO_BND(R,T,P,C,S,'LO')=0)$RP_FLO(R,P))=0;
+  FLO_BND(R,T,P,C,S,'LO')$((NOT RPC_EMIS(R,P,C))$(FLO_BND(R,T,P,C,S,'LO')=0)$RP_FLO(R,P))=0;
   LOOP((RTPC(R,T,P,C),S,BD)$FLO_BND(RTPC,S,BD),TRACKPC(RP_FLO(R,P),C)=YES);
   TRACKPC(PRC_VINT(R,P),C) = NO;
   TRACKPC(RPC_FFUNC(R,P,C))= NO;

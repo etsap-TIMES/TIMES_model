@@ -26,7 +26,7 @@
     COEF_PTRAN(CGTEST(R,V,P,COM_GRP,C,CG),TS)$(PRC_TS(R,P,TS)*
 * a flo_sum for the c in cg1 or
 * a flo_func for cg2 (as according to cgtest there must also be a flo_sum for some c in cg1), or
-                ((FLO_SUM(R,V,P,COM_GRP,C,CG,TS)+FLO_FUNC(R,V,P,CG,COM_GRP,TS))$(NOT FLO_FUNC(R,V,P,COM_GRP,CG,TS)) +
+                ((FLO_SUM(R,V,P,COM_GRP,C,CG,TS)+(NOT FLO_FUNC(R,V,P,COM_GRP,CG,TS))$FLO_FUNC(R,V,P,CG,COM_GRP,TS)) +
 * a flo_func for cg1 without a flo_sum for cg2
                  (NOT SUM(COM$FLO_SUM(R,V,P,CG,COM,COM_GRP,TS),1))$FLO_FUNC(R,V,P,COM_GRP,CG,TS)
                 )
