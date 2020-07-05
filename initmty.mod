@@ -270,6 +270,7 @@ $ONEMPTY
   PARAMETER G_OFFTHD(ALLYEAR)                       'Threshold for OFF ranges';
   PARAMETER G_OVERLAP                               'Overlap of stepped solutions (in years)' / 0 /;
   PARAMETER REG_FIXT(ALL_R)                         'Year up to which periods are fixed';
+  PARAMETER REG_BDNCAP(ALL_R,L)                     'Year up to which VAR_NCAPs are to be fixed';
   PARAMETER G_CUREX(CUR,CUR)                        'Global currency conversions';
   PARAMETER R_CUREX(ALL_REG,CUR,CUR)                'Regional currency conversions';
 
@@ -614,9 +615,8 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   ALIAS (TSLVL,TSL);
   ALIAS (LIFE,AGE);
 * Label lengths exceeding default
-  PARAMETER LABL(ITEM);
-$IF NOT SETGLOBAL G2X6 $SETGLOBAL RL 'R.TL:(12+LABL(R))' SETGLOBAL PL 'P.TL:(12+LABL(P))' SETGLOBAL CL 'C.TL:(12+LABL(C))'
-$IF SETGLOBAL G2X6 $SETGLOBAL RL 'R.TL:MAX(12,R.LEN)' SETGLOBAL PL 'P.TL:MAX(12,P.LEN)' SETGLOBAL CL 'C.TL:MAX(12,C.LEN)'
+$SETGLOBAL RL 'R.TL:MAX(12,R.LEN)' SETGLOBAL PL 'P.TL:MAX(12,P.LEN)' SETGLOBAL CL C.TL:MAX(12,C.LEN)
+$IFI NOT %G2X6%==YES $SETGLOBAL RL 'R.TL:MAX(12,CARD(R.TL))' SETGLOBAL PL 'P.TL:MAX(12,CARD(P.TL))' SETGLOBAL CL C.TL:MAX(12,CARD(C.TL))
 
 *------------------------------------------------------------------------------
 * Sets and parameters used in reduction algorithm
@@ -641,6 +641,7 @@ ALIAS (CG3,CG4,COM_GRP);
 *------------------------------------------------------------------------------
 * Parameters used in report routine
 *------------------------------------------------------------------------------
+  PARAMETER RPT_OPT(ITEM,J) //;
   PARAMETERS
    PAR_FLO(R,ALLYEAR,ALLYEAR,P,C,S)            'Flow parameter'                                    //
    PAR_FLOM(R,ALLYEAR,ALLYEAR,P,C,S)           'Reduced cost of flow variable'                     //

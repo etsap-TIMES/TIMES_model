@@ -32,7 +32,7 @@ SET SOLVESTAT(J) /
  12 "Error unknown"
  13 "Error no solution"
 /;
-FILE SCREEN / CON /;
+FILE SCREEN / '' /;
 FILE END_GAMS / %TMP% /;
 *------------------------------------------------------------------------------
 $LABEL ACTION

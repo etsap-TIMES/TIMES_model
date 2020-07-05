@@ -5,7 +5,7 @@
 *=============================================================================*
 * INITMTY.VDA has all the EMPTY declarations for system & user data           *
 *=============================================================================*
-$SETGLOBAL VDA YES
+$ SETGLOBAL VDA YES
 *=============================================================================
 * User Input attributes in the VDA extension
 *-----------------------------------------------------------------------------
@@ -44,7 +44,6 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
 * Special: Risk parameters & reporting options
   PARAMETER UC_ACTBET(UC_N,ALL_REG,ALLYEAR,PRC);
   PARAMETER UC_FLOBET(UC_N,ALL_REG,ALLYEAR,PRC,CG);
-  PARAMETER RPT_OPT(ITEM,J) //;
   PARAMETER PRC_REACT(R,ALLYEAR,P) 'Reactance of transmission line';
   PARAMETER COM_CSTBAL(R,ALLYEAR,C,S,ITEM,CUR) 'Cost on specific component of node balance';
   PARAMETER GR_GENLEV(R,C) 'Grid connection category for electricity generation commodity'//;
