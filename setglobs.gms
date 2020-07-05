@@ -51,6 +51,7 @@ $IF NOT %G2X6%==YES $GOTO EOF
   DISPLAY 'GAMS Warnings detected; Data have been Filterd via GDX';
 $hiddencall gdxdump _dd_.gdx NODATA > _dd_.dmp
 $hiddencall sed "/\(^Scalar\|(\*)\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /\$LOADR /" _dd_.dmp > _dd_.dd
+$IF gamsversion 301 $onFiltered
 $INCLUDE _dd_.dd
 $hiddencall rm -f _dd_.dmp
 $GDXIN

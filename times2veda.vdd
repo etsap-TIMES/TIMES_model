@@ -6,7 +6,7 @@
  TIMES
 
 [Dimensions]
- Attribute        attr
+ Attribute       attr
  Commodity        c
  Process          p
  Period           t
@@ -97,14 +97,27 @@ not-0 var_fin var_fout var_act var_actm var_cap var_capm cost_flo cost_act eq_cu
 
 [DimensionTextAll]
 * Gams_set_name  Veda_Tab
-adesc    attr
-uc_n     uc_n
-sysuc    uc_n
+adesc     attr
+uc_n      uc_n
+sysuc     uc_n
+costagg   uc_n
+pluset    uc_n
+in_out    uc_n
+impexp    uc_n
+uc_grptype  c
+othcom      c
+all_ts      s
+nonset      s
+modlyear    v
+pastcv      v
+milestonyr  t
+nonset      t
 
 [ParentDimensionTextAll]
 * Gams_set_name  Veda_Tab
 prc_desc   r p
 com_desc   r c
+reg_act    r c
 
 [ParentSubSets]
 *  subset  GAMS    VEDA Tab

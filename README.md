@@ -55,9 +55,3 @@ Information on the activities of ETSAP are available on ETSAP's [website](https:
 If you are interested in receiving information and newsletters on ETSAP's tool you can register [here](https://iea-etsap.org/index.php/etsap-tools/acquiring-etsap-tools).
 
 A forum for TIMES users is [available](http://iea-etsap.org/forum/index.php).
-
-
-
-[![DOI](https://zenodo.org/badge/229031856.svg)](https://zenodo.org/badge/latestdoi/229031856)
-
-

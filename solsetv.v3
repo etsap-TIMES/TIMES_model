@@ -144,13 +144,21 @@ SETS
 * timeslices
   SET RS(R,ALL_TS);
   OPTION RS < RS_TSLVL;
-* UCs
+* UCs and completion of missing labels
   SETS
+   NONSET / NONE /
+   PLUSET / '+' /
+   OTHCOM(ITEM) //
+   SET REG_ACT(ITEM,C)
    UC_CONST(*,UC_N) 'Genuine TIMES UC constraints'
    UC_MARKS(R,ITEM) 'PRC_MARK Share UC constraints'
    UC_DYNBD(R,UC_N) 'Dynamic UC bound constraints';
   LOOP(R,UC_CONST('NONE',UC_N)$UC_R_SUM(R,UC_N)=YES);
   LOOP(RMKC(R,ITEM,C)$RPT_OPT('COMPRD','4'),UC_MARKS(R,ITEM)=YES);
+  REG_ACT(ALL_R,'ACT') = ALL_REG(ALL_R);
+  REG_ACT(NONSET,'ACT') = YES;
+  OTHCOM(CG) $= SUM(COM_PEAK(R,CG),1);
+  OTHCOM(CUR) $= SUM(RDCUR(R,CUR),1);
 
 $ EXIT
 *---------------------------------------------------------------------

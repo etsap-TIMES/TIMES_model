@@ -44,10 +44,10 @@ $SET LOAD 0
 $IF NOT SET LPOINT $GOTO RUNNAME
 $IF EXIST %PATH%%LPOINT%%PNT1%.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%LPOINT%%PNT1%.gdx';
-$IF %LOAD%==2 $EXIT
+$IF %LOAD%==2 $GOTO FINISH
 $IF EXIST %PATH%%LPOINT%%PNT2%.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%LPOINT%%PNT2%.gdx';
-$IF %LOAD%==2 $EXIT
+$IF %LOAD%==2 $GOTO FINISH
 $IF SET FIXBOH $ABORT Could not load gdx file %LPOINT%
 *-----------------------------------------------------------------------------
 $LABEL RUNNAME
@@ -58,8 +58,29 @@ $IF %SPOINT%==3 $SET LOAD 1
 $IF %LOAD%==0 $EXIT
 $IF EXIST %PATH%%RUN_NAME%_P.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%RUN_NAME%_p.gdx';
-$IF %LOAD%==2 $EXIT
+$IF %LOAD%==2 $GOTO FINISH
 $IF EXIST %PATH%%RUN_NAME%.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%RUN_NAME%.gdx';
-$IF %LOAD%==2 $EXIT
+$IF %LOAD%==2 $GOTO FINISH
 *-----------------------------------------------------------------------------
+$LABEL FINISH
+$IF NOT DEFINED REG_BDNCAP $EXIT
+* Fix new capacities to previous solution if requested
+  SET RT_NO(R,T), RTCS(R,ALLYEAR,C,S);
+  REG_BDNCAP(R,BDNEQ)$REG_BDNCAP(R,'FX')=MAX(REG_BDNCAP(R,BDNEQ),REG_BDNCAP(R,'FX'))$(SMAX(BD,REG_BDNCAP(R,BD))>REG_BDNCAP(R,'FX'));
+  REG_BDNCAP(R,'FX')$SUM(BDNEQ$REG_BDNCAP(R,BDNEQ),1)=0;
+  LOOP((R,BD)$REG_BDNCAP(R,BD),Z=REG_BDNCAP(R,BD); RT_NO(R,T)$(M(T)<=Z)=YES);
+* Determine which years available
+  RTCS(R,T,C,S--ORD(S))$=EQG_COMBAL.M(R,T,C,S);
+  RTCS(R,T,C,S--ORD(S))$=EQE_COMBAL.M(R,T,C,S);
+  OPTION FIL < RTCS;
+  PASTSUM(RTP(RT_NO(R,T(FIL)),P))$PRC_CAP(R,P)=EPS;
+  PASTSUM(RTP(RT_NO,P)) $= VAR_NCAP.L(RTP);
+  NCAP_BND(RTP(RT_NO(R,T),P),BD)$((M(T)<=REG_BDNCAP(R,BD))$PASTSUM(RTP)) = MAX(EPS,PASTSUM(RTP),NCAP_BND(RTP,BD)$BDLOX(BD));
+  NCAP_BND(RTP(RT_NO,P),'UP')$(NCAP_BND(RTP,'LO')$NCAP_BND(RTP,'UP')) = SMAX(BDNEQ,NCAP_BND(RTP,BDNEQ));
+$ IF %STAGES%==YES $SETLOCAL SWT '$SW_T(T%SOW%)'
+  %VAR%_NCAP.LO(RTP(RT_NO(R,T),P)%SOW%)%SWT%  $= NCAP_BND(RTP,'LO');
+  %VAR%_NCAP.UP(RTP(RT_NO(R,T),P)%SOW%)%SWT%  $= NCAP_BND(RTP,'UP');
+  %VAR%_NCAP.FX(RTP(RT_NO(R,T),P)%SOW%)%SWT%  $= NCAP_BND(RTP,'FX');
+  VAR_NCAP.L(RTP(RT_NO,P)) $= PASTSUM(RTP);
+  OPTION CLEAR=PASTSUM,CLEAR=RTCS,CLEAR=FIL,CLEAR=RT_NO;

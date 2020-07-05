@@ -3,7 +3,7 @@
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
-* PREPONLY.MOD oversees that all inputs are inperpolated when INTEXT_ONLY
+* PREPONLY.MOD oversees that all inputs are interpolated when INTEXT_ONLY
 *=============================================================================*
 $ GOTO %1
 $ LABEL XTIE
@@ -73,9 +73,18 @@ $ LABEL UCINT
     UC_T_SUCC(R,UC_N,LL+(ORD(YEAR)-ORD(LL)))$(EOHYEARS(LL)$PERIODYR(T,LL)$UC_T_SUCC(R,UC_N,LL)) = YES;
     UC_T_SUM(R,UC_N,LL+(ORD(YEAR)-ORD(LL)))$(EOHYEARS(LL)$PERIODYR(T,LL)$UC_T_SUM(R,UC_N,LL)) = YES;
   );
+$ EXIT
 *-----------------------------------------------------------------------------
 $ LABEL SAVE
-  F=JNOW; Z=CARD("%GDXPATH%%RUN_NAME%")+16;
-$IF %1==SAVE MODLYEAR(LL)=T(LL)+PASTYEAR(LL); PUT QLOG; FILE.PW=512;
-$IFI %G2X6%%1==YESSAVE
-  PUT_UTILITY 'SHELL' / 'mv -f _dd_.gdx ' '%GDXPATH%%RUN_NAME%' @(Z+16) (GSECOND(F)+100):0:0 '.GDX' @(Z+14) (GMINUTE(F)+100):0:0 @(Z+12) (GHOUR(F)+100):0:0 @(Z+9) (GDAY(F)+100):0:0 "_" @(Z+7) (GMONTH(F)+100):0:0 @(Z+4) GYEAR(F):0:0 @Z '~Data_' @(Z+25) ;
+* Rename and move saved data GDX file
+  Z=CARD("%GDXPATH%%RUN_NAME%")+16;
+$ SET GDATE '10000*MOD(GYEAR(JSTART),100)+100*GMONTH(JSTART)+GDAY(JSTART)' SET X1
+$ SET GTIME '10000*GHOUR(JSTART)+100*GMINUTE(JSTART)+GSECOND(JSTART)' SET X2 5
+$ IF %G2X6%%1==YESSAVE $SET X2
+$ IFI %G2X6%%1%X2%==YESSAVE5
+  PUT QLOG; FILE.PW=512; PUT_UTILITY 'SHELL' / 'mv -f _dd_.gdx ' '%GDXPATH%%RUN_NAME%' @(Z+12) (%GTIME%+10**6):0:0 '.GDX' @(Z+5) (%GDATE%+10**6):0:0 "_" @Z '~Data_';
+$ LABEL PAD
+$ IF %X2%0==0 $EVAL X1 '%X1%+1' EVAL X2 'TRUNC(LOG10(%GTIME%+.5))' EVAL GDATE '%GTIME%' SET GTIME %GDATE%
+$ IF NOT %X2%==5 $EVAL X2 '%X2%+1' SET GDATE '0%GDATE%' GOTO PAD
+$ IF %X1%==1 $SET X2 '' GOTO PAD
+$ IF %X1%==2 $hiddencall mv -f _dd_.gdx "%GDXPATH%%RUN_NAME%~Data_%GDATE%_%GTIME%.gdx"
