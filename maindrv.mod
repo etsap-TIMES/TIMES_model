@@ -25,7 +25,8 @@ $   SET MODEL_NAME TIMES
 $   IFI %MICRO% == YES  $SET TIMESED YES 
 $   IF  %MACRO% == YES  $SET MODEL_NAME 'TIMES_MACRO' SET TIMESED '0' SETLOCAL SRC tm
 $   IF NOT %SYSTEM.FILESYS%==MSNT $SET MODEL_NAME times
-$   IF %TIMESED% == YES $BATINCLUDE readbprice.mod
+$   IFI NOT %TIMESED%==NO
+$   IF NOT %TIMESED%==0 $BATINCLUDE readbprice.mod
 * Stochastic & sensitivity analysis controls
 $   IFI %STAGES% == YES $SET STAGES YES
 $   IFI %SENSIS% == YES $SET STAGES Yes

@@ -45,8 +45,7 @@
       IPD(ALLYEAR)  //;
 
 *-----------------------------------------------------------------------------
-* Establish label lengths for QC log (G225 and below)
-$IF NOT SET G2X6 LABL(ITEM)=MAX(0,CARD(ITEM.TL)-12);
+* Log Warnings
 $SET TMP .
 $IF %DATAGDX%%G2X6%==YESYES $SET TMP ; Input Data have been filtered via GDX
 $IF WARNINGS $BATINCLUDE pp_qaput.%1 PUTOUT 0 * 'GAMS Warnings Detected%TMP%'
@@ -176,7 +175,7 @@ $IFI '%OBLONG%'==YES IF(MIYR_V1+SUM(T,E(T)+1-B(T))-MIYR_VL NE 1,ABORT "Inconsist
 * Set LEADs and LAGs for periods
     LEAD(TT(T++1)) = MAX(M(TT)-M(T),M(TT)-B(TT)+1);
     LAGT(TT(T--1)) = MAX(M(T)-M(TT),E(TT)-M(TT)+1);
-    IF(ALTOBJ,IPD(T) = LEAD(T)+(LEAD(T)-1)$MIYR_1(T);
+    IF(ALTOBJ,IPD(T) = LEAD(T)+MIN(E(T)-M(T),LEAD(T)-1)$MIYR_1(T);
     ELSE IPD(T) = D(T)); FPD(T) = D(T);
 * Initialize MINYR already here (was in COEF_OBJ.mod)
     SCALAR MINYR;
@@ -323,7 +322,7 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
         IF(SUM(TOP(R,P,C,IO)$COM_GMAP(R,CG,C),1),PRC_SPG(R,P,CG) = YES;
         ELSE
 * did not find any commodities with the same type as the PG, so assume energy
-* [AL] assume material if PRC is material conversion and PGTYPE is DEM
+* assume material if PRC is material conversion and PGTYPE is DEM
           IF((SUM(RPC(R,P,C)$COM_TMAP(R,'MAT',C),1)$SUM(PRC_MAP(R,MATPRC,P),1))$RP_PGTYPE(R,P,'DEM'),
              PRC_SPG(R,P,'MAT') = YES;
           ELSE Z=1; LOOP(PG_SMAP(CG,J,COM_TYPE)$Z,
@@ -511,7 +510,7 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'NCAP_TLIFE out of feasible range
       RTP_CPTYR(R,VNT(V,T),P)$((B(V)+NCAP_ILED(R,V,P)<(E(T)+1))$(NCAP_ILED(R,V,P)+COEF_RPTI(R,V,P)*NCAP_TLIFE(R,V,P)>YKVAL(V,T))
                                $RTP(R,V,P)) = YES;
     ELSE
-* [AL] If linearized objective, use relaxed thresholds
+* If linearized objective, use relaxed thresholds
       YKVAL(VNT(TT,T)) = B(T)-B(TT)-(1-MOD(IPD(T),2)+(IPD(T)-1)/9)/2; F=0;
       PASTSUM(RTP(R,V,P)) = (NCAP_ILED(R,V,P)+F)$NCAP_ILED(R,V,P)+COEF_RPTI(R,V,P)*NCAP_TLIFE(R,V,P);
       RTP_CPTYR(R,VNT(V,T),P)$((PASTSUM(R,V,P) > YKVAL(V,T))$(B(V)+NCAP_ILED(R,V,P) < E(T)+1)$RTP(R,V,P)) = YES;
