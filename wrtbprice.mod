@@ -6,8 +6,8 @@
 * Exporting shadow prices of commodity balances to be used as bprice
 * for elastic demands into a gdx file called Com_bprice.GDX
 *==============================================================================
-  PARAMETER DINV(R,ALLYEAR,ALLYEAR,CUR) / EMPTY.EMPTY.EMPTY.EMPTY 0 /;
-  PARAMETER SOL_BPRICE(REG,ALLYEAR,COM,ALL_TS,CUR) /EMPTY.EMPTY.EMPTY.EMPTY.EMPTY 0/;
+  PARAMETER DINV(R,ALLYEAR,ALLYEAR,CUR) //;
+  PARAMETER SOL_BPRICE(REG,ALLYEAR,COM,ALL_TS,CUR) //;
 *------------------------------------------------------------------------------
 * General undiscounting via matrix inversion currently disabled; using direct method
   DINV(R,T,T,CUR)$G_RCUR(R,CUR) = 1/COEF_PVT(R,T);

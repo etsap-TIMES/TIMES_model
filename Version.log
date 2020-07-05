@@ -2167,7 +2167,7 @@ clearsol.stp  : (2)
 -----------------------------------------------------------------------------------------
 TIMES Version 4.4.0
 -----------------------------------------------------------------------------------------
-Date: 9-Jan-2019 [AL]: Major release; Added Open Source License
+Date: 9-Jan-2020 [AL]: Major release; Added Open Source License
 1) 1st release of the ABS extension (Ancillary Balancing Services)
 2) Added option for reporting flows of given commodity types at ANNUAL
 3) Cosmetic improvements
@@ -2192,7 +2192,7 @@ LICENSE.txt : GPLv3 License
 -----------------------------------------------------------------------------------------
 TIMES Version 4.4.1
 -----------------------------------------------------------------------------------------
-Date: 9-Feb-2019 [AL]: Minor release
+Date: 9-Feb-2020 [AL]: Minor release
 1) Added experimental implementation for dynamic timeslice trees
 2) Fixed small Linux compatibility issues
 3) Small improvements and cleanup
@@ -2211,7 +2211,35 @@ ppm_ext.vda   : (1)
 equ_ext.vda   : (3)
 resloadc.vda  : (3)
 ucbet.vda     : (3)
-sensis.stc    : (1) 
+sensis.stc    : (1)
 
 Added file:
 dynslite.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.4.2
+-----------------------------------------------------------------------------------------
+Date: 1-Jul-2020 [AL]: Minor release
+1) Added new attribute REG_BDNCAP for fixing new capacities to previous solution
+2) Fixed inconsist spread of short-lived investment costs in first period when OBJ=MOD and D(T1)>2
+3) Improved DATAGDX by renaming GDX at compile time
+4) Fixed omission of zero FLO_BND when bounding a reduced flow
+5) Small improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.4.2
+initmty.mod   : (1)
+maindrv.mod   : (5)
+setglobs.gms  : (5)
+ppmain.mod    : (2)
+prepxtra.mod  : (3)
+bnd_flo.mod   : (4)
+coef_ptr.mod  : (5)
+rptmisc.rpt   : (5)
+err_stat.mod  : (5)
+spoint.mod    : (1)
+readbprice.mod: (5)
+wrtbprice.mod : (5)
+initmty.vda   : (5)
+solsetv.v3    : (5)
+times2veda.vdd: (5)
