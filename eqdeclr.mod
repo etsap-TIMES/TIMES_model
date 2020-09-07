@@ -13,7 +13,7 @@
   EQUATIONS
 *-----------------------------------------------------------------------------
 * Objective Function & Components
-$IF %MACRO%==YES $GOTO MACROBJ
+$IFI %MACRO%==YES $GOTO MACROBJ
 *-----------------------------------------------------------------------------
 * Overall OBJ linear combination of the regional objs (which are built from rest)
     EQ_OBJ 				'Overall Objective Function'
@@ -27,7 +27,7 @@ $IF %MACRO%==YES $GOTO MACROBJ
    %EQ%_OBJDAM(R,CUR %SWD%) 		'Damage costs'
 
 *-----------------------------------------------------------------------------
-$IF %MACRO%==YES
+$IFI %MACRO%==YES
 $LABEL MACROBJ BATINCLUDE eqdeclr.tm
 *-----------------------------------------------------------------------------
 * Core Equations
@@ -191,5 +191,4 @@ $LABEL UCDONE
     %EQ%_SOBJ(LIM%SWD%) 	'Deterministic objective by SOW'
     EQ_EXPOBJ(ALLSOW) 		'Expected value of total system cost'
     EQ_UPDEV(ALLSOW) 		'Upper absolute deviation'
-
 ;

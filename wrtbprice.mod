@@ -3,26 +3,33 @@
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *==============================================================================
-* Exporting shadow prices of commodity balances to be used as bprice
-* for elastic demands into a gdx file called Com_bprice.GDX
+* Saving shadow prices of commodity balances to be used as base prices
+* for elastic demands into gdx files com_bprice.gdx & <RUN_NAME>_DP.dgx
 *==============================================================================
-  PARAMETER DINV(R,ALLYEAR,ALLYEAR,CUR) //;
+  PARAMETER DINV(R,YEAR,CUR) //;
   PARAMETER SOL_BPRICE(REG,ALLYEAR,COM,ALL_TS,CUR) //;
+  PARAMETER SOL_ACFR(R,YEAR) //;
+  SET ANCAT / INV, INVX, FIX, FIXX, VAR, VARX, DAM /;
 *------------------------------------------------------------------------------
-* General undiscounting via matrix inversion currently disabled; using direct method
-  DINV(R,T,T,CUR)$G_RCUR(R,CUR) = 1/COEF_PVT(R,T);
+* Undiscounting via matrix inversion currently disabled; using direct method
+  DINV(R,T,CUR)$G_RCUR(R,CUR) = 1/COEF_PVT(R,T);
 
- SOL_BPRICE(R,T,C,S,CUR)$(RCS_COMBAL(R,T,C,S,'LO')$DEM(R,C)) = DINV(R,T,T,CUR)*EQG_COMBAL.M(R,T,C,S);
- SOL_BPRICE(R,T,C,S,CUR)$(RCS_COMBAL(R,T,C,S,'FX')$DEM(R,C)) = DINV(R,T,T,CUR)*EQE_COMBAL.M(R,T,C,S);
+  SOL_BPRICE(R,T,C,S,CUR)$(RCS_COMBAL(R,T,C,S,'LO')$DEM(R,C)) = DINV(R,T,CUR)*EQG_COMBAL.M(R,T,C,S);
+  SOL_BPRICE(R,T,C,S,CUR)$(RCS_COMBAL(R,T,C,S,'FX')$DEM(R,C)) = DINV(R,T,CUR)*EQE_COMBAL.M(R,T,C,S);
 
 * Check elastic supply curve requests
-$IF DEFINED DAM_ELAST TRACKC(R,C)$((NOT DAM_BQTY(R,C))$DAM_ELAST(R,C,'N')) = YES;
-$IF DEFINED DAM_COST LOOP((R,T,C,CUR)$DAM_COST(R,T,C,CUR), TRACKC(R,C) = NO);
- OPTION CLEAR=DAM_COEF,CLEAR=DAM_TVOC;
- DAM_COEF(RTCS_VARC(R,T,C,S))$TRACKC(R,C) = SUM(G_RCUR(R,CUR),DINV(R,T,T,CUR)*EQE_COMPRD.M(R,T,C,S))+EPS;
- DAM_TVOC(RTC(R,T,C),'N')$TRACKC(R,C) = SUM(RTCS_VARC(R,T,C,S),DAM_COEF(R,T,C,S)*VAR_COMPRD.L(R,T,C,S));
- OPTION CLEAR=TRACKC;
+$ IF DEFINED DAM_ELAST TRACKC(RC)$((NOT DAM_BQTY(RC))$DAM_ELAST(RC,'N')) = YES;
+$ IF DEFINED DAM_COST LOOP((R,T,C,CUR)$DAM_COST(R,T,C,CUR), TRACKC(R,C) = NO);
+  OPTION CLEAR=DAM_COEF,CLEAR=DAM_TVOC;
+  DAM_COEF(RTCS_VARC(R,T,C,S))$TRACKC(R,C) = EQE_COMPRD.M(R,T,C,S)/COEF_PVT(R,T)+EPS;
+  DAM_TVOC(RTC(R,T,C),'N')$TRACKC(R,C) = SUM(RTCS_VARC(RTC,S),DAM_COEF(RTC,S)*VAR_COMPRD.L(RTC,S));
 
- EXECUTE_UNLOAD 'com_bprice',sol_bprice,DAM_COEF,DAM_TVOC;
- EXECUTE_UNLOAD '%GDXPATH%%RUN_NAME%_DP',sol_bprice,DAM_COEF,DAM_TVOC;
+* Save also annual cost to expenditure ratios for TIMES CGE calibration
+  RB(R,T) = SUM((COM_TS(DEM(R,C),S),RDCUR(R,CUR)),SOL_BPRICE(R,T,C,S,CUR)*COM_FR(R,T,C,S)*COM_PROJ(R,T,C))+1-1;
+$ IFI NOT %STAGES%==YES
+$ IFI %ANNCOST%==LEV SOL_ACFR(R,T)$RB(R,T)=SUM(ANCAT,REG_ACOST(R,T,ANCAT)) / RB(R,T);
+  OPTION CLEAR=RB,CLEAR=TRACKC;
+
+  EXECUTE_UNLOAD 'com_bprice',sol_bprice,DAM_COEF,DAM_TVOC,SOL_ACFR;
+  EXECUTE_UNLOAD '%GDXPATH%%RUN_NAME%_DP',sol_bprice,DAM_COEF,DAM_TVOC,SOL_ACFR;
 *------------------------------------------------------------------------------

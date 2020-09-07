@@ -2243,3 +2243,26 @@ wrtbprice.mod : (5)
 initmty.vda   : (5)
 solsetv.v3    : (5)
 times2veda.vdd: (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.4.3
+-----------------------------------------------------------------------------------------
+Date: 4-Sep-2020 [AL]: Minor release
+1) Fixed handling of new attribute REG_BDNCAP when STAGES and no FIXBOH
+2) Generalized TIMESED to allow for specifying Base price GDX file name
+3) Preparation for forthcoming MLF extension
+4) Small improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.4.3
+initmty.mod   : (3)
+maindrv.mod   : (3)
+spoint.mod    : (1)
+readbprice.mod: (2),(3)
+wrtbprice.mod : (3)
+eqdeclr.mod   : (3)
+eqmain.mod    : (3)
+eqobjann.mod  : (4)
+solve.mod     : (3)
+rptmain.mod   : (3)
+eqdamage.mod  : (3)

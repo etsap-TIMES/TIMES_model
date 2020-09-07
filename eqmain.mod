@@ -30,9 +30,9 @@ $   IFI %VDA%==YES $BATINCLUDE equ_ext.vda DECLR
 $IFI '%SPINES%'==YES $BATINCLUDE recurrin.stc SPINES
 $IF  '%STAGES%'==YES $%WITSPINE% %SW_STVARS%
 
-$IFI NOT %OBJ%==LIN  $ SETLOCAL OBJ %1
-$IF NOT %MACRO%==YES $ BATINCLUDE eqobj.%1 %1
-$IF %MACRO%    ==YES $ BATINCLUDE eqobj.tm %1
+$IFI NOT %OBJ%==LIN   $SETLOCAL OBJ %1
+$IFI NOT %MACRO%==YES $BATINCLUDE eqobj.%1 %1
+$IFI %MACRO%    ==YES $BATINCLUDE eqobj.tm %1
 *
 $IFI '%SPINES%'==YES $%EWISPINE%
 *-----------------------------------------------------------------------------
@@ -71,8 +71,8 @@ $IF DEFINED PRC_SIMV $INCLUDE coef_csv.mod
 *-----------------------------------------------------------------------------
 $IFI '%SPINES%'==YES $%WITSPINE%
 $IF '%VALIDATE%'==YES $GOTO M2T
-$IF %ETL% == 'YES'   RTP_VARP(RTP(R,T,P))$TEG(P) = YES;
-$IF %MACRO% == 'YES' RTP_VARP(RTP(R,T,P))$(TM_CAPTB(R,P) AND (TM_QFAC(R) NE 0)) = YES;
+$IFI %ETL% == YES RTP_VARP(RTP(R,T,P))$TEG(P) = YES;
+$IFI %MACRO%==YES RTP_VARP(RTP(R,T,P))$((TM_QFAC(R) NE 0)$TM_CAPTB(R,P)) = YES;
 $   BATINCLUDE eqcpt.%1 E E "RTP_VARP(R,T,P) OR YES$CAP_BND(R,T,P,'FX')"  "%VAR%_CAP(R,T,P %SOW%)"
 $   BATINCLUDE eqcpt.%1 L L "((NOT RTP_VARP(R,T,P))$CAP_BND(R,T,P,'LO'))" "CAP_BND(R,T,P,'LO')"
 $   BATINCLUDE eqcpt.%1 G G "((NOT RTP_VARP(R,T,P))$CAP_BND(R,T,P,'UP'))" "CAP_BND(R,T,P,'UP')"

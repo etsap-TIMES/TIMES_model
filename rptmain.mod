@@ -26,7 +26,7 @@ $IFI %SOLVEDA% == 'YES'  $BATINCLUDE rptmain.rpt
 $IFI %SOLVEDA% == '1'    $BATINCLUDE rptlite.rpt S WW, "'1',"
 
 $LABEL OTHER_REP
-$IFI %MACRO%  == YES     $BATINCLUDE rptmain.tm
+$IF  %MACRO%  == YES     $BATINCLUDE rptmain.tm
 
 * If running stochastics, streamline reports
 $IF  %STAGES% == YES     $BATINCLUDE rptmain.stc SOW %SWS% "'1'" ",'1')"

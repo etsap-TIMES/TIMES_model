@@ -70,18 +70,18 @@ $LABEL COEF
   OBJ_SUMSI(RTP(R,V(LL),P),LL+FIL2(V))$(B(V)+NCAP_ILED(R,V,P)<MIYR_V1) = YES;
 
 * Annualizing coefficient for fixed costs over years of capacity transfer
-  COEF_CRF(OBJ_FCUR(R,V,P,CUR)) = (1-(1/(1+G_DRATE(R,V,CUR)))) / (1-(1+G_DRATE(R,V,CUR))**
-     (-MAX(1,MIN(MIYR_VL+1,B(V)+NCAP_ILED(R,V,P)+NCAP_TLIFE(R,V,P)*COEF_RPTI(R,V,P))-MAX(MIYR_V1,B(V)+NCAP_ILED(R,V,P)))));
+  COEF_CRF(OBJ_FCUR(R,V,P,CUR)) =
+    SUM((OBJ_SUMIV(K_EOH,R,V,P,JOT,LIFE),INVSPRED(K_EOH,JOT,LL,K)),OBJ_LIFE(LL,R,JOT,LIFE,CUR));
 
 * Fixed cost coefficient
 
-  COEF_OBFIX%1(OBJ_FCUR(R,V,P,CUR)) = SUM(OBJ_SUMSI(R,V,P,K),COEF_CRF(R,V,P,CUR)/OBJ_DISC(R,K,CUR)) * (
+  COEF_OBFIX%1(OBJ_FCUR(R,V,P,CUR))$COEF_CRF(R,V,P,CUR) = SUM(OBJ_SUMSI(R,V,P,K),1/COEF_CRF(R,V,P,CUR)) * (
 
 * Fixed O&M Cost and Taxes
 
       SUM(OBJ_SUMIV(K_EOH,R,V,P,JOT,LIFE)$(NOT RTP_ISHPR(R,V,P)),
        SUM(INVSPRED(K_EOH,JOT,LL,K), OBJ_LIFE(LL,R,JOT,LIFE,CUR) * %CAPWD%
-        (OBJ_FOM(R,K,P,CUR)+(OBJ_FTX(R,K,P,CUR)-OBJ_FSB(R,K,P,CUR))%2)) / OBJ_DIVIV(R,V,P)) +
+        (OBJ_FOM(R,K,P,CUR)+(OBJ_FTX(R,K,P,CUR)-OBJ_FSB(R,K,P,CUR))%2))) +
 
       SUM(OBJ_SUMIV(K_EOH,RTP_ISHPR(R,V,P),JOT,LIFE),
         SUM((INVSPRED(K_EOH,JOT,LL,K),OPYEAR(LIFE,AGE),Y_EOH(LL+(ORD(AGE)-1))),
@@ -92,7 +92,7 @@ $LABEL COEF
                    OBJ_FSB(R,K,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'3',J,JJ),SHAPE(J,AGE)*MULTI(JJ,Y_EOH)-1))%2
                 ) 
 
-           ) / OBJ_DIVIV(R,V,P)
+           )
          ) +
 
 * Decommissioning Surveillance
@@ -100,7 +100,7 @@ $LABEL COEF
   );
 
   COEF_OBFIX%1(OBJ_FCUR(R,PASTMILE(V),P,CUR))$PRC_RESID(R,'0',P) = 
-     COEF_OBFIX%1(R,V,P,CUR) / SUM(OBJ_SUMSI(R,V,P,K),COEF_CRF(R,V,P,CUR)/OBJ_DISC(R,K,CUR)) /
+     COEF_OBFIX%1(R,V,P,CUR) * SUM(OBJ_SUMSI(R,V,P,K),COEF_CRF(R,V,P,CUR)/OBJ_DIVIV(R,V,P)) /
      SUM(VNT(V,T)$PRC_RESID(R,T,P),PRC_RESID(R,T,P)/NCAP_PASTI(R,V,P)*OBJ_PVT(R,T,CUR));
 *===============================================================================
   OPTION CLEAR=OBJ_SUMSI,CLEAR=COEF_CRF;

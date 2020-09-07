@@ -19,9 +19,7 @@ $IFI %SPOINT%==YES $SET SPOINT 1
 $LABEL CHECK
 $IF '%1'=='0' $EXIT
 *-----------------------------------------------------------------------------
-$IF NOT SET FIXBOH $GOTO LOADS
-$IF NOT %STAGES%==YES $GOTO LOADS
-$BATINCLUDE clearsol.stc ALL
+$IF %STAGES%==YES $BATINCLUDE clearsol.stc ALL
 *-----------------------------------------------------------------------------
 $LABEL LOADS
 $IF %RPOINT%==NO $GOTO LLOAD
@@ -51,20 +49,20 @@ $IF %LOAD%==2 $GOTO FINISH
 $IF SET FIXBOH $ABORT Could not load gdx file %LPOINT%
 *-----------------------------------------------------------------------------
 $LABEL RUNNAME
-$IF NOT SET SPOINT $EXIT
-$IFI %LPOINT%==%RUN_NAME% $EXIT
+$IF NOT SET SPOINT $GOTO FINISH
+$IFI %LPOINT%==%RUN_NAME% $GOTO FINISH
 $IF %SPOINT%==2 $SET LOAD 1
 $IF %SPOINT%==3 $SET LOAD 1
-$IF %LOAD%==0 $EXIT
+$IF %LOAD%==0 $GOTO FINISH
 $IF EXIST %PATH%%RUN_NAME%_P.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%RUN_NAME%_p.gdx';
 $IF %LOAD%==2 $GOTO FINISH
 $IF EXIST %PATH%%RUN_NAME%.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%RUN_NAME%.gdx';
-$IF %LOAD%==2 $GOTO FINISH
 *-----------------------------------------------------------------------------
 $LABEL FINISH
-$IF NOT DEFINED REG_BDNCAP $EXIT
+$IF NOT DEFINED REG_BDNCAP $SET LOAD '0' $CLEAR REG_BDNCAP
+$IF NOT %LOAD%==2 $EXIT
 * Fix new capacities to previous solution if requested
   SET RT_NO(R,T), RTCS(R,ALLYEAR,C,S);
   REG_BDNCAP(R,BDNEQ)$REG_BDNCAP(R,'FX')=MAX(REG_BDNCAP(R,BDNEQ),REG_BDNCAP(R,'FX'))$(SMAX(BD,REG_BDNCAP(R,BD))>REG_BDNCAP(R,'FX'));
