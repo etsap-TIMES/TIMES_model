@@ -61,16 +61,17 @@ $IF EXIST %PATH%%RUN_NAME%.gdx $SET LOAD 2
 $IF %LOAD%==2 execute_loadpoint '%PATH%%RUN_NAME%.gdx';
 *-----------------------------------------------------------------------------
 $LABEL FINISH
-$IF NOT DEFINED REG_BDNCAP $SET LOAD '0' $CLEAR REG_BDNCAP
+$IF NOT DEFINED REG_BDNCAP $SET LOAD 0 
+$IF NOT %LOAD%==2 $CLEAR REG_BDNCAP
 $IF NOT %LOAD%==2 $EXIT
 * Fix new capacities to previous solution if requested
   SET RT_NO(R,T), RTCS(R,ALLYEAR,C,S);
   REG_BDNCAP(R,BDNEQ)$REG_BDNCAP(R,'FX')=MAX(REG_BDNCAP(R,BDNEQ),REG_BDNCAP(R,'FX'))$(SMAX(BD,REG_BDNCAP(R,BD))>REG_BDNCAP(R,'FX'));
   REG_BDNCAP(R,'FX')$SUM(BDNEQ$REG_BDNCAP(R,BDNEQ),1)=0;
   LOOP((R,BD)$REG_BDNCAP(R,BD),Z=REG_BDNCAP(R,BD); RT_NO(R,T)$(M(T)<=Z)=YES);
-* Determine which years available
-  RTCS(R,T,C,S--ORD(S))$=EQG_COMBAL.M(R,T,C,S);
-  RTCS(R,T,C,S--ORD(S))$=EQE_COMBAL.M(R,T,C,S);
+* Determine which milestones available
+  RTCS(RTC,S--ORD(S))$=EQG_COMBAL.M(RTC,S);
+  RTCS(RTC,S--ORD(S))$=EQE_COMBAL.M(RTC,S);
   OPTION FIL < RTCS;
   PASTSUM(RTP(RT_NO(R,T(FIL)),P))$PRC_CAP(R,P)=EPS;
   PASTSUM(RTP(RT_NO,P)) $= VAR_NCAP.L(RTP);

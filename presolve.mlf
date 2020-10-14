@@ -1,0 +1,103 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* Presolve.mlf - Prepare coefficients for full MLF model
+*------------------------------------------------------------------------------
+  SET TM_DMAS(CG,CG) //;
+  SET TM_CES(CG) / AKL, YN /;
+  SET TM_RCJ(R,CG,J,BD) //;
+  SET LOGJ(J,BD) //;
+
+  PARAMETERS TM_LOGJOT /0/, TM_LSC /0/
+     TM_BASEPRI(R,T,CG)
+     TM_BASELEV(R,T,CG)
+     TM_PREF(R,T,CG)
+     TM_QREF(R,T,CG)
+     TM_SHAR(R,T,CG,CG)
+     TM_AGG(R,T,CG,CG)
+     TM_CESLEV(R,T,CG)
+     TM_AGC(R,T,CG,CG,J,BD)
+     TM_MIDCON(R,T)
+     TM_LOGVAL(J,BD);
+
+* Reset demand indicators
+  OPTION CLEAR=DM; DM(C)$=SUM(TM_DM(MR,C),1);
+
+  TM_BASEPRI(MR,T,MAG(C))= ABS(EQ_DD.M(MR,T,C)*TM_AEEIFAC(MR,T,C)/TM_SCALE_NRG)/TM_DFACT(MR,T);
+  TM_BASEPRI(MR,T,'LAB') = ABS(EQ_LABOR.M(MR,T))/TM_DFACT(MR,T);
+  TM_BASEPRI(MR,T,'KN')  = ABS(EQ_KNCAP.M(MR,T))/TM_DFACT(MR,T);
+  TM_BASEPRI(MR,T,'AKL') = ABS(EQ_AKL.M(MR,T))/TM_DFACT(MR,T);
+  TM_BASEPRI(MR,T,'YN')  = ABS(EQ_PROD_Y.M(MR,T))/TM_DFACT(MR,T);
+  TM_BASELEV(MR,T,MAG)   = VAR_D.L(MR,T,MAG);
+  TM_BASELEV(MR,T,'YN')  = PAR_Y(MR,T);
+  TM_BASELEV(MR,T,'CON') = VAR_C.L(MR,T);
+
+  TM_DMAS('AKL','KN')=YES;
+  TM_DMAS('AKL','LAB')=YES;
+  TM_DMAS('YN','AKL')=YES;
+  TM_DMAS('YN','ACT')=YES;
+
+* Calculate CES parameters
+  TM_PREF(MR(R),T,CG) $= TM_BASEPRI(R,T,CG);
+  TM_CESLEV(MR(R),T,TM_CES(CG)) = SUM(TM_DMAS(CG,CG1),TM_BASELEV(R,T,CG1));
+  TM_PREF(MR(R),T,TM_CES(CG)) = SUM(TM_DMAS(CG,CG1),TM_BASELEV(R,T,CG1)*TM_PREF(R,T,CG1))/TM_CESLEV(R,T,CG);
+  TM_AGG(MR(R),T,CG1,TM_CES(CG))$TM_DMAS(CG,CG1)=1+(TM_BASEPRI(R,T,CG1)/TM_PREF(R,T,CG)-1)$TM_PREF(R,T,CG);
+* Normalize TM_AGG
+  TM_QREF(MR(R),T,TM_CES(CG)) = SUM(TM_DMAS(CG,CG1),TM_AGG(R,T,CG1,CG)*TM_BASELEV(R,T,CG1));
+  TM_AGG(MR(R),T,CG1,TM_CES(CG))$TM_AGG(R,T,CG1,CG)=TM_AGG(R,T,CG1,CG)*TM_CESLEV(R,T,CG)/TM_QREF(R,T,CG);
+* Reset QREF and determine shares
+  TM_QREF(MR(R),T,CG) $= TM_BASELEV(R,T,CG);
+  TM_SHAR(MR(R),T,CG,CG1)$TM_DMAS(CG,CG1) = TM_BASELEV(R,T,CG1) / TM_CESLEV(R,T,CG);
+  TM_CIE(MR(R),T,TM_CES(CG))$TM_CESLEV(R,T,CG)= TM_QREF(R,T,CG) / TM_CESLEV(R,T,CG);
+* Reverse RD_SHAR for CES aggregation
+  TM_SHAR(MR(R),T,CG1,CG)$TM_AGG(R,T,CG1,CG)=TM_AGG(R,T,CG1,CG)*TM_PREF(R,T,CG);
+
+* Prepare elasticity steps
+  LOOP(TM_DMAS(CG,CG1),Z=TM_DEFVAL('MACVOC');
+   TM_STEP(R,CG1,BDNEQ)=TM_DEFVAL('MACSTEP');
+   TM_VOC(MR(R),T,CG1,BDNEQ)=MIN(Z,Z/2+(M(T)-MIYR_V1)*0.01);
+   TM_RCJ(MR(R),CG1,J,BDNEQ)$(ORD(J)<=TM_STEP(R,CG1,BDNEQ))=YES);
+* Cobb-Douglas function
+  TM_AGC(MR(R),T,CG('AKL'),CG1,J,BD)$((TM_VOC(R,T,CG1,BD)>0)$TM_RCJ(R,CG1,J,BD)$TM_DMAS(CG,CG1)) = -BDSIG(BD)*
+    LOG(1-BDSIG(BD)*ORD(J)*TM_VOC(R,T,CG1,BD)/TM_STEP(R,CG1,BD))/(ORD(J)*TM_VOC(R,T,CG1,BD)/TM_STEP(R,CG1,BD));
+* CES Production function
+  TM_AGC(MR(R),T,CG('YN'),CG1,J,BD)$((TM_VOC(R,T,CG1,BD)>0)$TM_RCJ(R,CG1,J,BD)$TM_DMAS(CG,CG1)) = BDSIG(BD)*
+    (1-(1-BDSIG(BD)*ORD(J)*TM_VOC(R,T,CG1,BD)/TM_STEP(R,CG1,BD))**(1-1/TM_ESUB(R)))/(ORD(J)*TM_VOC(R,T,CG1,BD)/TM_STEP(R,CG1,BD))/(1-1/TM_ESUB(R));
+* Restore PREF to BASEPRI
+  TM_PREF(MR(R),T,CG) $= TM_BASEPRI(R,T,CG);
+
+* Calculate demand parameters
+  TM_PREF(MR(R),T,C)$TM_DM(R,C) = DDF_PREF(R,T,C);
+  TM_QREF(MR(R),T,C)$TM_DM(R,C) = COM_PROJ(R,T,C);
+  TM_AGG(MR(R),T,DM(C),CG('ACT')) = TM_PREF(R,T,C)/TM_DMC(R,T,CG);
+  TM_SHAR(MR(R),T,CG('ACT'),C)$TM_DM(R,C) = TM_QREF(R,T,C) / TM_DEM(R,T,CG);
+  TM_SHAR(MR(R),T,C,CG('ACT'))$TM_DM(R,C) = TM_AGG(R,T,C,CG)*TM_DMC(R,T,CG);
+* Prepare elasticity steps
+  Z=SMIN(PP(T),M(T));
+  TM_STEP(TM_DM(RC),BDNEQ(BD))$(NOT TM_STEP(RC,BD))=55-5*BDSIG(BD);
+  TM_VOC(MR(R),T,C,'LO')$((NOT TM_VOC(R,T,C,'LO'))$TM_DM(R,C)) = MIN(0.45,0.15+(M(T)-Z)*.015);
+  TM_VOC(MR(R),T,C,'UP')$((NOT TM_VOC(R,T,C,'UP'))$TM_DM(R,C)) = 0.3/(1-TM_VOC(R,T,C,'LO'))+TM_VOC(R,T,C,'LO')-0.3;
+  TM_RCJ(TM_DM(MR,C),J,BDNEQ(BD))$(ORD(J)<=TM_STEP(MR,C,BD)) = YES;
+* Demand CES aggregation
+  TM_AGC(MR(R),T,CG('ACT'),C,J,BD)$((TM_VOC(R,T,C,BD)>0)$TM_RCJ(R,C,J,BD)$TM_DM(R,C)) = BDSIG(BD)*
+    (1-(1-BDSIG(BD)*ORD(J)*TM_VOC(R,T,C,BD)/TM_STEP(R,C,BD))**(1-1/TM_DESUB(R)))/(ORD(J)*TM_VOC(R,T,C,BD)/TM_STEP(R,C,BD))/(1-1/TM_DESUB(R));
+
+* Logarithmic utility from consumption
+  Z=TM_DEFVAL('LOGSTEP');
+  LOGJ(J,BDNEQ(BD))$(ORD(J)<=ROUND(Z/2)) = YES;
+  TM_MIDCON(R,T) = TM_BASELEV(R,T,'CON')*0.5*SQRT(EXP(LOG(2)*1.1));
+  TM_LOGJOT=LOG(2)/ROUND(Z/1.1);
+  TM_LOGVAL(LOGJ(J,BDNEQ(BD))) = (1-EXP(-BDSIG(BD)*ORD(J)*TM_LOGJOT))/(TM_LOGJOT*ORD(J));
+  TM_LSC=ROUND(Z**.7,-1);
+
+*------------------------------------------------------------------------------
+* Reset bounds
+  VAR_K.UP(MR,T) = INF;
+  VAR_K.LO(MR,T) = 0;
+  VAR_D.UP(MR,T,MAG) = INF;
+  VAR_D.LO(MR,T,MAG) = 0;
+  VAR_D.FX(MR,T,'LAB') = TM_L(MR,T);
+  VAR_C.UP(MR(R),T)$(NOT TM_PP(R,T)) = VAR_C.L(R,T);
+  OPTION BRATIO=1;

@@ -1,0 +1,113 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*-----------------------------------------------------------------------------
+* RPT_EXT.mlf - Extension for MACRO MLF: Negishi iteration and reporting
+*-----------------------------------------------------------------------------
+* Common reporting parameter declarations
+$ SET SOLVEDA 1
+$ BATINCLUDE rptlite.rpt
+* Scenario index not supported in current version, use SOW 1
+  SET SOW / 1 /;
+*-----------------------------------------------------------------------
+$ SET METHOD LP
+$ IFI %NONLP%==NL $SET METHOD NLP
+  DOITER=1;
+  LOOP(NITER$DOITER,
+*   Perform Negishi iterations with tax rebate
+*-----------------------------------------------------------------------
+*   Calculation of annual costs and commodity marginals
+    OPTION CLEAR=PAR_FLO,CLEAR=PAR_IRE;
+$   BATINCLUDE sol_flo.red PAR_FLO '' .L
+$   BATINCLUDE sol_ire.rpt
+    OPTION CLEAR=CST_PVP,CLEAR=CST_ACTC,CLEAR=CST_INVC,CLEAR=CST_INVX,CLEAR=CST_FIXC,CLEAR=CST_FIXX;
+    OPTION CLEAR=CAP_NEW,CLEAR=CST_FLOC,CLEAR=CST_FLOX,CLEAR=CST_COMC,CLEAR=CST_COMX,CLEAR=CST_IREC;
+$   SET TIMESED NO
+$   BATINCLUDE rpt_obj.rpt '' "" '' '%SYSPREFIX%' 0
+$   BATINCLUDE cost_ann.rpt
+*-----------------------------------------------------------------------
+*   Calculate new Negishi weights
+    IF(CARD(MR),
+      TM_NWTIT(NITER,MR) = TM_NWT(MR);
+      LOOP(TB(T-1), MY_ARRAY(PP) = ABS(EQ_TRDBAL.M(PP)/EQ_TRDBAL.M(T)));
+      TM_NWT(MR(R)) = SUM(PP, MY_ARRAY(PP)*(VAR_C.L(R,PP)+VAR_NTX.L(R,PP)));
+      TM_NWT(MR) = TM_NWT(MR) / SUM(REG, TM_NWT(REG));
+      IF(CARD(MR)=1, Z=0; ELSE Z = SUM(MR, ABS(TM_NWTIT(NITER,MR)-TM_NWT(MR))));
+      F=TM_DEFVAL('NEGTOL'); IF(ORD(NITER)=1, F=F*(1+LOG(10**.1)) ELSE F=ABS(F));
+*     Calculate rebate of tax revenues
+      RB(MR(R),T)=TM_TAXREV(R,T);
+      TM_TAXREV(MR(R),PP(T)) = REG_ACOST(R,T,'INVX')+REG_ACOST(R,T,'FIXX')+REG_ACOST(R,T,'VARX');
+      DFUNC = SMAX(MR(R),TM_SCALE_CST*SUM(PP(T),COEF_PVT(R,T)*ABS(TM_TAXREV(R,T)-RB(R,T)))/SUM(PP(T),COEF_PVT(R,T)*VAR_EC.L(R,T)*TM_HDF(R,T)));
+      DISPLAY "Negishi Tolerance, Negishi Gap, Tax Gap:",F,Z,DFUNC;
+      IF(MAX(Z,DFUNC)<F, DOITER=0;
+      ELSE SOLVE %MODEL_NAME% MAXIMIZING VAR_UTIL USING %METHOD%)
+    ELSE DOITER=0));
+
+*-----------------------------------------------------------------------
+* Calculation of undiscounted shadow prices in MACRO
+*-----------------------------------------------------------------------
+  PARAMETER VDA_DISC(R,ALLYEAR) //;
+  VDA_DISC(MR,T) = ABS(-EQ_ENSCST.M(MR,T) * TM_SCALE_CST);
+  LOOP(MIYR_1(TT(T-1)),VDA_DISC(R,TT)$(VDA_DISC(R,TT) LE 0) = COEF_PVT(R,TT)/COEF_PVT(R,T)*VDA_DISC(R,T));
+  VAR_OBJ.L(R,OBV(OBVANN),CUR)=0;
+* Trade prices and implied costs/revenues
+  PAR_IPRIC(MR(R),PP(T),P,C,TS,IE)$PAR_IPRIC(R,T,P,C,TS,IE) = -PAR_IPRIC(R,T,P,C,TS,IE)*COEF_PVT(R,T)/VDA_DISC(R,T);
+  CST_IREC(RTP_VINTYR(MR(R),V,PP(T),P),C)$(RPC(R,P,C)$RP_IRE(R,P)) $=
+     SUM((RTPCS_VARF(R,T,P,C,S),RPC_IREIO(R,P,C,IE,'IN')),PAR_IPRIC(R,T,P,C,S,IE)*PAR_IRE(R,V,T,P,C,S,IE));
+  REG_ACOST(MR(R),PP(T),'IRE') =  SUM((VNT(V,T),P,C)$CST_IREC(R,V,T,P,C),CST_IREC(R,V,T,P,C));
+
+*-----------------------------------------------------------------------
+* Miscellaneous reportings
+$ BATINCLUDE sol_flo.red PAR_FLO M .M
+  TM_UDF(R,T)=COEF_PVT(R,T);
+  COEF_PVT(MR,T) = -VDA_DISC(MR,T);
+$ BATINCLUDE rptmisc.rpt '' ''
+  VAR_UTIL.UP = INF;
+  PAR_NCAPM(RTP(R,T,P))$(VAR_NCAP.M(RTP)*COEF_OBJINV(RTP)) = VAR_NCAP.M(RTP)*TM_UDF(R,T)/COEF_PVT(R,T)/COEF_OBJINV(RTP);
+
+*-----------------------------------------------------------------------
+* Discounted objective values by cost type(INV, FIX, VAR etc.)
+*-----------------------------------------------------------------------
+* Discounted objective value by region
+  REG_WOBJ(R,'INV',CUR)  = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'INV'));
+  REG_WOBJ(R,'INVX',CUR) = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'INVX'));
+  REG_WOBJ(R,'FIX',CUR)  = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'FIX'));
+  REG_WOBJ(R,'FIXX',CUR) = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'FIXX'));
+  REG_WOBJ(R,'VAR',CUR)  = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'VAR'));
+  REG_WOBJ(R,'VARX',CUR) = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'VARX'));
+  REG_WOBJ(R,'ELS',CUR)  = SUM(T, OBJ_PVT(R,T,CUR)*REG_ACOST(R,T,'ELS'));
+$IF DEFINED DAM_COST  REG_WOBJ(R,'DAM',CUR)  = VAR_OBJ.L(R,'OBJDAM',CUR);
+  REG_IREC(R) = SUM(T,TM_UDF(R,T)*REG_ACOST(R,T,'IRE'));
+  REG_OBJ(R) = SUM((ITEM,RDCUR(R,CUR))$REG_WOBJ(R,ITEM,CUR), REG_WOBJ(R,ITEM,CUR));
+  OBJz.L = SUM(R,REG_OBJ(R));
+
+*---------------------------------------------------------------------
+* Shadow prices of user constraints
+*---------------------------------------------------------------------
+* Note: undiscounting only done for user constraints having region and period as index
+$ IF %VAR_UC%==YES $GOTO UC_DONE
+$ BATINCLUDE par_uc.rpt SM EQE
+$ BATINCLUDE par_uc.rpt SM EQG
+$ BATINCLUDE par_uc.rpt SM EQL
+$ LABEL UC_DONE
+
+OPTION CLEAR=F_INOUT, CLEAR=F_INOUTS, CLEAR=F_IOSET;
+
+*---------------------------------------------------------------------
+* Report parameters for TIMES-MACRO
+*---------------------------------------------------------------------
+
+  PAR_Y(MR(R),T(TB))  = TM_Y0(R);   PAR_Y(MR(R),PP(T)) = VAR_C.L(R,T) + VAR_INV.L(R,T) + VAR_EC.L(R,T) + VAR_NTX.L(R,T);
+  TM_GDP(MR(R),T(TB)) = TM_GDP0(R); TM_GDP(MR(R),PP(T)) = VAR_C.L(R,T) + VAR_INV.L(R,T) + VAR_NTX.L(R,T);
+
+* Reporting parameters
+  TM_RESULT('TM_GDP-REF',MR,T) = TM_GDPGOAL(MR,T);
+  TM_RESULT('TM_GDP-ACT',MR,T) = TM_GDP(MR,T);
+  TM_RESULT('TM_PRD-Y',MR,T)   = PAR_Y(MR,T);
+  TM_RESULT('TM_CON-C',MR,T)   = VAR_C.L(MR,T);
+  TM_RESULT('TM_CAP-K',MR,T)   = VAR_K.L(MR,T);
+  TM_RESULT('TM_INV-I',MR,T)   = VAR_INV.L(MR,T);
+  TM_RESULT('TM_ESCOST',MR,T)  = VAR_EC.L(MR,T);
+  TM_RESULT('TM_GDPLOS',MR,T) = 100*(TM_GDPGOAL(MR,T)-TM_GDP(MR,T))/TM_GDPGOAL(MR,T);
+  DISPLAY TM_RESULT;

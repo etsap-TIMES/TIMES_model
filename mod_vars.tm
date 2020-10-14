@@ -24,22 +24,23 @@ $ INCLUDE mod_vars.mod
 * - Annual Cost Components: investment, fixed, variable costs
 * - Annual Demands
 *-----------------------------------------------------------------------------*
-  VAR_ANNCST(OBVANN,R,ALLYEAR,CUR)  Annualized costs
-  VAR_DEM(R,MILESTONYR,C)           Annual useful demand
+  VAR_ANNCST(OBV,R,ALLYEAR,CUR)  Annualized costs
+  VAR_DEM(R,MILESTONYR,C)        Annual useful demand
 
 *-----------------------------------------------------------------------------*
 * MACRO variables
 *-----------------------------------------------------------------------------*
   VAR_EC(R,ALLYEAR)       'Annual energy costs in MACRO'
   VAR_C(R,T)              'Annual consumption in MACRO'
-  VAR_D(R,T,C)            'Annual useful demand in MACRO'
   VAR_Y(R,T)              'Annual production in MACRO'
-  VAR_INV(R,T)            'Annual investments in MACRO'
-  VAR_OBJCOST(R,ALLYEAR)  'Annual energy costs in TIMES'
   VAR_K(R,T)              'Total capital'
-  VAR_SP(R,T,C)           'Artificial variable for scaling shadow price'
+  VAR_INV(R,T)            'Annual investments in MACRO'
+  VAR_D(R,T,CG)           'Annual useful demand in MACRO'
+  VAR_SP(R,T,CG)          'Artificial variable for scaling shadow price'
+  VAR_OBJCOST(R,ALLYEAR)  'Annual energy costs in TIMES'
   VAR_XCAP(R,YEAR,P)      'Market penetration bounds - additional capacity'
   VAR_XCAPP(R,YEAR,P,J)   'Market penetration bounds - additional capacity'
+  VAR_MELA(R,T,CG,J,BD)   'Step variables for elasticities'
   ;
 
 
@@ -49,4 +50,8 @@ $ INCLUDE mod_vars.mod
 * MACRO variables
 *-----------------------------------------------------------------------------*
   VAR_UTIL                Total utility
+  VAR_NTX(R,T)            Trade in numeraire
   ;
+
+  VAR_ANNCST.LO(OBV(UCN),R,T,CUR)$(RDCUR(R,CUR)$UC_RHS(UCN,'N')) = INF;
+  VAR_ANNCST.LO(OBV(UCN),R,T,CUR)$(RDCUR(R,CUR)$UC_RHSR(R,UCN,'N')) = INF;

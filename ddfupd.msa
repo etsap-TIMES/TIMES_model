@@ -9,7 +9,7 @@
 *
 * initialize Y
   TM_DDF_Y(MR(R),T(T_1)) = 1;
-  TM_DDF_Y(MR(R),PP) = ((TM_GDPGOAL(R,PP)/TM_GDP(R,PP))**.5) * PAR_Y(R,PP)/SUM(T_1(T),PAR_Y(R,T));
+  TM_DDF_Y(MR(R),PP) = ((TM_GDPGOAL(R,PP)/TM_GDP(R,PP))**.7) * PAR_Y(R,PP)/SUM(T_1(T),PAR_Y(R,T));
   DISPLAY TM_DDF_Y;
 
 * normalize to base year

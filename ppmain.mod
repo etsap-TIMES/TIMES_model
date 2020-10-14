@@ -296,7 +296,9 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
     PRC_CG(RP_PG) = YES;
 
 * Add aggregate commodities into RC:
-  LOOP((R,DATAYEAR,C,COM)$COM_AGG(R,DATAYEAR,C,COM), RC(R,COM) = YES);
+  OPTION MI_DMAS<=COM_AGG,FIN<COM_TMAP;
+  LOOP(MI_DMAS(R,COM,C)$(FIN(R,COM)$FIN(R,C)),RC(R,C)=YES);
+  OPTION CLEAR=FIN,CLEAR=MI_DMAS;
 
 * determination of capacity related flows - initialization
     RPC_CAPFLO(RTP,C)$(NCAP_ICOM(RTP,C)+NCAP_OCOM(RTP,C)) = YES;
@@ -966,7 +968,7 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Unsupported diverging trade topo
    OPTION CLEAR=TRACKC;
 
 * handle TIMES-MACRO
-$  IF %MACRO%==YES  COM_LIM(RC(DEM),BD)$(NOT COM_LIM(RC,'N')) = NOT BDNEQ(BD);
+$  IFI %MACRO%==YES COM_LIM(RC(DEM),BD)$(NOT COM_LIM(RC,'N')) = NOT BDNEQ(BD);
 $  IFI %MICRO%==YES COM_LIM(RC(DEM),BD)$(NOT COM_LIM(RC,'N')) = NOT BDNEQ(BD);
 
 *-----------------------------------------------------------------------------

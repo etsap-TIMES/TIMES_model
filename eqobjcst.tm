@@ -46,9 +46,18 @@ $IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc OBJFIX
 * Generate Variable cost equation summing over all active indexes by region and currency
 *===============================================================================
 
-    EQ_ANNVAR(R,T,CUR)$RDCUR(R,CUR) ..
+   EQ_ANNVAR(R,T,CUR)$RDCUR(R,CUR) ..
 
 $BATINCLUDE eqobjvar.mod mod *
 
-    SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR)) * VAR_ANNCST('OBJVAR',R,T,CUR);
+   OBJ_PVT(R,T,CUR) * VAR_ANNCST('OBJVAR',R,T,CUR) 
 
+$IF DEFINED DAM_COST -
+$IF DEFINED DAM_COST $BATINCLUDE eqdamage.mod E * $EXIT
+$IF NOT %TIMESED%==YES $GOTO DONELS
+    -
+   SUM((MI_DMAS(R,COM,C),BDNEQ(BD))$MI_ESUB(R,T,COM), BDSIG(BD) *
+     SUM(RTCS_VARC(R,T,C,S)$COM_STEP(R,C,BD), COEF_PVT(R,T) * COM_BPRICE(R,T,C,S,CUR) *
+       SUM(RCJ(R,C,J,BD),%VART%_ELAST(R,T,C,S,J,BD %SWS%) * MI_AGC(R,T,COM,C,J,BD))))
+$LABEL DONELS
+  ;

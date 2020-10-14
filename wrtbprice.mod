@@ -8,8 +8,8 @@
 *==============================================================================
   PARAMETER DINV(R,YEAR,CUR) //;
   PARAMETER SOL_BPRICE(REG,ALLYEAR,COM,ALL_TS,CUR) //;
-  PARAMETER SOL_ACFR(R,YEAR) //;
-  SET ANCAT / INV, INVX, FIX, FIXX, VAR, VARX, DAM /;
+  PARAMETER SOL_ACFR(R,UC_COST,YEAR) //;
+  SET ANCAT(UC_COST,ITEM) / COST.(INV, FIX, VAR, DAM), TAX.(INVX, FIXX, VARX) /;
 *------------------------------------------------------------------------------
 * Undiscounting via matrix inversion currently disabled; using direct method
   DINV(R,T,CUR)$G_RCUR(R,CUR) = 1/COEF_PVT(R,T);
@@ -27,7 +27,7 @@ $ IF DEFINED DAM_COST LOOP((R,T,C,CUR)$DAM_COST(R,T,C,CUR), TRACKC(R,C) = NO);
 * Save also annual cost to expenditure ratios for TIMES CGE calibration
   RB(R,T) = SUM((COM_TS(DEM(R,C),S),RDCUR(R,CUR)),SOL_BPRICE(R,T,C,S,CUR)*COM_FR(R,T,C,S)*COM_PROJ(R,T,C))+1-1;
 $ IFI NOT %STAGES%==YES
-$ IFI %ANNCOST%==LEV SOL_ACFR(R,T)$RB(R,T)=SUM(ANCAT,REG_ACOST(R,T,ANCAT)) / RB(R,T);
+$ IFI %ANNCOST%==LEV SOL_ACFR(R,UC_COST,T)$RB(R,T)=SUM(SYSUCMAP(SYSUC,ITEM)$ANCAT(UC_COST,ITEM),REG_ACOST(R,T,SYSUC)) / RB(R,T);
   OPTION CLEAR=RB,CLEAR=TRACKC;
 
   EXECUTE_UNLOAD 'com_bprice',sol_bprice,DAM_COEF,DAM_TVOC,SOL_ACFR;

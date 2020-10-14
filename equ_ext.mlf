@@ -1,0 +1,182 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* equ_ext.mlf - Equation formulations for MLF
+*-----------------------------------------------------------------------------
+* Calibration equations
+*-----------------------------------------------------------------------------
+* Utility Objective Function
+  EQ_UTIL.. SUM(MR(R), SUM(T, TM_NWT(R) * TM_PWT(T) * TM_DFACT(R,T) * LOG(VAR_C(R,T))))
+	=E= VAR_UTIL * MAX(1,LOG(TM_SCALE_UTIL*1000))/1000;
+
+*-----------------------------------------------------------------------------
+* Production Function
+  EQ_PROD_Y(MR(R),T)..  VAR_C(R,T) + VAR_INV(R,T) + VAR_EC(R,T) + VAR_NTX(R,T)$PP(T) =E=
+  (TM_AKL(R) * VAR_D(R,T,'AKL')**TM_RHO(R) + SUM(DM,TM_B(R,DM)*VAR_D(R,T,DM)**TM_RHO(R))) ** (1/TM_RHO(R));
+
+*-----------------------------------------------------------------------------
+* AKL aggregate
+  EQ_AKL(MR(R),T)..  VAR_D(R,T,'AKL') =E= (VAR_D(R,T,'KN')**(TM_KPVS(R))) * VAR_D(R,T,'LAB')**(1-TM_KPVS(R));
+
+*-----------------------------------------------------------------------------
+* Labor resource
+  EQ_LABOR(MR(R),T)..  VAR_D(R,T,'LAB') =E= TM_L(R,T);
+
+*-----------------------------------------------------------------------------
+* Capital Dynamics Equation
+  EQ_MCAP(MR(R),PP(T+1))..  VAR_K(R,PP) =E= VAR_K(R,T)*TM_TSRV(R,T) + (D(T+1)*VAR_INV(R,T+1)+TM_TSRV(R,T)*D(T)*VAR_INV(R,T))/2;
+
+*-----------------------------------------------------------------------------
+* Capital dummy definition
+  EQ_KNCAP(MR(R),T)..  VAR_D(R,T,'KN') =E= VAR_K(R,T);
+
+*-----------------------------------------------------------------------------
+* Terminal Condition for investment in last period
+  EQ_TMC(MR(R),TLAST(T))..  VAR_K(R,T) * (TM_GROWV(R,T) + TM_DEPR(R))/100  =L=  VAR_INV(R,T);
+
+*-----------------------------------------------------------------------------
+* Bound on Sum of Investment and Energy
+  EQ_IVECBND(MR(R),PP(T))..  VAR_INV(R,T) + VAR_EC(R,T)  =L=  TM_Y0(R) * TM_L(R,T) ** TM_IVETOL(R);
+
+*-----------------------------------------------------------------------------
+* Demand Coupling Equation
+  EQ_DD(MR(R),PP(T),C('ACT'))..
+    VAR_DEM(R,T,C) =E= ((1/TM_SCALE_NRG) * (TM_AEEIFAC(R,T,C) * VAR_D(R,T,C) + VAR_SP(R,T,C)));
+
+*-----------------------------------------------------------------------------
+* Energy System Costs
+  EQ_ESCOST(MR(R),PP(T))..
+  SUM(DM('ACT'), TM_QSFA(R,T) + TM_QSFB(R,T,DM)*VAR_DEM(R,T,DM)**2) + TM_AMP(R,T) =E= VAR_EC(R,T)*TM_HDF(R,T);
+
+*-----------------------------------------------------------------------------
+* Trade balance
+  EQ_TRDBAL(PP)..  SUM(MR(R), VAR_NTX(R,PP)) =E= 0;
+
+*=============================================================================
+* Variable bounds
+
+  VAR_D.LO(MR(R),T,DM) = TM_DMTOL(R) * TM_D0(R,DM);
+  VAR_D.L(MR(R),PP,DM) = TM_D0(R,DM);
+  VAR_D.FX(MR(R),T(TB),DM) = TM_D0(R,DM);
+  VAR_DEM.FX(MR,T(TB),DM)  = TM_DEM(MR,T,DM);
+
+  LOOP(MR(R), Z=TM_K0(R)*TM_DEPR(R)/100; LOOP(PP(T+1), Z=Z*TM_TSRV(R,T); VAR_INV.LO(R,PP) = Z));
+  VAR_INV.L(MR,PP)     = TM_IV0(MR) * TM_L(MR,PP);
+  VAR_INV.FX(MR,T(TB)) = TM_IV0(MR);
+  VAR_D.LO(MR,T,'AKL') = MIN(1,TM_K0(MR))/2;
+  VAR_D.LO(MR,T,'KN')  = TM_K0(MR) * 0.33;
+  VAR_D.LO(MR,T,'LAB') = TM_L(MR,T)/2;
+  VAR_K.FX(MR,T(TB))   = TM_K0(MR);
+  VAR_C.L(MR,TP)       = TM_GDP0(MR) - TM_IV0(MR);
+  VAR_C.LO(MR,TP)      = TM_GDP0(MR) * 0.33;
+  VAR_SP.FX(MR,TP,DM)  = 0;
+  VAR_EC.LO(MR,PP)     = TM_ANNC(MR,PP) * 0.33;
+  VAR_EC.LO(MR,T(TB))  = TM_EC0(MR) + TM_AMP(MR,TB);
+
+* set the bounds for the step variables for quad approx, clearing first
+  VAR_XCAPP.UP(RTP,J)   = INF;
+  VAR_XCAPP.UP(RTP,XCP(J))$(ORD(J)<7) $= TM_EXPBND(RTP);
+
+*-----------------------------------------------------------------------------
+$ BATINCLUDE calibase.mlf
+*-----------------------------------------------------------------------------
+$ IF SET FIXBOH LOOP(R, Z=REG_FIXT(R); IF(Z=0,Z=ABS(%FIXBOH%)); TM_PP(R,T)$(M(T) LE Z)=NO);
+$ IF DEFINED REG_BDNCAP LOOP(BD,TM_PP(R,T)$((M(T)<=REG_BDNCAP(R,BD))$REG_BDNCAP(R,BD))=NO);
+$ IFI %NONLP%==NL $GOTO NLP
+$ BATINCLUDE presolve.mlf
+$ SETCOMPS %KESTREL% X1 X2 .
+$ IFI %X2%==LP OPTION LP=KESTREL;
+
+*=============================================================================
+* Full model equations
+*-----------------------------------------------------------------------------
+* Utility Objective Function
+  EQ_UTILP..
+  SUM(MR(R), SUM(T, TM_NWT(R)*TM_PWT(T)*TM_DFACT(R,T)*(LOG(TM_MIDCON(R,T))-SUM(LOGJ(J,BD),BDSIG(BD)*VAR_MELA(R,T,'CON',J,BD)/TM_LSC)))) +
+  SUM(R$(NOT MR(R)),SUM(T,(3*TM_ANNC(R,T)-VAR_OBJCOST(R,T)*TM_SCALE_CST)*TM_UDF(R,T)))
+  =E=  VAR_UTIL * MAX(1,LOG(TM_SCALE_UTIL*1000))/1000;
+
+*-----------------------------------------------------------------------------
+* Consumption
+  EQ_CONSO(MR(R),T)..  VAR_D(R,T,'YN')  =E=  VAR_C(R,T) + VAR_INV(R,T) + VAR_EC(R,T) + VAR_NTX(R,T)$PP(T);
+
+*-----------------------------------------------------------------------------
+* Consumption disaggregation
+  EQ_CONDA(MR(R),T)..  VAR_C(R,T) =E= TM_MIDCON(R,T)*(1-SUM(LOGJ(J,BD),VAR_MELA(R,T,'CON',J,BD)*TM_LOGVAL(J,BD)/TM_LSC));
+
+*-----------------------------------------------------------------------------
+* Consumption LOG steps constraint
+  EQ_LOGBD(MR(R),T)..  SUM(LOGJ(J,BD),VAR_MELA(R,T,'CON',J,BD)/ORD(J)/TM_LOGJOT) =L= TM_LSC;
+
+*-----------------------------------------------------------------------------
+* Macro CES function shares
+  EQ_MACSH(MR(R),T,TM_DMAS(CG,CG1))..
+  VAR_D(R,T,CG1) + SUM(TM_RCJ(R,CG1,J,BD)$TM_PP(R,T),BDSIG(BD)*VAR_MELA(R,T,CG1,J,BD))
+  =E= TM_SHAR(R,T,CG,CG1)*VAR_D(R,T,CG) / TM_CIE(R,T,CG);
+
+*-----------------------------------------------------------------------------
+* Macro CES function aggregation
+  EQ_MACAG(TM_PP(MR(R),T),TM_CES(CG))..
+  SUM(TM_RCJ(R,CG1,J,BDNEQ(BD))$TM_DMAS(CG,CG1),
+      (TM_PREF(R,T,CG1)*(TM_AGC(R,T,CG,CG1,J,BD)-1)+TM_SHAR(R,T,CG1,CG))*BDSIG(BD)*VAR_MELA(R,T,CG1,J,BD))
+  =E= 0;
+
+*-----------------------------------------------------------------------------
+* Macro CES function constraint
+  EQ_MACES(TM_PP(MR(R),T),TM_DMAS(CG,CG1))..
+  SUM(TM_RCJ(R,CG1,J,BDNEQ(BD)),VAR_MELA(R,T,CG1,J,BD)*TM_STEP(R,CG1,BD)/ORD(J)/(TM_QREF(R,T,CG1)*TM_VOC(R,T,CG1,BD)))
+  =L= (VAR_D(R,t,CG)/TM_CIE(R,T,CG)/TM_CESLEV(R,T,CG));
+
+*-----------------------------------------------------------------------------
+* Demand CES function shares
+  EQ_DEMSH(MR(R),PP(T),C)$TM_DM(R,C)..
+  VAR_DEM(R,T,C) + SUM(TM_RCJ(R,C,J,BD)$TM_PP(R,T),BDSIG(BD)*VAR_MELA(R,T,C,J,BD))
+  =E= SUM(MAG('ACT'),TM_SHAR(R,T,MAG,C)*VAR_DEM(R,T,MAG));
+
+*-----------------------------------------------------------------------------
+* Demand CES aggregation
+  EQ_DEMAG(TM_PP(MR(R),T))..
+  SUM(TM_RCJ(R,C,J,BDNEQ(BD))$TM_DM(R,C),
+    SUM(MAG('ACT'), (TM_PREF(R,T,C)*(TM_AGC(R,T,MAG,C,J,BD)-1)+TM_SHAR(R,T,C,MAG))*BDSIG(BD)*VAR_MELA(R,T,C,J,BD)))
+  =E= 0;
+
+*-----------------------------------------------------------------------------
+* Demand linear CES function constraint
+  EQ_DEMCES(TM_PP(MR(R),T),C)$TM_DM(R,C)..
+  SUM(TM_RCJ(R,C,J,BDNEQ(BD)),VAR_MELA(R,T,C,J,BD)*TM_STEP(R,C,BD)/ORD(J)/(TM_QREF(R,T,C)*TM_VOC(R,T,C,BD)))
+  =L= SUM(MAG('ACT'),(VAR_DEM(R,T,MAG)/TM_DEM(R,T,MAG)));
+
+*-----------------------------------------------------------------------------
+$LABEL NLP
+*-----------------------------------------------------------------------------
+* Demand non-linear CES function constraint
+  EQ_DNLCES(MR(R),PP(T))..
+  VAR_DEM(R,T,'ACT') =E= TM_DEM(R,T,'ACT') *
+  SUM(TM_DM(R,C),TM_CIE(R,T,C)*(VAR_DEM(R,T,C)/TM_DEM(R,T,C))**(1-1/TM_DESUB(R)))**(TM_DESUB(R)/(TM_DESUB(R)-1));
+
+*-----------------------------------------------------------------------------
+* Energy System costs
+  EQ_ENSCST(MR(R),T)..
+  TM_SCALE_CST * VAR_OBJCOST(R,T) + TM_AMP(R,T) + VAR_SP(R,T,'DEM')$(NOT TM_PP(R,T)) -
+* Credit for lump-sum rebate of tax revenues
+  TM_SCALE_CST * TM_TAXREV(R,T) +
+* quadratic market penetration curves (pending)
+  0  =E= VAR_EC(R,T)*TM_HDF(R,T);
+
+*-----------------------------------------------------------------------------
+* Full model bounds
+  VAR_DEM.FX(R,T,C)$((NOT TM_DM(R,C)$MR(R))$DEM(R,C))=COM_PROJ(R,T,C);
+  VAR_DEM.FX(MR(R),T(TB),C)$TM_DM(R,C) = TM_DEM(R,T,C);
+  VAR_EC.UP(MR,T) = INF;
+  VAR_EC.LO(MR(R),T) = ((TM_ANNC(R,T) + TM_AMP(R,T))/TM_HDF(R,T))$(NOT TM_PP(R,T));
+  VAR_INV.FX(MR(R),T)$(NOT TM_PP(R,T)) = VAR_INV.L(R,T);
+* Treat non-MR regions gracefully
+  IF(CARD(MR),Z=SUM(TB(T-1),SMAX(MR,EQ_ESCOST.M(MR,T)/COEF_PVT(MR,T))); ELSE Z=0.5);
+  TM_UDF(R,T) = COEF_PVT(R,T)*Z;
+
+$ IF NOT %NONLP%==NL $EXIT
+$ IFI %X1%%X2==NLP OPTION NLP=KESTREL;
+  TM_CIE(R,T,C)$TM_DM(R,C) = TM_DEM(R,T,C)*TM_DMC(R,T,C) / (TM_DEM(R,T,'ACT')*TM_DMC(R,T,'ACT'));
+  VAR_DEM.LO(R,PP,C)$TM_DM(R,C) = TM_DEM(R,PP,C)*0.5;

@@ -6,12 +6,8 @@
 * MOD_EQUA.MOD lists all the equations for each of the MODEL instances        *
 *   a MODEL / <list of equaions> / block will appear for each model supported *
 *=============================================================================*
-*GaG Questions/Comments:
-*   - need a mechanism to enable limiting of CUR (c$)
-*   - any non-binding (=N=) accounting equations, or do it all with reports?
-*-----------------------------------------------------------------------------
 
-  MODEL TIMES_MACRO / 
+  MODEL TIMES_MACRO /
 
 $IFI %MERGE%==YES    ALL /;
 $IFI %MERGE%==YES    $EXIT
@@ -21,19 +17,13 @@ $IFI %MERGE%==YES    $EXIT
 * Overall OBJ linear combination of the regional objs (which are built from rest)
     EQ_OBJ
 
-* Resource depletion costs
-*    EQ_OBJDPL
-
-* Costs of elastic demands - not in MACRO
-*$IF %TIMESED% == 'YES'    EQ_OBJELS
-
 * Fixed Costs
     EQ_ANNFIX
 
-* investment component
+* Investment component
     EQ_ANNINV
 
-* Variable operating costs
+* Variable operating costs (including substitution loss in MLF)
     EQ_ANNVAR
 
 *-----------------------------------------------------------------------------
@@ -41,7 +31,7 @@ $IFI %MERGE%==YES    $EXIT
 *-----------------------------------------------------------------------------
 $ SET OBJANN NO
 $ BATINCLUDE mod_equa.mod CORE
-
+$ IF %MACRO%==Yes $GOTO MLF 
 *---------------------------------------------------------------------
 * MACRO equations
 *---------------------------------------------------------------------
@@ -54,7 +44,48 @@ $ BATINCLUDE mod_equa.mod CORE
    EQ_ESCOST
    EQ_MPEN
    EQ_XCAPDB
-
-* [AL] Commented out the end of MODEL statement - now in maindrv.mod
-*/;
-
+$  EXIT
+*---------------------------------------------------------------------
+$ LABEL MLF
+$ IF %NONLP%==NL $GOTO NONLP
+*---------------------------------------------------------------------
+* MACRO MLF equations
+*---------------------------------------------------------------------
+   EQ_UTILP
+   EQ_CONSO
+   EQ_CONDA
+   EQ_LOGBD
+   EQ_MACSH
+   EQ_MACAG
+   EQ_MACES
+   EQ_KNCAP
+   EQ_MCAP
+   EQ_TMC
+   EQ_IVECBND
+   EQ_DD
+   EQ_DEMSH
+   EQ_DEMAG
+   EQ_DEMCES
+   EQ_ENSCST
+   EQ_TRDBAL
+*  EQ_MPEN
+*  EQ_XCAPDB
+$  EXIT
+*---------------------------------------------------------------------
+$ LABEL NONLP
+*---------------------------------------------------------------------
+* MACRO MLF NLP benchmark equations
+*---------------------------------------------------------------------
+   EQ_UTIL
+   EQ_PROD_Y
+   EQ_AKL
+   EQ_LABOR
+   EQ_KNCAP
+   EQ_MCAP
+   EQ_TMC
+   EQ_DD
+   EQ_IVECBND
+   EQ_DNLCES
+   EQ_ENSCST
+   EQ_TRDBAL
+* End of MODEL statement now in maindrv.mod

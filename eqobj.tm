@@ -42,8 +42,9 @@ $   BATINCLUDE eqobsalv.mod tm exit
 $   BATINCLUDE eqobjann.tm
 
 *===============================================================================
-* Elastic Demand costs: not included
+* Elastic Demand costs: only when MLF
 *===============================================================================
+$ IF %MACRO%==Yes $BATINCLUDE eqobjels.mod
 
 *===============================================================================
 * Actual OBJ

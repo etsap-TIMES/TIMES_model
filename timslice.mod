@@ -14,9 +14,12 @@
   PARAMETERS RS_HR(R,S) //, MY_SUM /0/, NORTS(R,YEAR,S) //;
   SETS RS_UP(R,TS,J,TS), RJ_SL(R,J,TS,TS), JS(J,TS) /1.ANNUAL/;
 *-----------------------------------------------------------------------------
-  TS_GROUP(ALL_REG,'ANNUAL',ANNUAL) = YES;
-  TS_MAP(R,ANNUAL,S)$SUM(TS_GROUP(R,TSL,S),1) = YES;
-  TS_MAP(R,S,S)$SUM(TS_MAP(R,ANNUAL,S),1)     = YES;
+  TS_GROUP(ALL_R,'ANNUAL',S) = ANNUAL(S);
+  OPTION STOAL < TS_GROUP;
+  TS_MAP(R,ANNUAL,S) = STOAL(R,S);
+  TS_MAP(R,S,S) = STOAL(R,S);
+  STOAL(ALL_R,S)$STOAL(ALL_R,S) = STOAL(ALL_R,S)-1;
+  IF(CARD(STOAL),ABORT "Error: Timeslice on several levels.");
   TS_MAP(R,ALL_TS,TS)$SUM(TS_MAP(R,ALL_TS,S),TS_MAP(R,S,TS)) = YES;
 * Build a set for timeslices strictly below
   RS_BELOW(TS_MAP(R,S,TS))$(NOT TS_MAP(R,TS,S)) = YES;
@@ -52,12 +55,17 @@ $ IF NOT %OBMAC%==YES ALIAS(ALL_TS,RTS);
   OPTION CLEAR=FINEST;
 * Build a set for all timeslices in the same subtree
   RS_TREE(R,S,TS)$(TS_MAP(R,TS,S) OR RS_BELOW(R,S,TS)) = YES;
+* Define the set of the finest (highest) timeslices in use:
+  FINEST(R,S)$(SUM(TS_MAP(R,S,TS),1)=1) = YES;
+  LOOP(SAMEAS('5',J),RJLVL(J-ORD(TSL),R,TSL)=SUM(TS_GROUP(R,TSL,S),1));
+* Define above-map for TSL levels
+  LOOP((J,R,TSL)$RJLVL(J,R,TSL),Z=ORD(J);LOOP(RJLVL(JJ,R,TSLVL)$(ORD(JJ)>Z),RLUP(R,TSL,TSLVL)=1;Z=9));
 *-----------------------------------------------------------------------------
 
 * Target accuracy of fractions: 1 second
   Z = 8760*3600; PUTGRP=0;
 * Normalize year fractions if they do not sum up
-  LOOP(TS_GROUP(R,TSL,S)$(TSLVLNUM(TSL)<4),
+  LOOP(TS_GROUP(R,TSL,S)$(NOT FINEST(R,S)),
    IF(ANNUAL(S)$CARD(NORTS), F=0;
      LOOP(T,MY_F=1-SUM(RS_BELOW1(R,S,TS)$(RS_HR(R,TS)$(NORTS(R,T,TS)=0)),RS_HR(R,TS));
        MY_SUM = SUM(RS_BELOW1(R,S,TS)$((NOT RS_HR(R,TS))$(NORTS(R,T,TS)=0)),G_YRFR(R,TS));
@@ -66,19 +74,13 @@ $ IF NOT %OBMAC%==YES ALIAS(ALL_TS,RTS);
      G_YRFR(R,TS) $= RS_HR(R,TS);
 *  Get the year fraction of current timeslice and sum of those below
    ELSE MY_F=G_YRFR(R,S); MY_SUM=SUM(RS_BELOW1(R,S,TS),G_YRFR(R,TS));
-     F=ABS(MY_F-MY_SUM); IF(F*Z>1,G_YRFR(R,TS)$RS_BELOW1(R,S,TS)=MY_F/MY_SUM*G_YRFR(R,TS))); 
+     F=ABS(MY_F-MY_SUM); IF(F*Z>1,G_YRFR(R,TS)$RS_BELOW1(R,S,TS)=MY_F/MY_SUM*G_YRFR(R,TS)));
 *  If the sum differs from the lump sum by over a second, do normalize:
    IF(F*Z > 1,
 $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'User-provided G_YRFR values are not valid year fractions'
      PUT QLOG ' WARNING       - TS fractions normalized,  (R.TSL.S)=',TS_GROUP.TE(TS_GROUP);
   ));
 *-----------------------------------------------------------------------------
-* Define the set of the finest (highest) timeslices in use:
-  FINEST(R,S)$(SUM(TS_MAP(R,S,TS),1)=1) = YES;
-  LOOP(SAMEAS('5',J),RJLVL(J-ORD(TSL),R,TSL)=SUM(TS_GROUP(R,TSL,S),1));
-* Define above-map for TSL levels
-  LOOP((J,R,TSL)$RJLVL(J,R,TSL),Z=ORD(J);LOOP(RJLVL(JJ,R,TSLVL)$(ORD(JJ)>Z),RLUP(R,TSL,TSLVL)=1;Z=9));
-
 * Calculate the number of storage periods for each timeslice
   G_CYCLE(TSL('WEEKLY'))$(G_CYCLE(TSL)=0)=8760/(24*7); TS_CYCLE(FINEST)=0;
   LOOP(RLUP(R,TSLVL,TSL),TS_CYCLE(R,S)$((TS_CYCLE(R,S)<1)$TS_GROUP(R,TSL,S)) = 365/G_CYCLE(TSLVL));

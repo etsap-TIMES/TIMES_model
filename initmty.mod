@@ -89,7 +89,7 @@ $ONEMPTY
 *  SET TS(ALL_TS)                     'Time slices of the year               //;
       ALIAS(ALL_TS,TS,S,SL,S2);
   SET TS_OFF(REG,TS,BOHYEAR,EOHYEAR)  'Timeslices turned off';
-  SET TS_GROUP(ALL_REG,TSLVL,ALL_TS)  'Timeslice Level assignment'           //;
+  SET TS_GROUP(ALL_REG,TSLVL,TS)      'Timeslice Level assignment'           //;
   SET TS_MAP(ALL_REG,ALL_TS,ALL_TS)   'Timeslice hierarchy tree: node+below' //;
   SET MILESTONYR(ALLYEAR)             'Projection years for which model to be run' //;
       ALIAS(MILESTONYR,T,TT);
@@ -749,7 +749,7 @@ $ IF NOT %G2X6%==YES $GOTO RUN
 $ IF NOT SET RUN_NAME $SETNAMES %SYSTEM.INCPARENT% . RUN_NAME .
 $ IF NOT EXIST %RUN_NAME%~data.gdx $GOTO RUN
 $ hiddencall gdxdump %RUN_NAME%~data.gdx NODATA > _dd_.dmp
-$ hiddencall sed "/\(^\|(\*) \)Alias/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /\$LOADR /" _dd_.dmp > _dd_.dd
+$ hiddencall sed "/\(^\|(\*) \)Alias/{N;d;}; /^\([^$].*$\|$\)/d;" _dd_.dmp > _dd_.dd
 $ INCLUDE _dd_.dd
 $ hiddencall rm -f _dd_.dmp
 $ TITLE %SYSTEM.TITLE%#

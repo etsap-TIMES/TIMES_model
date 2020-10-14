@@ -1,0 +1,44 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file LICENSE.txt).
+*=============================================================================*
+* PREP_ext.tm oversees all the added inperpolation activities needed by MACRO *
+*   %1 - mod or v# for the source code to be used                             *
+*=============================================================================*
+$ IF NOT '%CTST%'=='' MINYR = MIYR_V1;
+*------------------------------------------------------------------------------
+* Interpolate MACRO-specific parameters
+$ BATINCLUDE filparam TM_EXPBND 'R,' 'P' ",'','','','',''" DATAYEAR T
+$ BATINCLUDE filparam TM_EXPF 'R,' '' ",'','','','',''" DATAYEAR T
+$ BATINCLUDE filparam TM_VOC 'R,' 'C,BD' ",'','','',''" YEAR T 
+$ BATINCLUDE filparam TM_GR 'R,' '' ",'','','','',''" YEAR T
+*------------------------------------------------------------------------------
+* Additions to support MACRO linear formulation
+  SET MAG(CG) / ACT, AKL, LAB, KN, YN /;
+  SET MR(R), PP(T), TLAST(T), DM(C), XCP(J) /1, 6, 12/;
+  SET MSAREG(REG) //;
+  SET TM_DM(REG,COM);
+  SET XTP(LL);
+  ALIAS (MIYR_1,T_1,TB);
+  ALIAS (T,TP);
+  PARAMETER NYPER(ALLYEAR);
+  PARAMETER CM_LED(LL);
+  PARAMETER TM_TAXREV(R,T) //;
+  PARAMETER TM_HDF(R,T) //;
+* Periods stuff
+  PP(T+1) = YES;
+  TLAST(T--ORD(T)) = YES;
+  NYPER(T) = LAGT(T);
+  NYPER(TLAST(T+1)) = NYPER(T);
+  CM_LED(T+1)=LAGT(T);
+  XTP(LL)$=CM_LED(LL);
+  XTP(T) = YES;
+  TM_PP(R,PP)=YES;
+
+  MR(R) $= SUM(T$TM_GR(R,T),YES);
+  TM_GDPGOAL(R,TB) = TM_GDP0(R);
+  LOOP(PP(T+1),TM_GDPGOAL(R,PP) = TM_GDPGOAL(R,T)*(1+TM_GR(R,T)/100)**NYPER(T));
+* Save demand LIM for non-MR
+  OPTION TM_DM < COM_PROJ;
+  TM_STEP(TM_DM(R,C),'N') = NOT COM_LIM(R,C,'FX');

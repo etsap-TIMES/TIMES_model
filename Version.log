@@ -2266,3 +2266,38 @@ eqobjann.mod  : (4)
 solve.mod     : (3)
 rptmain.mod   : (3)
 eqdamage.mod  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.0
+-----------------------------------------------------------------------------------------
+Date: 9-Oct-2020 [AL]: Major release
+1) Introducing the new Macro MLF extension
+2) Fixed support for input data via GDX file
+3) Small improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.0
+initmty.mod   : (2)
+timslice.mod  : (3)
+ppmain.mod    : (1),(3)
+spoint.mod    : (1)
+wrtbprice.mod : (1)
+rptmisc.rpt   : (1)
+initmty.tm    : (1)
+mod_vars.tm   : (1)
+eqdeclr.tm    : (1)
+eqobj.tm      : (1)
+eqobjann.tm   : (1)
+eqobjcst.tm   : (1)
+mod_equa.tm   : (1)
+rptmain.tm    : (1)
+ddfupd.msa    : (3)
+
+Added files   :
+presolve.mlf  : (1)
+initmty.mlf   : (1)
+ppm_ext.mlf   : (1)
+rpt_ext.mlf   : (1)
+equ_ext.mlf   : (1)
+prep_ext.mlf  : (1)
+calibase.mlf  : (1)
