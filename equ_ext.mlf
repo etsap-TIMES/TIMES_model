@@ -43,7 +43,7 @@
 *-----------------------------------------------------------------------------
 * Demand Coupling Equation
   EQ_DD(MR(R),PP(T),C('ACT'))..
-    VAR_DEM(R,T,C) =E= ((1/TM_SCALE_NRG) * (TM_AEEIFAC(R,T,C) * VAR_D(R,T,C) + VAR_SP(R,T,C)));
+  VAR_DEM(R,T,C) =E= ((1/TM_SCALE_NRG) * (TM_AEEIFAC(R,T,C) * VAR_D(R,T,C) + VAR_SP(R,T,C)));
 
 *-----------------------------------------------------------------------------
 * Energy System Costs
@@ -84,9 +84,9 @@ $ BATINCLUDE calibase.mlf
 *-----------------------------------------------------------------------------
 $ IF SET FIXBOH LOOP(R, Z=REG_FIXT(R); IF(Z=0,Z=ABS(%FIXBOH%)); TM_PP(R,T)$(M(T) LE Z)=NO);
 $ IF DEFINED REG_BDNCAP LOOP(BD,TM_PP(R,T)$((M(T)<=REG_BDNCAP(R,BD))$REG_BDNCAP(R,BD))=NO);
+$ SETCOMPS %KESTREL% X1 X2 .
 $ IFI %NONLP%==NL $GOTO NLP
 $ BATINCLUDE presolve.mlf
-$ SETCOMPS %KESTREL% X1 X2 .
 $ IFI %X2%==LP OPTION LP=KESTREL;
 
 *=============================================================================
@@ -176,7 +176,7 @@ $LABEL NLP
   IF(CARD(MR),Z=SUM(TB(T-1),SMAX(MR,EQ_ESCOST.M(MR,T)/COEF_PVT(MR,T))); ELSE Z=0.5);
   TM_UDF(R,T) = COEF_PVT(R,T)*Z;
 
-$ IF NOT %NONLP%==NL $EXIT
-$ IFI %X1%%X2==NLP OPTION NLP=KESTREL;
+$ IFI NOT %NONLP%==NL $EXIT
+$ IFI %X1%%X2%==NLP OPTION NLP=KESTREL;
   TM_CIE(R,T,C)$TM_DM(R,C) = TM_DEM(R,T,C)*TM_DMC(R,T,C) / (TM_DEM(R,T,'ACT')*TM_DMC(R,T,'ACT'));
   VAR_DEM.LO(R,PP,C)$TM_DM(R,C) = TM_DEM(R,PP,C)*0.5;
