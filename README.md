@@ -1,6 +1,6 @@
 # TIMES_model
 
-## The Integrated MARKAL-EFOM System (TIMES) - a bottom-up optimization model for energy-environment systems.
+## The Integrated MARKAL-EFOM System (TIMES) – a bottom-up optimization model for energy-environment systems.
 
 The TIMES (The Integrated MARKAL-EFOM System) model generator was developed by ETSAP the Energy Technology Systems Analysis Program, which is a Technology Cooperation Program of the International Energy Agency. 
 ETSAP is an international community which uses long term energy scenarios to conduct in-depth energy and environmental analyses. 
@@ -36,7 +36,7 @@ When all markets are in equilibrium the total economic surplus is maximized (i.e
 The main output TIMES are energy system configurations, which meet the end-use energy service demands at least cost while also adhering to the various constraints (e.g 80% emissions reduction, 40% renewable electricity penetration). 
 In the first instance, TIMES model addresses the question: is the target feasible? If an energy system is possible, it can then be examined, at what cost? The model outputs are energy flows, energy commodity prices, GHG emissions, capacities of technologies, energy costs and marginal emissions abatement costs. 
 
-## Documentation
+## Documentation  [![Documentation](https://img.shields.io/badge/docs-passing-brightgreen.svg?style=flat&logo=github)](https://github.com/etsap-TIMES/TIMES_Documentation)
 
 Detailed documentation is available on ETSAP's [website](https://iea-etsap.org/index.php/documentation):
 
@@ -44,7 +44,7 @@ i)   [Concept and Theory](https://iea-etsap.org/docs/Documentation_for_the_TIMES
 ii)  [Comprehensive Reference Manual](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-II_July-2016.pdf).
 iii) [Operation of TIMES code](https://iea-etsap.org/docs/Documentation_for_the_TIMES_Model-Part-III_July-2016.pdf).
 
-## TIMES Demo 
+## TIMES Demo [![Demo model](https://img.shields.io/badge/demo%20model-available-brightgreen.svg?style=flat&logo=github)](https://github.com/etsap-TIMES/TIMES_Demo)
 
 A Demo model is available on [GitHub](https://github.com/etsap-TIMES/TIMES_Demo).
 
