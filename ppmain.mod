@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -312,6 +312,8 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
 * primary group & commodities in primary group
     RPC_PG(RPC(R,P,C))$SUM(RP_PG(R,P,CG)$COM_GMAP(R,CG,C),1) = YES;
     RPC_PG(RP_IRE(R,P),C)$(NOT RPC_IRE(R,P,C,'IMP')+RPC_IRE(R,P,C,'EXP')) = NO;
+* endorse STG level
+    RPC_PG(PRC_STGTSS(RP,C))$SUM(PRC_TSL(RP,TSL)$(ORD(TSL)>1),1)=YES;
     RP_PGTYPE(RP(R,P),COM_TYPE)$SUM(RPC_PG(R,P,C)$COM_TMAP(R,COM_TYPE,C),1) = YES;
     RP_AIRE(RP_IRE(RP),IE)$SUM(RPC_IRE(RPC_PG(RP,C),IE),1) = YES;
 * input/output normalized process
@@ -342,8 +344,6 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
 *   - if individual TS provided and no TSL then use TSs to set TSL
 *     else set the TS from TSL if none provided
 *-----------------------------------------------------------------------------
-* endorse STG level
-    RPC_PG(PRC_STGTSS(RP,C))$SUM(PRC_TSL(RP,TSL)$(ORD(TSL)>1),1)=YES;
 * remove invalid levels
     OPTION CLEAR=RXX; RXX(R,TSL,R)$(NOT SUM(RJLVL(J,R,TSL),1))=YES; F=CARD(COM_TSL); Z=CARD(PRC_TSL);
     COM_TSL(R,C,TSL-1)$RXX(R,TSL,R)$=COM_TSL(R,C,TSL); F=CARD(COM_TSL)-F; COM_TSL(R,C,TSL)$(RXX(R,TSL,R)$F)=NO;
@@ -460,7 +460,7 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
   PRC_NSTTS(RP_STG(R,P),ANNUAL)$(NOT SUM(TOP(TRACKPC(R,P,C),'IN'),1))=NO; OPTION PRC_ACT<PRC_NSTTS;
   PRC_NSTTS(RPS_S2(R,P,S))$(NOT PRC_ACT(R,P)) $= PRC_MAP(R,'NST',P);
 * The commodities in the PCG need to be tracked at the PRC_TS-level
-  TRACKP(RP(R,P)) = NOT RP_STG(RP);
+  TRACKP(RP) = NOT RP_STG(RP);
   RPCS_VAR(RPC_PG(TRACKP(R,P),C),S)$PRC_TS(R,P,S) = YES;
 * All non-PCG commodities need to be tracked at the S1/S2-level
   RPCS_VAR(RPC_SPG(TRACKP(R,P),C),S)$RPS_S2(R,P,S) = YES;
@@ -647,8 +647,8 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 * commodity release always in next year if no time provided but release
     NCAP_DLIFE(RTP(R,T,P))$((NOT NCAP_DLIFE(RTP))$SUM(RPC(R,P,C)$NCAP_OCOM(RTP,C),1)) = 1;
     NCAP_DELIF(RTP(R,T,P))$(NOT NCAP_DELIF(RTP))$= NCAP_DLIFE(RTP);
-*V0.5a - 980718 if investment requires commodity and has a leadtime, set
-*               commodity time = lead if not provided
+*V0.5a if investment requires commodity and has a leadtime, set
+*      commodity time = lead if not provided
     NCAP_CLED(RTP(R,T,P),C)$((NOT NCAP_CLED(RTP,C))$NCAP_ICOM(RTP,C)) = COEF_ILED(RTP);
 * CHP plants
     NCAP_BPME(RTP(R,V,P))$((NOT NCAP_BPME(RTP))$NCAP_CDME(RTP)$PRC_MAP(R,'CHP',P)) = 1;
@@ -780,7 +780,7 @@ $ BATINCLUDE pp_lvlbr.%1 NCAP_AF '' PRC_TS ",'0','0'" 0 1
 
 * Make sure to get rid of any remaining PRC_TS for which no NCAP_AF
   LOOP(PRC_TS(RXX(R,P,TS)),PRC_TS2(R,P,S)$TS_MAP(R,TS,S) = YES);
-  PRC_TS(PRC_TS2(R,P,TS)) = NO;
+  PRC_TS(PRC_TS2) = NO;
   RPCS_VAR(RPCS_VAR(R,P,C,S))$PRC_TS2(R,P,S) = NO;
   RTPCS_OUT(RTPC(R,T,P,C),S)$PRC_TS2(R,P,S) = YES;
   OPTION CLEAR=PRC_TS2,CLEAR=TRACKP,CLEAR=RTPS_BD;
@@ -1066,9 +1066,10 @@ $IFI %OBJ%==LIN  RTC_PRD(R,T,C)$((M(T)+LAGT(T) > YEARVAL(ALLYEAR)) * (M(T)-LEAD(
   RTPCS_OUT(RTP(R,T,P),C,S)$((RPCS_VAR(R,P,C,S)*TOP(R,P,C,'IN')*(NOT PRC_NSTTS(R,P,S)))$PRC_MAP(R,'NST',P)) = YES;
 
 * Prepare demand sifting storages
-  OPTION TRACKPC < STG_SIFT; TRACKPC(RP,C)$(NOT (TOP(RP,C,'OUT')+ACTCG(C))$RP_STG(RP))=NO;
-  TRACKPC(RP,C)$PRC_NSTTS(RP,'ANNUAL')=NO; RPC_STGN(TOP(TRACKPC,'IN'))=YES;
+  OPTION TRACKPC < STG_SIFT; TRACKPC(RP,C)$(NOT (TOP(RP,C,'OUT')$RPC_STG(RP,C)+ACTCG(C))$RP_STG(RP))=NO;
+  TRACKPC(RP,C)$PRC_NSTTS(RP,'ANNUAL')=NO;
   LOOP(TRACKPC(R,P,C),TRACKP(R,P)=YES; RPC_PKC(R,P,C)=NO; RHS_COMPRD(RTCS_VARC(R,T,C,S))=YES);
+  RPC_SPG(RPC_STG(TRACKP,C))=YES; RPC_STGN(TOP(RPC_STG(RPC_SPG(RP,C)),IO))$TOP(RP,C,'IN') = (TRACKPC(RP,C) EQV IPS(IO));
   LOOP(PRC_TSL(TRACKP(RP(R,P)),TSLVL), RP_STS(RP)=NO; RP_STG(RP)=NO;
     Z=1-SUM(RPCS_VAR(RP,C,ANNUAL),2); LOOP(TOP(RPC_STG(RP,C),'IN'),IF(Z>0,RPC_LS(RP,C)=YES);Z=Z-1); RPC_LS(RP,C(ACTCG))$Z=YES;
 * Levelize STG_SIFT(ACT)
@@ -1221,9 +1222,9 @@ $   BATINCLUDE pp_lvlus.mod UC_COM 'C' COM_TS "" ,UC_GRPTYPE ,COM_VAR
 * Control set for balance/production equations based on TS-resolution and RHS
 *-----------------------------------------------------------------------------
   RCS_COMBAL(RTCS_VARC(R,T,C,S),LIM)$(COM_LIM(R,C,LIM) * (NOT RHS_COMBAL(R,T,C,S))) = YES;
-  RCS_COMBAL(RHS_COMBAL(R,T,C,S),'FX') = YES;
-$IF '%VALIDATE%'==YES  RHS_COMPRD(RTCS_VARC(R,T,C,S)) = YES;
-  RCS_COMPRD(RHS_COMPRD(R,T,C,S),'FX') = YES;
+  RCS_COMBAL(RHS_COMBAL,'FX') = YES;
+$IF '%VALIDATE%'==YES  RHS_COMPRD(RTCS_VARC) = YES;
+  RCS_COMPRD(RHS_COMPRD,'FX') = YES;
 
 
 *----------------------------------------------------------------------------*

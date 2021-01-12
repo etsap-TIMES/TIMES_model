@@ -1,10 +1,10 @@
-$TITLE  TIMES -- VERSION 4.5.0
+$TITLE  TIMES -- VERSION 4.5.1
 *==========================================================================================*
 * INITSYS.MOD has all the fixed system declarations for ETSAP TIMES                        *
 *==========================================================================================*
 $ onlisting ontext
 *===========================================================================================
-*  Copyright (C) 2000-2020 IEA Energy Technology Systems Analysis Programme (IEA-ETSAP).
+*  Copyright (C) 2000-2021 IEA Energy Technology Systems Analysis Programme (IEA-ETSAP).
 *  This software (ETSAP TIMES) is open source: you can redistribute it and/or modify it
 *  under the terms of the GNU General Public License v3.0 (see file LICENSE.txt).
 *  For further information, visit: <http://www.gnu.org/licenses/gpl-3.0.html>.

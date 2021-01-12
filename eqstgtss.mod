@@ -1,14 +1,12 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
 * EQSTGTSS TIME-Slice Storage (TSS) and general storage (STS)
 *=============================================================================*
-*UR Questions/Comments:
-*   - the storage level in one TS has to be fixed by ACT_BND to an initial storage level
-*AL Comment:
-*   - fixing by ACT_BND is no longer needed
+* Questions/Comments:
+*   - the storage level does NOT need to be fixed to an initial storage level in some TS
 *-----------------------------------------------------------------------------*
 *$ONLISTING
 
@@ -27,7 +25,7 @@
                (
                  SUM((RPCS_VAR(RPC_STG(R,P,C),TS),TS_MAP(R,TS,ALL_TS)),
                    (%VAR%_SIN(R,V,T,P,C,TS%SOW%)$(TOP(R,P,C,'IN')$PRC_NSTTS(R,P,TS)) -
-                    %VAR%_SOUT(R,V,T,P,C,TS %SOW%)$(TOP(R,P,C,'OUT')$(NOT PRC_NSTTS(R,P,TS)))) *
+                    %VAR%_SOUT(R,V,T,P,C,TS%SOW%)$(TOP(R,P,C,'OUT')$(PRC_NSTTS(R,P,TS) EQV RPC_STGN(R,P,C,'OUT')))) *
                    RS_FR(R,ALL_TS,TS) * (1+RTCS_FR(R,T,C,ALL_TS,TS)) / PRC_ACTFLO(R,V,P,C))
                )$PRC_MAP(R,'NST',P)
                +

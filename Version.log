@@ -2301,3 +2301,22 @@ rpt_ext.mlf   : (1)
 equ_ext.mlf   : (1)
 prep_ext.mlf  : (1)
 calibase.mlf  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.1
+-----------------------------------------------------------------------------------------
+Date: 9-Jan-2021 [AL]: Maintenance release
+1) Allow back injection from NST storage to grid
+2) Support independent AFC equations for storage
+3) Small improvements and cleanup
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.1
+ppmain.mod    : (1)
+maplists.def  : (3)
+pp_qack.mod   : (3)
+eqstgtss.mod  : (1)
+eqstgaux.mod  : (1)
+eqcaflac.vda  : (2)
+solsetv.v3    : (3)
+times2veda.vdd: (3)

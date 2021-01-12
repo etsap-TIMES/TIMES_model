@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *==============================================================================*
@@ -79,6 +79,7 @@
       NUCLR      'Nuclear'
       SYNTH      'Synthetic'
       RATE       'Rate of doing work or transferring heat (dW/dt)'
+      RENEN      'Renewable Energies'
       LIMRENEW   'Limited Renewables'
 * these values are explicitly referenced in the code to release the balance EQ
       FRERENEW   'Unlimited Renewables'

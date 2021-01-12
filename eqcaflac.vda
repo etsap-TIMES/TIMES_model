@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -15,23 +15,23 @@
   %EQ%%1_CAFLAC(RTP_VINTYR(%R_V_T%,P),S%SWT%)$(AFS(R,T,P,S,%2)$RPS_CAFLAC(R,P,S,%2))..
 
 * Sum over flows in PG
-      SUM((RPC_PG(R,P,C),COM_TMAP(R,COM_TYPE(CG),C)),
-          (1/PRC_ACTFLO(R,V,P,C)) /
-          (NCAP_AFCS(R,V,P,C,S)+PROD(XPT$NCAP_AFCS(R,V,P,CG,S),NCAP_AFCS(R,V,P,CG,S))$(NOT NCAP_AFCS(R,V,P,C,S))) *
-          SUM(RPCS_VAR(R,P,C,TS)$RS_FR(R,S,TS),RS_FR(R,S,TS) * (%VAR%_FLO(R,V,T,P,C,TS %SOW%)$RP_STD(R,P) +
-            (SUM(TOP(RPC_STG(R,P,C),IO)$(NCAP_AFCS(R,V,P,C,S)+NCAP_AFCS(R,V,P,CG,S)),
-              (%VAR%_SIN(R,V,T,P,C,TS %SOW%)*PROD(RP_PGACT(R,P)$NCAP_AFCS(R,V,P,C,S),(NCAP_AFCS(R,V,P,C,S)/NCAP_AFCS(R,V,P,CG,S))$NCAP_AFCS(R,V,P,CG,S)))$IPS(IO)+
-              (%VAR%_SOUT(R,V,T,P,C,TS %SOW%)*STG_EFF(R,V,P)*(1+RTCS_FR(R,T,C,S,TS)))$(NOT IPS(IO))) +
-             SUM(RPC_IRE(R,P,C,IE),%VAR%_IRE(R,V,T,P,C,TS,IE %SOW%)*PROD(RPG_AFEX(R,P,C,IE,CG)$((NCAP_AFCS(R,V,P,C,S)$NCAP_AFCS(R,V,P,CG,S))**1$RP_AIRE(R,P,IE)),
-               (NCAP_AFCS(R,V,P,C,S)/NCAP_AFCS(R,V,P,CG,S))$NCAP_AFCS(R,V,P,CG,S))+1$0))$(NOT RP_STD(R,P)))))
+    SUM((RPC_PG(R,P,C),COM_TMAP(R,COM_TYPE(CG),C)),
+        (1/PRC_ACTFLO(R,V,P,C)) /
+        (NCAP_AFCS(R,V,P,C,S)+PROD(XPT$NCAP_AFCS(R,V,P,CG,S),NCAP_AFCS(R,V,P,CG,S))$(NOT NCAP_AFCS(R,V,P,C,S))) *
+        SUM(RPCS_VAR(R,P,C,TS)$RS_FR(R,S,TS),RS_FR(R,S,TS) * (%VAR%_FLO(R,V,T,P,C,TS %SOW%)$RP_STD(R,P) +
+          (SUM(TOP(RPC_STG(R,P,C),IO)$(NCAP_AFCS(R,V,P,C,S)+NCAP_AFCS(R,V,P,CG,S)),
+            (%VAR%_SIN(R,V,T,P,C,TS %SOW%)*PROD(RP_PGACT(R,P)$NCAP_AFCS(R,V,P,C,S),(NCAP_AFCS(R,V,P,C,S)/NCAP_AFCS(R,V,P,CG,S))$NCAP_AFCS(R,V,P,CG,S)))$IPS(IO)+
+            (%VAR%_SOUT(R,V,T,P,C,TS %SOW%)*STG_EFF(R,V,P)*(1+RTCS_FR(R,T,C,S,TS)))$(NOT IPS(IO))) +
+           SUM(RPC_IRE(R,P,C,IE),%VAR%_IRE(R,V,T,P,C,TS,IE %SOW%)*PROD(RPG_AFEX(R,P,C,IE,CG)$((NCAP_AFCS(R,V,P,C,S)$NCAP_AFCS(R,V,P,CG,S))**1$RP_AIRE(R,P,IE)),
+             (NCAP_AFCS(R,V,P,C,S)/NCAP_AFCS(R,V,P,CG,S))$NCAP_AFCS(R,V,P,CG,S))+1$0))$(NOT RP_STD(R,P)))))
 
   =%1=
 
 * process capacity - vintaged or not
-      (SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P) * COEF_AF%4(R,K,T,P,S,%2) *
-         (%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)$PYR(K)%RCAPSBM%))+COEF_AF%4(R,V,T,P,S,%2)*%UPSCAP0%) *
+    (SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P) * COEF_AF%4(R,K,T,P,S,%2) *
+       (%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)$PYR(K)%RCAPSBM%))+COEF_AF%4(R,V,T,P,S,%2)*%UPSCAP0%) *
 * timeslice fraction of capacity
-      PRC_CAPACT(R,P) * G_YRFR(R,S)
+    PRC_CAPACT(R,P) * G_YRFR(R,S)
   ;
 
 %3 EXIT
@@ -40,20 +40,21 @@
   %EQ%L_CAPFLO(RTP_VINTYR(%R_V_T%,P),CG,SL(STL(%RTS%))%SWT%)$(RS_TSLVL(R,S)$NCAP_AFC(R,V,P,CG,STL))..
 
 * Sum over regular flows
-      SUM(RPC(RP_FLO(R,P),C)$COM_GMAP(R,CG,C),
-        SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,S,TS),
-$         BATINCLUDE %cal_red% C COM TS P T
-         )) +
+    SUM(RPC(RP_FLO(R,P),C)$COM_GMAP(R,CG,C),
+      SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,S,TS),RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))*
+$       BATINCLUDE %cal_red% C COM TS P T
+       )) +
 * storage: for activity multiply by number of storage cycles in a year
-      SUM(PRC_TS(RP_STG(R,P),TS)$RS_FR(R,TS,S),%VAR%_ACT(R,V,T,P,TS%SOW%)*RS_FR(R,TS,S)*EXP(PRC_SC(R,P))/RS_STGPRD(R,TS)*G_YRFR(R,S))$ACTCG(CG) +
-      SUM((TOP(RPC_STG(R,P,C(CG)),IO),RPCS_VAR(R,P,C,TS))$TS_MAP(R,S,TS),
-          %VAR%_SIN(R,V,T,P,C,TS%SOW%)$(NOT TOP(R,P,C,'OUT'))$IPS(IO)+%VAR%_SOUT(R,V,T,P,C,TS%SOW%)*STG_EFF(R,V,P)*DIAG(IO,'OUT'))
+    SUM(PRC_TS(RP_STG(R,P),TS)$RS_FR(R,TS,S),%VAR%_ACT(R,V,T,P,TS%SOW%)*RS_FR(R,TS,S)*EXP(PRC_SC(R,P))/RS_STGPRD(R,TS)*G_YRFR(R,S))$ACTCG(CG) +
+    SUM(RPC_STG(R,P,C)$COM_GMAP(R,CG,C),
+      SUM((TOP(R,P,C,IO),RPCS_VAR(R,P,C,TS))$RS_FR(R,S,TS),RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))*
+        (%VAR%_SIN(R,V,T,P,C,TS%SOW%)$(NOT TOP(R,P,C,'OUT'))$IPS(IO)+%VAR%_SOUT(R,V,T,P,C,TS%SOW%)*STG_EFF(R,V,P)*DIAG(IO,'OUT'))))
 
   =%1=
 
 * process capacity - vintaged or not
-      (SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P) *
-         (%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)$PYR(K)%RCAPSBM%))+%UPSCAP0%)*NCAP_AFC(R,V,P,CG,STL) *
+    (SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P) *
+       (%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)$PYR(K)%RCAPSBM%))+%UPSCAP0%)*NCAP_AFC(R,V,P,CG,STL) *
 * timeslice fraction of capacity
-      PRC_CAPACT(R,P) * G_YRFR(R,S)
+    PRC_CAPACT(R,P) * G_YRFR(R,S)
   ;

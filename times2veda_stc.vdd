@@ -124,6 +124,8 @@ reg_act    r c
   STG RP_STG  r p
   DISTR DISTR r p
   IRE RP_IRE  r p
+  XTRACT XTRACT r p
+  RENEW RENEW r p
 * commodities
   NRG  NRG    r c
   DEM  DEM    r c
@@ -133,10 +135,13 @@ reg_act    r c
   COMM COMM   r c
   TRN  TRN    r c
   AGR  AGR    r c
-  NE   NE     r c
   IND  IND    r c
+  OTH  OTH    r c
   ELC+ NRGELC r c
   HET+ NRGHET r c
+  FOS+ NRGFOS r c
+  REN+ NRGREN r c
+  SYN+ NRGSYN r c
   UC_Const uc_r_each r uc_n
   UC_Const uc_const  r uc_n
   UC_DynBD uc_dynbd  r uc_n

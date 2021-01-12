@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -78,10 +78,10 @@ $    BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 99 'Illegal system commodity in topolo
   PUTGRP = 0; Z = 1;
 * see that components of any CG for a process in topology
   LOOP(PRC_CG(R,P,CG)$(NOT COM_TYPE(CG)),
-$IF %RELAX_PRC_CG%==YES Z = NOT SUM(COM_GMAP(R,CG,C)$RPC(R,P,C),1);
+      Z = NOT SUM(COM_GMAP(R,CG,C)$RPC(R,P,C),1);
       LOOP(COM_GMAP(R,CG,C)$((NOT RPC(R,P,C))$Z),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Commodity in CG of process P but not in topology'
-         PUT QLOG ' FATAL ERROR   -     R=',%RL%,' P=',%PL%,' C=',%CL%,' CG=',CG.TL ;
+         PUT QLOG ' SEVERE WARNING  -   R=',%RL%,' P=',%PL%,' C=',%CL%,' CG=',CG.TL ;
       )
     );
 
