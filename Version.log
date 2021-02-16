@@ -2320,3 +2320,22 @@ eqstgaux.mod  : (1)
 eqcaflac.vda  : (2)
 solsetv.v3    : (3)
 times2veda.vdd: (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.2
+-----------------------------------------------------------------------------------------
+Date: 15-Feb-2021 [AL]: Maintenance release
+1) Fixed GDX load issues with GAMS v342
+2) Fixed rare issue with PASTyear beyond EOH
+3) Added reporting of ambiguous marginals of multi-region UC
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.2
+initmty.mod   : (1)
+setglobs.mod  : (1)
+ppmain.mod    : (2)
+rptmisc.rpt   : (3)
+ucbet.vda     : (1)
+
+Added file:
+gdxfilter.gms : (1)

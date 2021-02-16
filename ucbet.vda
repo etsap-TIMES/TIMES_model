@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -40,7 +40,7 @@
   UC_TS_SUM(R,UC_N(UNCD1),S) = NO;
 
 *-----------------------------------------------------------------------------
-  EQUATIONS
+*  EQUATIONS
 *-----------------------------------------------------------------------------
 
    %EQ%G_UCMAX(UC_GMAX(UC_N,ALL_R,ITEM,C,NAME)%SOW%) ..
@@ -124,6 +124,6 @@ $IF %STAGES%==YES $SET SOW %ORGSOW%
 * Sum regional maximums to global (change R to ALL_R if IMPEXP allowed)
    %EQ%G_UCSUMAX(UC_N%SOW%)$SUM(UC_GMAXR(ALL_R,UC_N),1) ..
 
-    %VAR%_UC(UC_N%SOW%)  =G=  SUM(UC_GMAXR(R,UC_N),%VAR%_UCR(UC_N,R%SOW%));
+   %VAR%_UC(UC_N%SOW%)  =G=  SUM(UC_GMAXR(R,UC_N),%VAR%_UCR(UC_N,R%SOW%));
 
 *-----------------------------------------------------------------------------

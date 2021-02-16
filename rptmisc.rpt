@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -162,6 +162,8 @@ $IF NOT %VAR_UC%==YES $GOTO UC_DONE
   %1PAR_UCSL(%2UC_N,'NONE',T,S)           $= %VART%_UCTS.L(UC_N,T,S%SWS%);
   %1PAR_UCSL(%2UC_N,R,T,S)                $= %VART%_UCRTS.L(UC_N,R,T,S%SWS%);
 * Marginals
+  %1PAR_UCSM(%2UCN,R,T,ANNUAL)$UC_R_SUM(R,UCN) $= %VART%_UCT.M(UCN,T%4)*R_DF(R,T);
+  %1PAR_UCSM(%2UCN,R,T,S)$UC_TS_EACH(R,UCN,S)  $= %VART%_UCTS.M(UCN,T,S%4)*R_DF(R,T);
   %1PAR_UCSM(%2UC_N,'NONE','NONE','NONE') $= %VAR%_UC.M(UC_N%5);
   %1PAR_UCSM(%2UC_N,R,'NONE','NONE')      $= %VAR%_UCR.M(UC_N,R%5);
   %1PAR_UCSM(%2UC_N,'NONE',T,'NONE')      $= %VART%_UCT.M(UC_N,T%4);

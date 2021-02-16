@@ -275,7 +275,7 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
 
 * establish each year in OBJ
 *   years before 1st period
-    EOHYEARS(PASTYEAR) = YES;
+    EOHYEARS(PYR)$(YEARVAL(PYR)<MINYR) = YES;
 
 * UR 10/04/00
 * EACHYEAR goes until (MIYR_VL+DUR_MAX)
@@ -647,8 +647,8 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 * commodity release always in next year if no time provided but release
     NCAP_DLIFE(RTP(R,T,P))$((NOT NCAP_DLIFE(RTP))$SUM(RPC(R,P,C)$NCAP_OCOM(RTP,C),1)) = 1;
     NCAP_DELIF(RTP(R,T,P))$(NOT NCAP_DELIF(RTP))$= NCAP_DLIFE(RTP);
-*V0.5a if investment requires commodity and has a leadtime, set
-*      commodity time = lead if not provided
+*V0.5a - if investment requires commodity and has a leadtime, set
+*        commodity time = lead if not provided
     NCAP_CLED(RTP(R,T,P),C)$((NOT NCAP_CLED(RTP,C))$NCAP_ICOM(RTP,C)) = COEF_ILED(RTP);
 * CHP plants
     NCAP_BPME(RTP(R,V,P))$((NOT NCAP_BPME(RTP))$NCAP_CDME(RTP)$PRC_MAP(R,'CHP',P)) = 1;

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2021 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *=========================================================================
 * Globals.gms - Safe Set of TIMES Critical Global control variables
 * %1 - optional variable label to jump
@@ -47,14 +47,7 @@ $GDXOUT _dd_.gdx
 $UNLOAD
 $GDXOUT
 $IF NOT warnings $GOTO EOF
-$IF NOT %G2X6%==YES $GOTO EOF
-  DISPLAY 'GAMS Warnings detected; Data have been Filterd via GDX';
-$hiddencall gdxdump _dd_.gdx NODATA > _dd_.dmp
-$hiddencall sed "/\(^Scalar\|(\*)\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /\$LOADR /" _dd_.dmp > _dd_.dd
-$IF gamsversion 301 $onFiltered
-$INCLUDE _dd_.dd
-$hiddencall rm -f _dd_.dmp
-$GDXIN
+$IF %G2X6%==YES $BATINCLUDE gdxfilter MAIN
 *---------
 $LABEL EOF
 $SETGLOBAL TIMESED 0

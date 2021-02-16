@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -749,7 +749,7 @@ $ IF NOT %G2X6%==YES $GOTO RUN
 $ IF NOT SET RUN_NAME $SETNAMES %SYSTEM.INCPARENT% . RUN_NAME .
 $ IF NOT EXIST %RUN_NAME%~data.gdx $GOTO RUN
 $ hiddencall gdxdump %RUN_NAME%~data.gdx NODATA > _dd_.dmp
-$ hiddencall sed "/\(^\|(\*) \)Alias/{N;d;}; /^\([^$].*$\|$\)/d;" _dd_.dmp > _dd_.dd
+$ hiddencall sed "/^\(Alias\|[^($]*(\*) Alias\|[^$].*empty *$\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /$LOAD /I" _dd_.dmp > _dd_.dd
 $ INCLUDE _dd_.dd
 $ hiddencall rm -f _dd_.dmp
 $ TITLE %SYSTEM.TITLE%#
