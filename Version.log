@@ -2339,3 +2339,32 @@ ucbet.vda     : (1)
 
 Added file:
 gdxfilter.gms : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.3
+-----------------------------------------------------------------------------------------
+Date: 1-Apr-2021 [AL]: Minor release
+1) Fixed bug related to dynamic (t,t+1) type UCs under stochastic mode
+2) Added support for non-vintaged FLO_FUNC for vintaged processes
+3) Added new attribute NCAP_ISUBP(r,y,p) for proportional investment subsidy
+4) Added support for dynamic commodity PRD/NET bounds with UC_DYNBND
+5) Cosmetic fixes e.g. for backwards compatibility
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.3
+initmty.mod   : (3)
+setglobs.gms  : (5)
+ppmain.mod    : (4)
+preppm.mod    : (3)
+prepparm.gms  : (3)
+coef_obj.mod  : (3)
+coef_shp.mod  : (2)
+equ_ext.vda   : (4)
+equcrtp.vda   : (4)
+bnd_ucv.mod   : (1)
+bnd_ucw.mod   : (1)
+mod_ext.vda   : (4)
+prepret.dsc   : (5)
+initmty.stc   : (1)
+stages.stc    : (1)
+solsetv.v3    : (5)

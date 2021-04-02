@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -9,13 +9,13 @@
 *------------------------------------------------------------------------------
   PARAMETER RTP_FFCX(R,ALLYEAR,ALLYEAR,P,CG,CG) //;
   SET AGEJ(J,AGE) / 1.1 /;
-  OPTION CLEAR=PRC_YMAX;
+  RTP_CGC(RTP(R,V,P),CG,CG2)$((FLO_FUNCX(RTP,CG,CG2)<=0)$FLO_FUNCX(RTP,CG,CG2))=PRC_VINT(R,P);
 
 * Remove FLO_FUNCX indexes that won't have any effect
   Z=CARD(J)/2+1;
-  FLO_FUNCX(RTP,CG1,CG2)$(ABS(FLO_FUNCX(RTP,CG1,CG2)-Z)>Z-1.5) = 0;
-  LOOP((RTP(R,V,P),CG1,CG2)$FLO_FUNCX(RTP,CG1,CG2),TRACKP(R,P) = YES);
-  TRACKP(RP)$(NOT PRC_VINT(RP)) = NO;
+  FLO_FUNCX(RTP,CG,CG2)$(ABS(FLO_FUNCX(RTP,CG,CG2)-Z)>Z-1.5) = 0;
+  OPTION PRC_YMIN < FLO_FUNCX,CLEAR=PRC_YMAX;
+  TRACKP(PRC_VINT(RP)) $= PRC_YMIN(RP);
 
   LOOP(AGEJ(J,AGE)$CARD(TRACKP),
     LOOP(V,
@@ -34,7 +34,9 @@
         SUM(LIFE$(ORD(LIFE) LE PRC_YMAX(R,P)),SHAPE(J+(FLO_FUNCX(R,TT,P,CG1,CG2)-1),LIFE))
         / PRC_YMAX(R,P) -1);
   );
-  OPTION CLEAR=PRC_YMIN,CLEAR=PRC_YMAX,CLEAR=TRACKP;
+* Option for non-vintaged FLO_FUNC multiplier
+  RTP_FFCX(RTP_VINTYR(R,V,T,P),CG,CG2)$((FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')>0)$RTP_CGC(R,V,P,CG,CG2))=FLO_FUNC(R,T,P,CG,CG2,'ANNUAL')/FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')-1;
+  OPTION CLEAR=PRC_YMIN,CLEAR=PRC_YMAX,CLEAR=RTP_CGC,CLEAR=TRACKP;
 *------------------------------------------------------------------------------
 * Shaping of COEF_CPT
 *------------------------------------------------------------------------------

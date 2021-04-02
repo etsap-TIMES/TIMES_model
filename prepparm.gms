@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2021 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *******************************************************************************
 * PREPPAR : Prepare parameters for preprocessing
 * Description: Non-default interpolation/extrapolation according to user option
@@ -17,9 +17,9 @@
 *******************************************************************************
 *$ONLISTING
 $EOLCOM !
-$SETLOCAL DATA 'MY_FIL2(%5)' SETLOCAL OPT '*' SETLOCAL LL ''
-$IF NOT %7 == 0 $SETLOCAL OPT '' SETLOCAL LL ",'%DFLBL%'"
-$IF NOT '%8' == '' $SETLOCAL DEF_IEBD '%8'
+$SETLOCAL DATA 'MY_FIL2(%5)' SETLOCAL OPT '*' SETLOCAL LL
+$IF NOT %7 == 0 $SETLOCAL LL ",'%DFLBL%'" SETLOCAL OPT
+$IF NOT %8.== . $SETLOCAL DEF_IEBD %8
 * conditional interpolation flag
 IF(G_NOINTERP, INT_DEFAULT('%1')=NO;
   ELSE OPTION CLEAR=UNCD7; CNT = (%DEF_IEBD%+(3-%DEF_IEBD%)$IE_DEFAULT('%1'))$%7;
@@ -63,9 +63,9 @@ IF(G_NOINTERP, INT_DEFAULT('%1')=NO;
        IF(DFUNC LE 2, %DATA%$(%6$(NOT %DATA%+MY_ARRAY(%5))) = EPS; ELSE
          IF(DFUNC EQ 4, Z = INF; ELSEIF DFUNC EQ 5, F = 0);
          %DATA%$(%6) $= FIRST_VAL$(YEARVAL(%5)<F) + LAST_VAL$(YEARVAL(%5)>Z);
-         IF(NOT %7, %DATA%$(%6$(NOT %DATA%+MY_ARRAY(%5))) = EPS);
+         IF((NOT %7)$LAST_VAL, %DATA%$(%6$(NOT %DATA%+MY_ARRAY(%5)))=EPS);
       )); %1(%2,%5,%3) $= %DATA%;
   ));
 * and reset OPT
-$IF NOT %9==+ %1(%2,'%DFLBL%',%3)$((%1(%2,'%DFLBL%',%3) NE %7)$%1(%2,'%DFLBL%',%3)) = MIN(%RESET%,%1(%2,'%DFLBL%',%3));
+$IF NOT %9==+ %1(%2,'%DFLBL%',%3)$((%1(%2,'%DFLBL%',%3)-%7)$%1(%2,'%DFLBL%',%3)) = MIN(%RESET%,%1(%2,'%DFLBL%',%3));
 $OFFLISTING

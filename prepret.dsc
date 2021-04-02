@@ -1,12 +1,11 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
 * PREPRET.dsc oversees pre-processing for retirements
 *=============================================================================*
 * Questions/Comments:
-*
 *-----------------------------------------------------------------------------
 $SET MIP %SOLMIP%==YES
 $GOTO %1
@@ -77,7 +76,7 @@ $SETGLOBAL RCAPSBM -SUM(VNRET(MODLYEAR,T),%VART%_SCAP(R,MODLYEAR,T,P%SWS%))$PRC_
    SUM(IO(IPS),SUM((RTP_CPTYR(R,V,TT,P),PRC_TS(R,P,S)),%VARTT%_ACT(R,V,TT,P,S%SWS%)*FPD(TT))/PRC_CAPACT(R,P)/NCAP_OLIFE(RTP)) +
    SUM(VNRET(V,T(LL+RVPRL(RTP))),%VART%_SCAP(R,V,T,P%SWS%))$LIM(IPS)
 
-   =L=  %VARV%_NCAP(R,V,P%SWS%)$T(V) + NCAP_PASTI(RTP) - %VAR%_SCAP(R,V,'0',P%SOW%)$OBJ_SUMS(RTP)$RVPRL(RTP);
+   =L=  %VARV%_NCAP(R,V,P%SWS%)$T(V) + NCAP_PASTI(R,V,P) - %VAR%_SCAP(R,V,'0',P%SOW%)$OBJ_SUMS(R,V,P)$RVPRL(R,V,P);
 
 * Retrofits and life-extensions
   %EQ%L_REFIT(RTP_TT(R,TT,T,PRC)%SWT%)$RT_PP(R,T)..

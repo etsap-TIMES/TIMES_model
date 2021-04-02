@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -29,6 +29,7 @@ $ IFI NOT %1==DECLR $GOTO VDA
 * Dynamic bounds
   %EQ%N_UCRTP(UC_N,R,T,P,UC_GRPTYPE,BD%SWTD%) 'Dynamic process bound (=L=)'
   %EQ%E_UCRTP(UC_N,R,T,P,UC_GRPTYPE,BD%SWTD%) 'Dynamic process bound (=E=)'
+  %EQ%N_UCRTC(UC_N,COM_VAR,R,T,C,TS,BD%SWTD%) 'Dynamic commodity bound (=NE=)'
   EQN_UCRTP(UC_N,R,T,P,UC_GRPTYPE,BD) 'Dynamic process bound (=NE=)'
 
 * Activity constraints

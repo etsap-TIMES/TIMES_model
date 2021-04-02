@@ -126,6 +126,7 @@ SETS
   AGR(REG,COM) 'Agriculature Sector Demands'
   OTH(REG,COM) 'Other Demands'
   IND(REG,COM) 'Industrial Demands'
+  NE(REG,COM)  'Non-energy Demands'
   NRGFOS(R,C)  'Fossil'
   NRGREN(R,C)  'Renewable'
   NRGSYN(R,C)  'Synthetic'
@@ -139,6 +140,7 @@ SETS
   AGR(RC(R,C))  $= DEM_SMAP(R,'AGR',C);
   IND(RC(R,C))  $= DEM_SMAP(R,'IND',C);
   OTH(RC(R,C))  $= DEM_SMAP(R,'OTH',C);
+  NE(RC(R,C))   $= DEM_SMAP(R,'NE',C);
   NRGELC(NRG(R,C)) $= NRG_TMAP(R,'ELC',C);
   NRGHET(NRG(R,C)) $= NRG_TMAP(R,'LTHEAT',C);
   NRGHET(NRG(R,C)) $= NRG_TMAP(R,'HTHEAT',C);

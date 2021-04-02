@@ -17,38 +17,26 @@
   SCALAR STARTOFF / 0 /, ENDOFF / 0 /;
   SET MATPRC(PRC_GRP) / PRV, PRW /;
   SET NO_RVP(R,T,P);
-  SET IPS / IN, N /, LNX(L) / N, FX /;
-  SET BDUPX(BD) / UP, FX /;
-  SET BDLOX(BD) / LO, FX /;
-  SET BDNEQ(BD) / LO, UP /;
   SET IRE_DIST(R,P) //;
   SET RP_SGS(R,P) //;
   SET RP_STS(R,P) //;
   SET RPS_STG(R,P,S);
-  SET RP_AIRE(R,P,IE) //;
-  SET RPC_MARKET(ALL_R,P,C,IE) //;
-  SET RPC_EQIRE(R,P,C,IE) //;
   SET RPC_STG(R,P,C) //;
   SET RPC_STGN(R,P,C,IO);
-  SET RTC_SHED(R,ALLYEAR,C,BD,J) 'Elastic shape indexes';
-  SET RTP_CGC(REG,ALLYEAR,P,CG,CG);
-  SET RTPCS_OUT(R,ALLYEAR,P,C,S);
-  SET RTPS_BD(R,ALLYEAR,P,S,BD);
   SET UC_DYNDIR(ALL_R,UC_N,SIDE) //;
   SET UC_DT(ALL_R,UC_N) //;
   SET RCS(REG,COM,TS);
   SET RC_RC(ALL_REG,COM,ALL_REG,COM);
-  PARAMETERS
-      LEAD(ALLYEAR) //
-      LAGT(ALLYEAR) //
-      FPD(ALLYEAR)  //
-      IPD(ALLYEAR)  //;
+  PARAMETER LEAD(ALLYEAR) //;
+  PARAMETER LAGT(ALLYEAR) //;
+  PARAMETER FPD(ALLYEAR)  //;
+  PARAMETER IPD(ALLYEAR)  //;
 
 *-----------------------------------------------------------------------------
 * Log Warnings
-$SET TMP .
-$IF %DATAGDX%%G2X6%==YESYES $SET TMP ; Input Data have been filtered via GDX
-$IF WARNINGS $BATINCLUDE pp_qaput.%1 PUTOUT 0 * 'GAMS Warnings Detected%TMP%'
+$ SET TMP .
+$ IF %DATAGDX%%G2X6%==YESYES $SET TMP ; Input Data have been filtered via GDX
+$ IF WARNINGS $BATINCLUDE pp_qaput.%1 PUTOUT 0 * 'GAMS Warnings Detected%TMP%'
 *-----------------------------------------------------------------------------
 * Establish set of main currencies by region (for which discount rate provided)
   LOOP((R,LL(BOHYEAR),CUR)$G_DRATE(R,LL,CUR), RDCUR(R,CUR) = YES);
@@ -1201,9 +1189,10 @@ $ BATINCLUDE prepxtra.mod UCINT
  LOOP(UNCD7(J,UCN,SIDE,R,UC_GRPTYPE,T,P),UC_GMAP_P(UC_ON(R,UCN),UC_GRPTYPE,P)=YES);
 
 * Mark those processes that have UC_CAP / COMXXX to also have VAR_CAP / VAR_COMXXX
- LOOP(UC_GMAP_P(R,UC_N,'CAP',P), TRACKP(R,P) = YES);
+ LOOP(UC_GMAP_P(R,UCN,'CAP',P),TRACKP(R,P)=YES);
  RTP_VARP(RTP(R,T,P))$TRACKP(R,P) = YES;
  OPTION CLEAR=TRACKP,CLEAR=RXX;
+ UC_ON(R,UCN) $= SUM(UC_DYNBND(UCN,BD),1);
  LOOP(UC_GMAP_C(UC_ON(R,UCN),COM_VAR,C,UC_GRPTYPE),RXX(R,COM_VAR,C)=YES);
  RHS_COMPRD(RTCS_VARC(R,T,C,S))$RXX(R,'PRD',C) = YES;
  RXX(R,'NET',C)$COM_LIM(R,C,'FX')=NO;

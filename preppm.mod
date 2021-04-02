@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -14,14 +14,12 @@ $   IFI %PREP_ANS% == YES        $EXIT
 *-----------------------------------------------------------------------------
 * Ensure that both MODLYEAR and DATAYEAR include PASTYEAR
 * Also set the special year among datayears for the processing of control options.
- MODLYEAR(LL) = MILESTONYR(LL);
- MODLYEAR(PASTYEAR)  = YES;
+ MODLYEAR(LL) = MILESTONYR(LL)+PASTYEAR(LL);
  DATAYEAR(PASTYEAR)  = YES;
  DATAYEAR('%DFLBL%') = YES;
 * Build DM_YEAR for interpolation; ensure exclusion of special year:
  DM_YEAR(MILESTONYR) = YES;
- DM_YEAR(DATAYEAR)   = YES;
- DM_YEAR(DATAYEAR)$(YEARVAL(DATAYEAR) EQ 0) = NO;
+ DM_YEAR(DATAYEAR) = (YEARVAL(DATAYEAR)>0);
 * Set migrating years MY_FIL, and FIL2 of each MY_FIL to the period year, if within periods:
  LOOP(T,FIL2(DM_YEAR)$((YEARVAL(DM_YEAR) >= B(T)) * (YEARVAL(DM_YEAR) <= E(T))) = YEARVAL(T));
  MY_FIL(DM_YEAR)$(FIL2(DM_YEAR)*(NOT T(DM_YEAR))) = YES;
@@ -76,7 +74,7 @@ $ BATINCLUDE fillvint
 *-----------------------------------------------------------------------------
 * General attributes
 *-----------------------------------------------------------------------------
-*$BATINCLUDE prepparm G_DRATE R 'CUR' ",'0','0','0','0','0'" MODLYEAR 1
+*$BATINCLUDE prepparm G_DRATE R 'CUR' ",'0','0','0','0','0'" YEAR 1
 *-----------------------------------------------------------------------------
 * Capacity related attributes
 *-----------------------------------------------------------------------------
@@ -89,6 +87,7 @@ $BATINCLUDE prepparm NCAP_FTAX R 'P,CUR' ",'0','0','0','0'" V 'RTP(R,V,P)' 0
 $BATINCLUDE prepparm NCAP_ISUB R 'P,CUR' ",'0','0','0','0'" V 'RTP(R,V,P)' 0
 $BATINCLUDE prepparm NCAP_ITAX R 'P,CUR' ",'0','0','0','0'" V 'RTP(R,V,P)' 0
 $BATINCLUDE prepparm NCAP_VALU R 'P,C,CUR' ",'0','0','0'" V 'RTP(R,V,P)' 0
+$BATINCLUDE prepparm NCAP_ISPCT R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 0
 *-----------------------------------------------------------------------------
 * Commodity related attributes
 *-----------------------------------------------------------------------------
@@ -137,8 +136,8 @@ $BATINCLUDE fillparm COM_ELAST R 'C,TS,L' ",'0','0','0'" T 1 'GE 0'
 $BATINCLUDE fillparm COM_FR R 'C,TS' ",'0','0','0','0'" T 1 'GE 0' X_RCS
 $BATINCLUDE fillparm COM_IE R 'C,TS' ",'0','0','0','0'" T 1 'GE 0'
 $BATINCLUDE fillparm COM_PKFLX R 'C,TS' ",'0','0','0','0'" T 1 'GE 0'
-$BATINCLUDE fillparm COM_PKRSV R 'C' ",'0','0','0','0','0'" T 1 'GE 0'
-$BATINCLUDE fillparm COM_PROJ R 'C' ",'0','0','0','0','0'" T 1 'GE 0'
+$BATINCLUDE fillparm COM_PKRSV R C ",'0','0','0','0','0'" T 1 'GE 0'
+$BATINCLUDE fillparm COM_PROJ R C ",'0','0','0','0','0'" T 1 'GE 0'
 $BATINCLUDE fillparm COM_VOC R 'C,BD' ",'0','0','0','0'" T 1 'GE 0'
 *-----------------------------------------------------------------------------
 * Flow related attributes & inter-regional exchange
@@ -217,17 +216,17 @@ $   IFI %INTEXT_ONLY%==YES  $BATINCLUDE prepxtra.mod XTIE
 *=============================================================================
 ***************************** SHAPE/MULTI INDEXES ****************************
 *-----------------------------------------------------------------------------
-$BATINCLUDE preshape NCAP_AFX R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_AFM R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_FOMX R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_FSUBX R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_FTAXX R 'P' "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_AFX R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_AFM R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_FOMX R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_FSUBX R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_FTAXX R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape FLO_FUNCX R 'P,CG1,CG2' ",'0','0'" V UNCD7 RTP(R,V,P)
 $BATINCLUDE preshape COM_ELASTX R 'C,BD' ",'0','0','0'" T UNCD7 1 15
-$BATINCLUDE preshape NCAP_FOMM R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_FSUBM R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_FTAXM R 'P' "" V RXX RTP(R,V,P)
-$BATINCLUDE preshape NCAP_CPX R 'P' "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_FOMM R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_FSUBM R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_FTAXM R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_CPX R P "" V RXX RTP(R,V,P)
 *-----------------------------------------------------------------------------
 * All non-cost parameters have now been interpolated / extrapolated and user-defined options processed.
 * Second interpolation pass is still needed for cost parameters (dense interpolation).

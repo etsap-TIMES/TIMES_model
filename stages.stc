@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -11,14 +11,15 @@ $IF %1==MCA $GOTO POST
 *
 $SETGLOBAL SW_TAGS SET EQ 'ES' SET VAR 'VAS' SET SWD ',WW' SET SWTD ',T,WW' SET SWS ',W)' SET SOW ',SOW' SET SWT ',SW_T(T,SOW)' SET VART 'SUM(SW_TSW(SOW,T,W),VAS' SET VARV 'SUM(SW_TSW(SOW,V,W),VAS' SET VARM 'SUM(SW_TSW(SOW,MODLYEAR,W),VAS'
 $IF %STAGES%==YES $SETGLOBAL SW_STVARS SET VARTT 'SUM(SW_TSW(SOW,TT,W),VAS' SET SWSW SW_TSW(SOW,T,WW),
-$SETGLOBAL SWD ',WW' SETGLOBAL WITSPINE ''
+$SETGLOBAL SWD ',WW' SETGLOBAL WITSPINE
 $IF %STAGES%==YES $SETGLOBAL SWX ',SOW' SETGLOBAL SWTX SW_T(T,SOW)$
-$IF %SENSIS%==YES $SETGLOBAL SWD ''
+$IF %SENSIS%==YES $SETGLOBAL SWD
 SET AUXSOW(ALLSOW) / 1 /;
 *-----------------------------------------------------------------------------
 * Use slack variables in user-constraints
 $SETGLOBAL VAR_UC YES
 $IF NOT %VAR_UC%==YES $ABORT Invalid VAR_UC setting in stochastic mode - abort.
+ OPTION SUC_L<UC_T_SUCC; SUC_L(UC_ON)$SUC_L(UC_ON)=(NOT UC_DYNDIR(UC_ON,'RHS'));
 *$SETLOCAL DEBUG YES
 *-----------------------------------------------------------------------------
 * Pre-preprocessing of inputs to internal mappings

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *==============================================================================*
@@ -14,13 +14,26 @@ $GOTO %1
 *-------------------------------------------------------------------------------
 $LABEL INIT_EXT
 * Move dynamic bounds to dedicated attribute
-  IF(CARD(UC_DYNBND),
+  IF(CARD(UC_DYNBND), OPTION CLEAR=UNCD1; LOOP(UC_DYNBND(UCN,BD),UNCD1(UCN)=YES);
     PRC_DYNUC(UC_N,SIDE,R,LL,P,'CAP',BD)$UC_DYNBND(UC_N,BD) $= UC_CAP(UC_N,SIDE,R,LL,P);
     PRC_DYNUC(UC_N,SIDE,R,LL,P,'NCAP',BD)$UC_DYNBND(UC_N,BD) $= UC_NCAP(UC_N,SIDE,R,LL,P);
     PRC_DYNUC(UC_N,SIDE,R,LL,P,'ACT',BD)$UC_DYNBND(UC_N,BD) $= UC_ACT(UC_N,SIDE,R,LL,P,'ANNUAL');
-    UC_CAP(UC_N,SIDE,R,LL,P)$SUM(UC_DYNBND(UC_N,BD),1) = 0;
-    UC_NCAP(UC_N,SIDE,R,LL,P)$SUM(UC_DYNBND(UC_N,BD),1) = 0;
-    UC_ACT(UC_N,SIDE,R,LL,P,S)$SUM(UC_DYNBND(UC_N,BD),1) = 0;
+    UC_COM(UC_N(UNCD1),'NET',SIDE,R,LL,C,ANNUAL(S),'UCN') $= UC_COMNET(UC_N,SIDE,R,LL,C,S);
+    UC_COM(UC_N(UNCD1),'PRD',SIDE,R,LL,C,ANNUAL(S),'UCN') $= UC_COMPRD(UC_N,SIDE,R,LL,C,S);
+    UC_CAP(UC_N(UNCD1),SIDE,R,LL,P) = 0;
+    UC_NCAP(UC_N(UNCD1),SIDE,R,LL,P) = 0;
+    UC_ACT(UC_N(UNCD1),SIDE,R,LL,P,S) = 0;
+    UC_COMPRD(UC_N(UNCD1),SIDE,R,LL,C,S) = 0;
+    UC_COMNET(UC_N(UNCD1),SIDE,R,LL,C,S) = 0;
+* Set LHS default IE to 5 and RHS default to 10
+    UC_COM(UCN(UNCD1),COM_VAR,'LHS',R,LL--ORD(LL),C,S,'UCN')$((NOT UC_COM(UCN,COM_VAR,'LHS',R,'0',C,S,'UCN'))$UC_COM(UCN,COM_VAR,'LHS',R,LL,C,S,'UCN'))=5;
+    UC_COM(UCN(UNCD1),COM_VAR,'RHS',R,LL--ORD(LL),C,S,'UCN')$((NOT UC_COM(UCN,COM_VAR,'RHS',R,'0',C,S,'UCN'))$UC_COM(UCN,COM_VAR,'RHS',R,LL,C,S,'UCN'))=
+      UC_COM(UCN,COM_VAR,'LHS',R,'0',C,S,'UCN')+10$(NOT UC_COM(UCN,COM_VAR,'LHS',R,'0',C,S,'UCN'));
+* If no RHS/LHS defined, set it to EPS/1 for all other side years except for the IE option as on other side
+    UC_COM(UCN,COM_VAR,'RHS',R,LL,C,S,'UCN')$((NOT UC_COM(UCN,COM_VAR,'RHS',R,'0',C,S,'UCN'))$UC_COM(UCN,COM_VAR,'LHS',R,LL,C,S,'UCN'))=
+      EPS$(NOT MIYR_1(LL))+UC_COM(UCN,COM_VAR,'LHS',R,LL,C,S,'UCN')$LASTLL(LL);
+    UC_COM(UCN,COM_VAR,'LHS',R,LL,C,S,'UCN')$((NOT UC_COM(UCN,COM_VAR,'LHS',R,'0',C,S,'UCN'))$UC_COM(UCN,COM_VAR,'RHS',R,LL,C,S,'UCN'))=
+      (1+(UC_COM(UCN,COM_VAR,'RHS',R,LL,C,S,'UCN')-1)$LASTLL(LL));
   );
 $GOTO FINISH
 *-------------------------------------------------------------------------------
@@ -46,14 +59,14 @@ $ BATINCLUDE prepparm PRC_DYNUC 'UC_N,SIDE,R' 'P,UC_GRPTYPE,BD' "" MILESTONYR 1 
 * Set final UC_GMAPs for REDUCE
   LOOP(BD, UC_GMAP_P(R,UC_N,UC_GRPTYPE,P)$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD) = YES);
   );
+  LOOP(UC_DYNBND(UCN,BD),UC_T_SUCC(R,UCN,'0') = YES);
 $GOTO FINISH
 *-------------------------------------------------------------------------------
 $LABEL PPM_EXT
 * Make sure that standard UCs are not being generated
-  LOOP(UC_DYNBND(UC_N,BD),
-    UC_T_SUCC(R,UC_N,T) = YES;
-    UC_R_SUM(R,UC_N) = NO;
-    UC_R_EACH(R,UC_N) = NO;
+  LOOP(UC_DYNBND(UCN,BD),
+    UC_R_SUM(R,UCN) = NO;
+    UC_R_EACH(R,UCN) = NO;
   );
 $GOTO FINISH
 *-------------------------------------------------------------------------------
@@ -63,19 +76,19 @@ $LABEL EQU_EXT
 
 *-------
 * Difference in capacity between previous and current period
-  (SUM(SAMEAS(T-1,V(TT))$RTP(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) * 
+  (SUM(SAMEAS(T-1,V(TT))$RTP(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) *
      %VARV%_CAP(R,V,P %SWS%))*(1-2$BDUPX(BD))
    -  %VAR%_CAP(R,T,P %SOW%) *(1-2$BDUPX(BD)))$SAMEAS('CAP',UC_GRPTYPE)
 *-------
   +
 * Difference in NCAP between previous and current period
-  (SUM(SAMEAS(T-1,V(TT))$RTP(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) * 
+  (SUM(SAMEAS(T-1,V(TT))$RTP(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) *
      %VARV%_NCAP(R,V,P %SWS%))*(1-2$BDUPX(BD))
    -  %VAR%_NCAP(R,T,P %SOW%) *(1-2$BDUPX(BD)))$SAMEAS('NCAP',UC_GRPTYPE)
 *-------
   +
 * Difference in ACT between previous and current period
-  (SUM(SAMEAS(T-1,V(TT))$RTP_VARA(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) * 
+  (SUM(SAMEAS(T-1,V(TT))$RTP_VARA(R,V,P), POWER(PRC_DYNUC(UC_N,'LHS',R,T,P,UC_GRPTYPE,BD),LEAD(T)) *
        SUM((RTP_VINTYR(R,MODLYEAR,V,P),PRC_TS(R,P,S)),%VARTT%_ACT(R,MODLYEAR,V,P,S %SWS%)))*(1-2$BDUPX(BD))
    -   SUM((RTP_VINTYR(R,MODLYEAR,T,P),PRC_TS(R,P,S)),  %VAR%_ACT(R,MODLYEAR,T,P,S %SOW%)) *(1-2$BDUPX(BD)))$SAMEAS('ACT',UC_GRPTYPE)
 
@@ -84,6 +97,28 @@ $LABEL EQU_EXT
 * RHS constant term
   PRC_DYNUC(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD)*LEAD(T)*(-1+2$BDUPX(BD))
 
+  ;
+
+$IFI %2==E $GOTO FINISH
+*-------------------------------------------------------------------------------
+  %EQ%%2_UCRTC(UC_N,COM_VAR,RTC(%R_T%,C),ANNUAL(S),BD(%4) %SWT%)$(UC_COM(UC_N,COM_VAR,'RHS',RTC,S,'UCN')$UC_DYNBND(UC_N,BD))..
+
+*-------
+* Difference in COMNET between previous and current period
+  (SUM(SAMEAS(T-1,Y(TT))$RTC(R,Y,C), POWER(UC_COM(UC_N,COM_VAR,'LHS',RTC,S,'UCN'),LEAD(T)) *
+     SUM(RHS_COMBAL(R,Y,C,S),%VARTT%_COMNET(R,Y,C,S %SWS%)))*(1-2$BDUPX(BD))
+   - SUM(RHS_COMBAL(R,T,C,S),  %VAR%_COMNET(R,T,C,S %SOW%)) *(1-2$BDUPX(BD)))$SAMEAS('NET',COM_VAR)
+*-------
+  +
+* Difference in COMPRD between previous and current period
+  (SUM(SAMEAS(T-1,Y(TT))$RTC(R,Y,C), POWER(UC_COM(UC_N,COM_VAR,'LHS',RTC,S,'UCN'),LEAD(T)) *
+     SUM(RHS_COMPRD(R,Y,C,S),%VARTT%_COMPRD(R,Y,C,S %SWS%)))*(1-2$BDUPX(BD))
+   - SUM(RHS_COMPRD(R,T,C,S),  %VAR%_COMPRD(R,T,C,S %SOW%)) *(1-2$BDUPX(BD)))$SAMEAS('PRD',COM_VAR)
+
+  =%3=
+
+* RHS constant term
+  UC_COM(UC_N,COM_VAR,'RHS',R,T,C,S,'UCN')*LEAD(T)*(-1+2$BDUPX(BD))
   ;
 *-------------------------------------------------------------------------------
 $LABEL FINISH

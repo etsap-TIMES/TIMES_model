@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *-----------------------------------------------------------------------------
@@ -67,6 +67,7 @@ $SETGLOBAL STAGES YES
   SET RP_FFSGG(R,P,CG,CG) 'Uncertain transformation groups';
   SET RP_FFSGGM(R,P,CG,CG,COM_GRP,COM_GRP) 'Map of transformation groups';
   PARAMETER OBJ_SIC(R,T,P,ALLSOW) 'Uncertainty in investments';
+  PARAMETER SUC_L(ALL_R,UC_N) 'Dynamic type LHS' //;
 
 * Reporting
   PARAMETER SPAR_UCSL(WW,UC_N,*,*,*)  //;

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -38,8 +38,8 @@ $IFI '%ANNCOST%%CTST%'==LEV MINYR=ACL;
   YR_VL = MAX(SMAX(DATAYEAR,YEARVAL(DATAYEAR)),YR_VL);
   FIL(LL)$((YEARVAL(LL) GE YR_V1)*(YEARVAL(LL) LE YR_VL)) = YES;
 
-* [AL] interpolate discount rates
-$   BATINCLUDE filparam.gms G_DRATE 'R,' 'CUR'  ",'','','','',''" ALLYEAR LL FIL(LL)$ FIL(LL)$
+* interpolate discount rates
+$ BATINCLUDE filparam.gms G_DRATE 'R,' CUR  ",'','','','',''" ALLYEAR LL FIL(LL)$ FIL(LL)$
 
 * set discounting factor OBJ_DISC in 'cumulative' way, covering EACHYEAR
 * First, initialize the discount factor for YR_V1 to 1.0:
@@ -85,30 +85,31 @@ $   BATINCLUDE filparam.gms G_DRATE 'R,' 'CUR'  ",'','','','',''" ALLYEAR LL FIL
       OPTION RPC_CUR <= FLO_DELIV; OBJ_VFLO(RPC_CUR,'COST') = YES;
       OPTION RPC_CUR <= FLO_TAX; OBJ_VFLO(RPC_CUR,'TAX') = YES;
       OPTION RPC_CUR <= FLO_SUB; OBJ_VFLO(RPC_CUR,'SUB') = YES;
+* remove proportional subsidy if absolute defined
+  IF(CARD(NCAP_ISPCT),OPTION PRC_YMAX<NCAP_ISUB; NCAP_ISPCT(R,LL,P)$PRC_YMAX(R,P)=0);
 
-*V07_1b blending
-    OBJ_BLNDV(R,Y_EOH,BLE,OPR,CUR)$(RDCUR(R,CUR)$BLE_OPR(R,BLE,OPR)) = BL_VAROMC(R,BLE,CUR) +
-              SUM(COM$BL_DELIVC(R,BLE,COM,CUR), BL_INP(R,BLE,COM) * BL_DELIVC(R,BLE,COM,CUR));
+* V07_1b blending
+  OBJ_BLNDV(R,Y_EOH,BLE,OPR,CUR)$(RDCUR(R,CUR)$BLE_OPR(R,BLE,OPR)) = BL_VAROMC(R,BLE,CUR) +
+            SUM(COM$BL_DELIVC(R,BLE,COM,CUR), BL_INP(R,BLE,COM) * BL_DELIVC(R,BLE,COM,CUR));
 
 $SET TAKE 'RDCUR(R,CUR)' SET TMP 1
 * Can we use macroes?
 $IF %OBMAC%==YES $SET TMP 2
 $IF DEFINED R_CUREX $SET TAKE 1
 *-----------------------------------------------------------------------------
-* Establish process-wise subset of EACHYEAR by determining the MIN and MAX years:
-* This considerably speeds up interpolation (are the limits waterproof?)
- MY_ARRAY(V) = MIN(B(V),M(V)-IPD(V));
- PRC_YMIN(RP(R,P)) = SMIN(RTP(R,V,P),MY_ARRAY(V));
- PRC_YMAX(RP(R,P)) = SMAX(RTP(R,PYR,P),YEARVAL(PYR));
+* Establish process-wise subset of EACHYEAR by determining the MIN and MAX years
+  MY_ARRAY(V) = MIN(B(V),M(V)-IPD(V));
+  PRC_YMIN(RP(R,P)) = SMIN(RTP(R,V,P),MY_ARRAY(V));
+  PRC_YMAX(RP(R,P)) = SMAX(RTP(R,PYR,P),YEARVAL(PYR));
 * Make sure last commissioning year of repeated investments is included
- LOOP(T, Z = M(T)-E(T)+LAGT(T);
-   PRC_YMAX(RP(R,P))$RTP(R,T,P) = MAX(PRC_YMAX(R,P),E(T)+NCAP_ILED(R,T,P)+MAX(Z,NCAP_TLIFE(R,T,P))$(COEF_RPTI(R,T,P) GT 1)));
+  LOOP(T, Z = M(T)-E(T)+LAGT(T);
+    PRC_YMAX(RP(R,P))$RTP(R,T,P) = MAX(PRC_YMAX(R,P),E(T)+NCAP_ILED(R,T,P)+MAX(Z,NCAP_TLIFE(R,T,P))$(COEF_RPTI(R,T,P) GT 1)));
 
 *-----------------------------------------------------------------------------*
 * Interpolation/extrapolation of cost parameters
 * EACHYEAR will be sufficient for all capacity related costs
- Z = SMAX(RP,PRC_YMAX(RP));
- OPTION CLEAR=FIL,CLEAR=MY_ARRAY; FIL(K)$(YEARVAL(K) LE Z) = YES;
+  Z = SMAX(RP,PRC_YMAX(RP));
+  OPTION CLEAR=FIL,CLEAR=MY_ARRAY; FIL(K)$(YEARVAL(K) LE Z) = YES;
 $IF %VALIDATE%==YES FIL(K)=V(K);
 *-----------------------------------------------------------------------------*
 $SETLOCAL BEXT '(YEARVAL(FIL) GE PRC_YMIN(R,P))$'
@@ -118,6 +119,8 @@ $SETLOCAL FEXT '(YEARVAL(FIL) LE PRC_YMAX(R,P))$'
 $BATINCLUDE fillcost OBJ_ICOST R 'P,CUR' ",'0','0','0'" FIL %TAKE% '%BEXT%' '%FEXT%' NCAP_COST OB_ICOST %TMP%
 $BATINCLUDE fillcost OBJ_ISUB  R 'P,CUR' ",'0','0','0'" FIL %TAKE% '%BEXT%' '%FEXT%' NCAP_ISUB OB_ISUB %TMP%
 $BATINCLUDE fillcost OBJ_ITAX  R 'P,CUR' ",'0','0','0'" FIL %TAKE% '%BEXT%' '%FEXT%' NCAP_ITAX OB_ITAX %TMP%
+$BATINCLUDE fillcost NCAP_ISPCT R P ",'0','0','0','0'" FIL 1 '%BEXT%' '%FEXT%' NCAP_ISPCT X_RP %TMP%
+  IF(CARD(X_RP),OB_ISUB(RP,CUR,YEAR)$X_RP(RP,YEAR) $= OB_ICOST(RP,CUR,YEAR)*X_RP(RP,YEAR); OPTION CLEAR=X_RP);
 
 * fixed O&M and taxes
 $BATINCLUDE fillcost OBJ_FOM R 'P,CUR' ",'0','0','0'" FIL %TAKE% '%BEXT%' '%FEXT%' NCAP_FOM OB_FOM %TMP%
@@ -167,10 +170,10 @@ $LABEL NOMACRO
 * investment related costs
 *-----------------------------------------------------------------------------*
 * capital recovery factors: CRFs now defined in eqobjinv.mod / eqobsalv.mod
-*    OBJ_CRF(RTP(R,V,P),CUR)    = (1-(1/(1+(G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(R,V,P)) + NCAP_DRATE(R,V,P))))) /
-*                                 (1-(1/(1+G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(R,V,P)) + NCAP_DRATE(R,V,P)))**NCAP_ELIFE(R,V,P));
-*    OBJ_CRFD(RTP(R,V,P),CUR)$NCAP_DELIF(R,V,P)  = (1-(1/(1+(G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(R,V,P)) + NCAP_DRATE(R,V,P))))) /
-*                                 (1-(1/(1+G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(R,V,P)) + NCAP_DRATE(R,V,P)))**NCAP_DELIF(R,V,P));
+*    OBJ_CRF(RTP(R,V,P),CUR)    = (1-(1/(1+(G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(RTP)) + NCAP_DRATE(RTP))))) /
+*                                 (1-(1/(1+G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(RTP)) + NCAP_DRATE(RTP)))**NCAP_ELIFE(RTP));
+*    OBJ_CRFD(RTP(R,V,P),CUR)$NCAP_DELIF(RTP)  = (1-(1/(1+(G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(RTP)) + NCAP_DRATE(RTP))))) /
+*                                 (1-(1/(1+G_DRATE(R,V,CUR)$(NOT NCAP_DRATE(RTP)) + NCAP_DRATE(RTP)))**NCAP_DELIF(RTP));
 
 $IF NOT %VALIDATE%==YES
 $IF NOT %TIMESED% ==YES  $GOTO TCOST
