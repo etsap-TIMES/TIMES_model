@@ -72,7 +72,7 @@ $GOTO FINISH
 *-------------------------------------------------------------------------------
 $LABEL EQU_EXT
 *-------------------------------------------------------------------------------
-  %EQ%%2_UCRTP(UC_N,RTP(%R_T%,P),UC_GRPTYPE,BD(%4) %SWT%)$(UC_T_SUCC(R,UC_N,T)$PRC_DYNUC%MX%(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD))..
+  %EQ%%2_UCRTP(UC_N,RTP(%R_T%,P),UC_GRPTYPE,BD(%4) %SWT%)$(PRC_DYNUC%MX%(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD))..
 
 *-------
 * Difference in capacity between previous and current period

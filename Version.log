@@ -2346,7 +2346,7 @@ TIMES Version 4.5.3
 Date: 1-Apr-2021 [AL]: Minor release
 1) Fixed bug related to dynamic (t,t+1) type UCs under stochastic mode
 2) Added support for non-vintaged FLO_FUNC for vintaged processes
-3) Added new attribute NCAP_ISUBP(r,y,p) for proportional investment subsidy
+3) Added new attribute NCAP_ISPCT(r,y,p) for proportional investment subsidy
 4) Added support for dynamic commodity PRD/NET bounds with UC_DYNBND
 5) Cosmetic fixes e.g. for backwards compatibility
 
@@ -2368,3 +2368,16 @@ prepret.dsc   : (5)
 initmty.stc   : (1)
 stages.stc    : (1)
 solsetv.v3    : (5)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.4
+-----------------------------------------------------------------------------------------
+Date: 1-May-2021 [AL]: Maintenance release
+1) Fixed bug introduced in v4.5.3, related to dynamic bound equations
+2) Extended RPT_OPT('CAP','9') to apply to PAR_PASTI as well.
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.4
+equcrtp.vda   : (1)
+solve.stp     : (1)
+rptmisc.rpt   : (2)

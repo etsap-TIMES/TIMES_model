@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -141,10 +141,9 @@ $IF %STEPPED%==YES $BATINCLUDE eqobsalv.%1 STP EXIT
     LOOP(UC_T_SUCC(UC_R_SUM(R,UC_N),T)$RT_PP(R,T), UC_T(UC_N,T) = YES);
     UC_T_EACH(UC_R_SUM(R,UC_N),T)$(NOT UC_T(UC_N,T)) = NO;
     UC_T_SUCC(UC_R_SUM(R,UC_N),T)$(UC_DYNDIR(R,UC_N,'RHS')$(NOT UC_T(UC_N,T))) = NO;
-    UC_T_SUCC(UC_R_SUM(R,UC_N),T-1)$(UC_DYNDIR(R,UC_N,'LHS')$(NOT RT_PP(R,T))) = NO;
     UC_T_EACH(UC_R_EACH(R,UC_N),T)$(NOT RT_PP(R,T)) = NO;
     UC_T_SUCC(UC_R_EACH(R,UC_N),T)$(UC_DYNDIR(R,UC_N,'RHS')$(NOT RT_PP(R,T))) = NO;
-    UC_T_SUCC(UC_R_EACH(R,UC_N),T-1)$(UC_DYNDIR(R,UC_N,'LHS')$(NOT RT_PP(R,T))) = NO;
+    UC_T_SUCC(UC_T_SUCC(R,UC_N,T-1)) = UC_DYNDIR(R,UC_N,'RHS')+RT_PP(R,T);
     UC_T(UC_N,T)$(NOT SUM(R$NO_RT(R,T),1)) = NO;
 $   IFI %CLI%==YES LOOP(T$(NOT SUM(R,NOT NO_RT(R,T))),CM_MAXC(LL,CG)$SUPERYR(T,LL) = 0);
 
@@ -227,7 +226,7 @@ $IF DEFINED %VAR%_DAM VAR_DAM.L(R,T,C,BD,J)$NO=0; %VAR%_DAM.FX(R,T(BACKWARD),C,B
    %VAR%_CAP.LO(NO_RVP(R,T,P)%SOW%)$CAP_BND(R,T,P,'LO') = CAP_BND(R,T,P,'LO');
 $IF DEFINED PRC_RCAP %VAR%_SCAP.FX(RTP_CPTYR(R,V,BACKWARD(T),P)%SOW%)$PRC_RCAP(R,P) = VAR_SCAP.L(R,V,T,P);
 * Cumulative variables
-   Z = (SMAX(T,M(T)) GT MIYR_VL);
+   Z = (SMAX(T,M(T)) > MIYR_VL);
    FIL(LL) = Z*(MIYR_VL LT YEARVAL(LL));
 * Get new modifiers for flexible model horizon
 $IFI NOT %SENSIS%==YES $BATINCLUDE bnd_cum.mod COM_VAR
