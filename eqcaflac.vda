@@ -3,7 +3,7 @@
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
-* EQCAFLAC : commodity-specific capacity utilization equations
+* EQCAFLAC - implements commodity-specific capacity utilization equations
 *   %1 - equation declaration type
 *   %2 - bound type for %1
 *=============================================================================*
@@ -16,7 +16,7 @@
 
 * Sum over flows in PG
     SUM((RPC_PG(R,P,C),COM_TMAP(R,COM_TYPE(CG),C)),
-        (1/PRC_ACTFLO(R,V,P,C)) /
+        (1/ABS(PRC_ACTFLO(R,V,P,C))) /
         (NCAP_AFCS(R,V,P,C,S)+PROD(XPT$NCAP_AFCS(R,V,P,CG,S),NCAP_AFCS(R,V,P,CG,S))$(NOT NCAP_AFCS(R,V,P,C,S))) *
         SUM(RPCS_VAR(R,P,C,TS)$RS_FR(R,S,TS),RS_FR(R,S,TS) * (%VAR%_FLO(R,V,T,P,C,TS %SOW%)$RP_STD(R,P) +
           (SUM(TOP(RPC_STG(R,P,C),IO)$(NCAP_AFCS(R,V,P,C,S)+NCAP_AFCS(R,V,P,CG,S)),

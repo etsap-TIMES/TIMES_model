@@ -2381,3 +2381,17 @@ initsys.mod   : Increased version number to 4.5.4
 equcrtp.vda   : (1)
 solve.stp     : (1)
 rptmisc.rpt   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.5
+-----------------------------------------------------------------------------------------
+Date: 15-Jun-2021 [AL]: Maintenance release
+1) Fix unwanted elimination of NST auxiliary storage flows
+2) Support reversed storage flow conversion in AFC equations
+3) Improved QA for inconsistent CAP_BND
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.5
+ppmain.mod    : (1),(3)
+eqcaflac.vda  : (2)
+bndmain.mod   : (3)
