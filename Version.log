@@ -2395,3 +2395,16 @@ initsys.mod   : Increased version number to 4.5.5
 ppmain.mod    : (1),(3)
 eqcaflac.vda  : (2)
 bndmain.mod   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.6
+-----------------------------------------------------------------------------------------
+Date: 24-Jun-2021 [AL]: Maintenance release
+1) Fixed compatibility issues with GAMS v34.2 and above
+2) Fixed reporting of storage flows in the special STS+STK case
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.6
+setglobs.gms  : (1)
+gdxfilter.gms : (1)
+rptmisc.rpt   : (2)

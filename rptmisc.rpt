@@ -74,10 +74,10 @@ $IF %1==S %1PAR_COMBALGM(%2RTC,S) $= EQG_COMBAL.L(RTC,S);
 * inputs: main flows & emissions, aux flows & emissions
   %1F_IN(%2R,V,T,P,C,S)$TOP(R,P,C,'IN')   $= PAR_FLO(R,V,T,P,C,S);
   %1F_IN(%2R,V,T,P,C,S)                   $= PAR_IRE(R,V,T,P,C,S,'EXP');
-  %1F_IN(%2R,V,T,P,C,S)$RC(R,C)           $= VAR_SIN.L(R,V,T,P,C,S);
+  %1F_IN(%2R,V,T,P,C,S)$RPCS_VAR(R,P,C,S) $= VAR_SIN.L(R,V,T,P,C,S);
   %1F_IN(%2R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'IN') = %1F_IN(%2R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'IN');
 * outputs: main flows & emissions, aux flows & emissions
-  PAR_FLO(R,V,T,P,C,S)$RC(R,C)            $= VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P);
+  PAR_FLO(R,V,T,P,C,S)$RPCS_VAR(R,P,C,S)  $= VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P);
   %1F_OUT(%2R,V,T,P,C,S)$TOP(R,P,C,'OUT') $= PAR_FLO(R,V,T,P,C,S);
   %1F_OUT(%2R,V,T,P,C,S)                  $= PAR_IRE(R,V,T,P,C,S,'IMP');
   %1F_OUT(%2R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'OUT') = %1F_OUT(%2R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'OUT');

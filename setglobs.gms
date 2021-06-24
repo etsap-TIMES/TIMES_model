@@ -9,10 +9,14 @@
 $ SETARGS X1 X2
 * --- DATA Dump ---
 $ IF NOT %DATAGDX%==YES $GOTO SYSD
+$ IF NOT ERRORFREE $GOTO SYSD
 $ GDXOUT _dd_.gdx
+$ IF %G2X6%==YES
+$ IF gamsversion 342 $UNLOAD XPT
 $ UNLOAD
 $ GDXOUT
 $ IF NOT warnings $GOTO SYSD
+$ IF NOT ERRORFREE $ABORT GAMS cannot filter domain violations
 $ IF %G2X6%==YES $BATINCLUDE gdxfilter MAIN
 *------------------
 $ LABEL SYSD

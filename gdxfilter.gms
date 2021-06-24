@@ -4,6 +4,7 @@
 * Filtering Domain Violations via GDX
 $ GOTO %1
 $ LABEL MAIN
+$ SET MX
   DISPLAY 'GAMS Warnings detected; Data have been Filtered via GDX';
 $ hiddencall gdxdump _dd_.gdx NODATA > _dd_.dmp
 $ hiddencall sed "/^\(Scalar\|[^$(]*([^,]*)\|[^$].*empty *$\)/{N;d;}; /^\([^$]\|$\)/d; s/\$LOAD.. /\$LOADR /I" _dd_.dmp > _dd_.dd
