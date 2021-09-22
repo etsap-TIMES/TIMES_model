@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -26,8 +26,10 @@ $IF DEFINED PRC_RCAP LOOP(PRC_RCAP(TRACKP(R,P)),Z=SMAX(T,PRC_RESID(R,T,P));RTFOR
   PRC_RESID(R,'0',P)$(NOT TRACKP(R,P)) = 0;
   COEF_CPT(RTP_CPTYR(R,PYR_S(V),T,P))$TRACKP(R,P) = PRC_RESID(R,T,P)/NCAP_PASTI(R,V,P);
 *-----------------------------------------------------------------------------
-* Offline capacity term:
+* Offline capacity terms & STS amendments
 $ SETGLOBAL UPSCAPS -SUM(TS_MAP(R,ALL_TS,S)$RPS_UPS(R,P,ALL_TS),%VAR%_UPS(R,V,T,P,ALL_TS,'N'%SOW%))
+$ IFI %OBMAC%==YES $macro var_sts(r,v,t,p,ts,bd) sum(rp_stl(r,p,tsl,bd)$ts_group(r,tsl,ts),%var%_udp(r,v,t,p,ts,bd%sow%))
+$ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
 *-----------------------------------------------------------------------------
 * Allow using NCAP_CLED as NCAP_CLAG if no ICOM
   NCAP_CLAG(RTP(R,V,P),C,IO)$((NOT NCAP_ICOM(RTP,C))$TOP(R,P,C,IO)) $= NCAP_CLED(RTP,C);

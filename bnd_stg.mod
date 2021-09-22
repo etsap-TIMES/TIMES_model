@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -11,7 +11,7 @@
 
   %VAR%_%1.LO(R,V,T,P,C,S%SWD%)$PRC_MAP(R,'STG',P) = 0;
   %VAR%_%1.UP(R,V,T,P,C,S%SWD%)$PRC_MAP(R,'STG',P) = INF;
-  %VAR%_%1.LO(RTP_VINTYR(R,V,T,P),%PGPRIM%,S%SWD%)$RP_STS(R,P) = -INF;
+  %VAR%_%1.LO(RTP_VINTYR(R,V,T,P),%PGPRIM%,S%SWD%)$((RPS_STG(R,P,S)->0)$RP_STS(R,P)) = %3;
 
 * set bounds at process activity level
   TRACKP(RP(R,P))$((NOT PRC_VINT(R,P))$PRC_MAP(R,'STG',P)) = YES;

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -9,8 +9,7 @@
 *=============================================================================*
 *GaG Questions/Comments:
 *  - FXs take precedence as are set last!!!
-*V0.4
-*  - TS-based bounds
+*  - TS-based bounds:
 *    - individual TS vs at/above limit via s-index
 *-----------------------------------------------------------------------------
 $ IF %2==0 $CLEAR %VAR%_IRE %VAR%_UPS %VAR%_UDP %VAR%_UPT %VAR%_SCAP
@@ -34,8 +33,8 @@ $   BATINCLUDE bnd_flo.%1
 *-----------------------------------------------------------------------------
 * limit on storage
 *-----------------------------------------------------------------------------
-$   BATINCLUDE bnd_stg.%1 SIN  STGIN
-$   BATINCLUDE bnd_stg.%1 SOUT STGOUT
+$   BATINCLUDE bnd_stg.%1 SIN  STGIN  0
+$   BATINCLUDE bnd_stg.%1 SOUT STGOUT -INF
 
 *-----------------------------------------------------------------------------
 * limit on total installation of new capacity

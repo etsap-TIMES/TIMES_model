@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -48,7 +48,7 @@ $             BATINCLUDE %cal_red% COM COM1 TS P T
              RS_FR(R,SL,TS)*(1+RTCS_FR(R,T,COM,SL,TS))) +
 * Allow referring to activity as well
           SUM((PRC_TS(R,P,TS),RTP_VARA(R,T,P))$RS_FR(R,SL,TS),RS_FR(R,SL,TS)*
-            (%VAR%_ACT(R,V,T,P,TS %SOW%)*EXP((-ABS(STG_LOSS(R,V,P,TS))*G_YRFR(R,TS)/RS_STGPRD(R,TS)/2)$RP_STG(R,P)))$(NOT RP_PGFLO(R,P)) +
+            (%VAR%_ACT(R,V,T,P,TS %SOW%)*EXP((-ABS(STG_LOSS(R,V,P,TS))/2)$RP_STG(R,P)))$(NOT RP_PGFLO(R,P)) +
             SUM(RPC_PG(RP_STD(R,P),COM),(%VAR%_ACT(R,V,T,P,TS %SOW%)$RP_PGACT(R,P)+(%VAR%_FLO(R,V,T,P,COM,TS %SOW%)/PRC_ACTFLO(R,V,P,COM))$(NOT RP_PGACT(R,P))) *
               RS_FR(R,SL,TS)*(1+RTCS_FR(R,T,COM,SL,TS)))$RP_PGFLO(R,P))$ACTCG(CG2)
          )

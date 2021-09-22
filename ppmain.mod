@@ -20,6 +20,7 @@
   SET IRE_DIST(R,P) //;
   SET RP_SGS(R,P) //;
   SET RP_STS(R,P) //;
+  SET RP_STL(R,P,TSL,L);
   SET RPS_STG(R,P,S);
   SET RPC_STG(R,P,C) //;
   SET RPC_STGN(R,P,C,IO);
@@ -409,21 +410,25 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
   RP_SGS(RP_FLO(R,P))$(PRC_TSL(R,P,'ANNUAL')$(PRC_MAP(R,'STS',P)+PRC_MAP(R,'NST',P))) = YES;
   RP_SGS(RP_FLO(R,P))$=PRC_MAP(R,'SGS',P);
   PRC_MAP(R,'STG',P)$((NOT SUM(TOP(RPC_PG(R,P,C),'IN'),1))$RP_SGS(R,P)) = NO;
+* All NST operating below ANNUAL level but producing ANNUAL level commodity will be STG:
+  PRC_MAP(R,'STG',P)$((NOT PRC_TSL(R,P,'ANNUAL'))$PRC_MAP(R,'NST',P)) = YES;
+  RP_STG(RP(R,P)) $= PRC_MAP(R,'STG',P);
+
 * identify shadow group timeslice level
 * For LOAD processes, take the maximum TSLVL
   LOOP((RTC(R,T,C),S)$COM_FR(R,T,C,S),TRACKC(R,C) = YES);
   LOOP(COM_TSL(TRACKC(R,C),'ANNUAL'), TRACKP(RP_FLO(R,P))$RPC_PG(R,P,C) = YES);
   PRC_YMAX(RP(R,P)) = SMAX((RPC_SPG(R,P,C),COM_TSL(R,C,TSL)),TSLVLNUM(TSL));
   PRC_YMAX(TRACKP(R,P)) = SMAX((RPC(R,P,C),COM_TSL(R,C,TSL)),TSLVLNUM(TSL));
-  PRC_YMAX(R,P)$PRC_MAP(R,'STG',P) = 0;
+  PRC_YMAX(RP_STG) = 0;
   PRC_YMAX(RP) = MAX(PRC_YMAX(RP),SMAX(PRC_TSL(RP,TSL),TSLVLNUM(TSL)));
 * First, get levels for each TS
   LOOP(R, OPTION CLEAR=TS_ARRAY;
     TS_ARRAY(S) $= RS_TSLVL(R,S);
-    Z = SMAX(RJLVL(J,R,TSL)$(NOT SAMEAS(TSL,'DAYNITE')),TSLVLNUM(TSL));
+    Z = MAX(1,SMAX(RLUP(R,TSLVL,TSL),TSLVLNUM(TSL)));
 * identify all S at shadow level
     RPS_S2(RP_SGS(R,P),S)$(TS_ARRAY(S) = PRC_YMAX(R,P)) = YES;
-    PRC_SGL(RP_FLO(R,P)) = MIN(PRC_YMAX(R,P),Z)-1;
+    PRC_SGL(RP_FLO(RP)) = MIN(PRC_YMAX(RP)-1$RP_STG(RP),Z)-1;
     PRC_YMAX(RP_SGS(R,P)) = PRC_SGL(R,P)+1;
 * save the finer of the PRC_TS and the finest commodity in the shadow primary
     RPS_S1(RP(R,P),S)$(TS_ARRAY(S) = PRC_YMAX(R,P)) = YES;
@@ -439,9 +444,6 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
 * Note: RTPCS_VAR further adjusted at the end of PPMAIN (after optional REDUCE)
 *-----------------------------------------------------------------------------
 * Special handling for storage, esp. night storage
-* All NST that operates below ANNUAL level but produces ANNUAL level commodity will be STG:
-  PRC_MAP(R,'STG',P)$((NOT PRC_TSL(R,P,'ANNUAL'))$PRC_MAP(R,'NST',P)) = YES;
-  RP_STG(RP(R,P))$= PRC_MAP(R,'STG',P);
   RPC_STG(RPC(RP_STG(R,P),C))$(PRC_STGTSS(RPC)+PRC_STGIPS(RPC)+(RPC_PG(RPC)+RPC_SPG(RPC))$PRC_MAP(R,'NST',P)) = YES;
   TRACKPC(RPC_STG(R,P,C))$((TOP(R,P,C,'OUT')+PRC_NSTTS(R,P,'ANNUAL'))$COM_TS(R,C,'ANNUAL')$PRC_MAP(R,'NST',P)) = YES;
   RPCS_VAR(RPC(RP_STG(R,P),C),S)$(PRC_TS(R,P,S)$(NOT TRACKPC(RPC))+ANNUAL(S)$TRACKPC(RPC)) = YES;
@@ -1078,14 +1080,16 @@ $IFI %OBJ%==LIN  RTC_PRD(R,T,C)$((M(T)+LAGT(T) > YEARVAL(ALLYEAR)) * (M(T)-LEAD(
     PRC_TS(R,P,ANNUAL)$PRC_MAP(R,'STK',P) = YES;
     PRC_STGTSS(PRC_STGIPS(R,P,C)) = YES;
     STG_LOSS(R,V,P,S)$STG_LOSS(R,V,P,S) = -ABS(STG_LOSS(R,V,P,S)));
+  RP_STL(RP_STS(RP),TSL+1,'N')$(PRC_SGL(RP)>=ORD(TSL)) = YES;
   NCAP_AF(RTP(R,V,P),S,BD)$((NOT RPS_STG(R,P,S))$RP_STS(R,P)) = NCAP_AFS(RTP,S,BD);
 
 * Levelization of STG_LOSS and STG_SIFT
   TRACKP(RP_STG)$(NOT RP_STS(RP_STG)) = YES;
 $ BATINCLUDE pp_lvlfc.mod STG_LOSS P PRC_TS '' ",'0','0','0','0'" S2 V 'RTP(R,V,P)$(NOT RPS_STG(R,P,S)$TRACKP(R,P))'
 $ BATINCLUDE pp_lvlfc.mod STG_SIFT 'P,C' RPCS_VAR '' ",'0','0','0'" ALL_TS T RTP(R,T,P)
-* Convert equilibrium losses into standard losses for IPS
-  STG_LOSS(RTP(R,V,P),ANNUAL(S))$((ABS(STG_LOSS(RTP,S)-0.5)>=0.5)$PRC_MAP(R,'STK',P)) = 1-EXP(-ABS(STG_LOSS(RTP,S)));
+* Convert equilibrium losses into standard losses for IPS, and adjust all losses by year fractions
+  STG_LOSS(RTP(R,V,P),S(TSL))$((ABS(STG_LOSS(RTP,S)*2-1)>=1)$PRC_MAP(R,'STK',P)) = 1-EXP(-ABS(STG_LOSS(RTP,S)));
+  STG_LOSS(RTP(R,V,P),S)$(STOA(S)$STG_LOSS(RTP,S)) = LOG(EXP(STG_LOSS(RTP,S)*G_YRFR(R,S)/RS_STGPRD(R,S)));
   OPTION CLEAR=TRACKP,CLEAR=TRACKPC;
 
 *-----------------------------------------------------------------------------

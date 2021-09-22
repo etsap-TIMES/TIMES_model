@@ -2408,3 +2408,27 @@ initsys.mod   : Increased version number to 4.5.6
 setglobs.gms  : (1)
 gdxfilter.gms : (1)
 rptmisc.rpt   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.5.7
+-----------------------------------------------------------------------------------------
+Date: 22-Sep-2021 [AL]: Minor release - storage improvements
+1) Implemented a more flexible STS variant - activate by $SET STSFLX YES (for now)
+2) Improved accounting of equilibrium losses for timeslice storage
+3) Improved consistency in NCAP_AFC handling for multi-commodity storage
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.5.7
+ppmain.mod    : (1)
+mod_vars.mod  : (1)
+eqdeclr.mod   : (1)
+eqcapact.mod  : (1)
+eqstgtss.mod  : (1),(2)
+bndmain.mod   : (1)
+bnd_stg.mod   : (1)
+mod_equa.mod  : (1)
+rptmisc.rpt   : (1)
+ppm_ext.vda   : (1),(3)
+coef_ext.vda  : (1)
+eqcaflac.vda  : (3)
+eqashar.vda   : (1)

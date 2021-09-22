@@ -1,12 +1,12 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
 * MOD_VARS.MOD lists the individual variables of all instances of the MODEL   *
 *=============================================================================*
 * Questions/Comments:
-*  - 
+*  -
 *-----------------------------------------------------------------------------
 * Set of standard objective components
   SET OBV / OBJINV, OBJFIX, OBJSAL, OBJVAR /;
@@ -93,3 +93,4 @@
 * [AL] ETL variables automatically by extension manager
 $IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc DECL
 $IF DEFINED PRC_REACT $BATINCLUDE powerflo.vda DECL
+$IF NOT DEFINED VAR_STS PARAMETER VAR_STS(R,YEAR,T,P,S,L) //;

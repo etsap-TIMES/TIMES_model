@@ -10,9 +10,13 @@
 *=============================================================================*
   R_DF(R,T) = SIGN(COEF_PVT(R,T))/MAX(1E-9,ABS(COEF_PVT(R,T)));
 *-----------------------------------------------------------------------------
-* Activity
+* Activity levels & marginals
 *-----------------------------------------------------------------------------
   %1PAR_ACTL(%2RTP_VINTYR(R,V,T,P),S)$PRC_TS(R,P,S) $= VAR_ACT.L(R,V,T,P,S);
+* Shift up STS activity levels
+  LOOP((RP_STL(R,P,TSL,BD),TS_GROUP(R,TSL,TS))$RLUP(R,'DAYNITE',TSL),Z=G_YRFR(R,TS)*365/TS_CYCLE(R,TS);
+    YKVAL(VNT(V,T))=SMIN(RS_BELOW(R,TS,S),VAR_ACT.L(R,VNT,P,S)/Z)$NCAP_YES(R,V,P);
+    %1PAR_ACTL(%2R,VNT,P,S)$(TS_MAP(R,TS,S)$YKVAL(VNT))=VAR_ACT.L(R,VNT,P,S)+YKVAL(VNT)*(1-(1+Z)$RS_BELOW(R,TS,S)));
   Z = (RPT_OPT('ACT','2') GE 0);
   %1PAR_ACTM(%2R,V,T,P,S)$VAR_ACT.M(R,V,T,P,S) = ROUND(VAR_ACT.M(R,V,T,P,S)*R_DF(R,T),7)$Z;
   %1PAR_ACTM(%2R,'0',T,P,S) $= EQL_ACTBND.M(R,T,P,S)*R_DF(R,T);

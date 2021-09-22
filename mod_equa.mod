@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -136,6 +136,7 @@ $IF %TIMESED%==YES  %EQ%L_COMCES
 * Time-slice storage
     %EQ%_STGTSS
     %EQ%_STSBAL
+    EQ_STSLEV
 
 * Bounds on in/output flows of storage process
     %EQ%G_STGIN
