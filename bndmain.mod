@@ -48,7 +48,7 @@ $   BATINCLUDE bnd_set.%1 %VAR%_NCAP 'R,T,P' NCAP_BND '%R_T%,P' $(RP(R,P)%SWT%)
 *-----------------------------------------------------------------------------
 * limit on total installed capacity
 *-----------------------------------------------------------------------------
-    CAP_BND(RTP(RTP_VARP),'LO')$CAP_BND(RTP,'UP') = SMIN(BDNEQ,NCAP_BND(RTP,BDNEQ));
+    CAP_BND(RTP(RTP_VARP),'LO')$CAP_BND(RTP,'UP') = SMIN(BDNEQ,CAP_BND(RTP,BDNEQ));
 $   BATINCLUDE bnd_set.%1 %VAR%_CAP 'R,T,P' CAP_BND RTP(R,T,P) %SWT%
 
 *-----------------------------------------------------------------------------

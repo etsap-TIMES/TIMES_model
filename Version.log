@@ -2410,21 +2410,22 @@ gdxfilter.gms : (1)
 rptmisc.rpt   : (2)
 
 -----------------------------------------------------------------------------------------
-TIMES Version 4.5.7
+TIMES Version 4.5.8
 -----------------------------------------------------------------------------------------
-Date: 22-Sep-2021 [AL]: Minor release - storage improvements
+Date: 29-Sep-2021 [AL]: Minor release - storage improvements
 1) Implemented a more flexible STS variant - activate by $SET STSFLX YES (for now)
 2) Improved accounting of equilibrium losses for timeslice storage
 3) Improved consistency in NCAP_AFC handling for multi-commodity storage
+4) Fixed bug introduced by typo in v455 related to CAP_BND(LO)
 
 Modified files: (reason)
-initsys.mod   : Increased version number to 4.5.7
+initsys.mod   : Increased version number to 4.5.8
 ppmain.mod    : (1)
 mod_vars.mod  : (1)
 eqdeclr.mod   : (1)
 eqcapact.mod  : (1)
 eqstgtss.mod  : (1),(2)
-bndmain.mod   : (1)
+bndmain.mod   : (1),(4)
 bnd_stg.mod   : (1)
 mod_equa.mod  : (1)
 rptmisc.rpt   : (1)
