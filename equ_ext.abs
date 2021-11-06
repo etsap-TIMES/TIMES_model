@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================
@@ -38,6 +38,7 @@ $ macro var_bsmup(r,v,t,p,s) %var%_bsprs(r,v,t,p,%PGPRIM%,s,'N'%SOW%)
 $ macro var_bsfsp(r,v,t,p,c,s) %var%_bsprs(r,v,t,p,c,s,'N'%SOW%)
 $ macro var_bsfnsp(r,v,t,p,c,s) %var%_bsprs(r,v,t,p,c,s,'FX'%SOW%)
 $ macro var_bsupsr(r,v,t,p,s,bd) %var%_bsprs(r,v,t,p,%PGPRIM%,s,bd%SOW%)
+$ macro var_bslack(r,t,p,c,s) %var%_bsprs(r,t,t,p,c,s,'UP'%SOW%)
 * Capacity-CPT expression
 $SET TMP SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%))
 
@@ -50,7 +51,7 @@ $SET TMP SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_C
   =L=
 * Supply (converted to common flow units, as also demand)
   SUM((RHS_COMBAL(RTC,SL),TS_MAP(R,SL,S))$BS_OMEGA(RTC,SL),
-    SUM(RTP_VINTYR(R,V,T,P)$(BS_BSC(R,P,C)+BS_STGP(R,P)$BS_STIME(R,P,C,'UP')),PRC_CAPACT(R,P) *
+    SUM(RTP_VINTYR(R,V,T,P)$(BS_BSC(R,P,C)+YES$BS_STIME(R,P,C,'UP')),PRC_CAPACT(R,P) *
       SUM(BS_PRS(R,P,TS)$RS_FR(R,S,TS),(VAR_BSFSP(R,V,T,P,C,TS)+SUM(BS_SUPP(R,P)$(ABS(BS_RTYPE(R,C))>2),VAR_BSFNSP(R,V,T,P,C,TS)))*RS_FR(R,TS,S))));
 *-----------------------------------------------------------------------------
 * ABSEQ1+: Max and ABS(diff) and Share equations
@@ -60,7 +61,7 @@ $SET TMP SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_C
     ((VAR_BSD('PRB',RTC,S)-VAR_BSD('DET',RTC,S))*BDSIG(BD))$(BS_OMEGA(RTC,S)>2))$IPS(L) +
   SUM(BD(L),
 * Supply by group
-    SUM(RTP_VINTYR(R,V,T,P)$((BS_BSC(R,P,C)+BS_STGP(R,P)$BS_STIME(R,P,C,'UP'))$GR_GENMAP(R,P,BS_K)),PRC_CAPACT(R,P) *
+    SUM(RTP_VINTYR(R,V,T,P)$((BS_BSC(R,P,C)+YES$BS_STIME(R,P,C,'UP'))$GR_GENMAP(R,P,BS_K)),PRC_CAPACT(R,P) *
       SUM(BS_PRS(R,P,TS)$RS_FR(R,S,TS),(VAR_BSFSP(R,V,T,P,C,TS)+SUM(BS_SUPP(R,P)$(ABS(BS_RTYPE(R,C))>2),VAR_BSFNSP(R,V,T,P,C,TS)))*RS_FR(R,TS,S))) -
 * Share in demand
     BS_SHARE(RTC,BS_K,L)*%VAR%_COMNET(RTC,S%SOW%)/G_YRFR(R,S))*BDSIG(L)
@@ -180,6 +181,12 @@ $      BATINCLUDE %cal_red% C COM TS P T
     SUM(RTPCS_VARF(R,T,P,C,TS)$TS_MAP(R,S,TS),
 $     BATINCLUDE %cal_red% C COM TS P T
     )$RP_STD(R,P)+SUM(RPCS_VAR(RPC_STG(R,P,C),TS)$TS_MAP(R,S,TS),V_U(SIN,R,V,T,P,C,TS)$(PRC_NSTTS(R,P,TS)+PRC_STGTSS(R,P,C))));
+*-----------------------------------------------------------------------------
+* ABSEQ26 : Bound on process reserve provision
+  EQ_BS26(RTP(R,T,P),C,RTS(S)%SWX%)$(%SWTX%BS_COMTS(R,C,S)$(BS_BSC(R,P,C)+YES$BS_STIME(R,P,C,'UP'))$BS_BNDPRS(RTP,C,S,'N'))..
+  SUM((RTP_VINTYR(R,V,T,P),BS_PRS(R,P,TS))$RS_FR(R,TS,S),
+    (VAR_BSFSP(R,V,T,P,C,TS)+VAR_BSFNSP(R,V,T,P,C,TS)$(ABS(BS_RTYPE(R,C))>2)$BS_SUPP(R,P))*RS_FR(R,TS,S))
+  =E=  VAR_BSLACK(R,T,P,C,S);
 *-----------------------------------------------------------------------------
 * ABSEQ27 : Maintenence 1 - entrance to maintenance
   EQ_BS27(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%(BS_MAINT(R,V,P,S)>=0)$BS_MAINT(R,V,P,S))..

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *==================================================================*
@@ -14,7 +14,7 @@
   ;
 
   EQUATIONS
-  EQ_BS00(R,T,C,S,ALLSOW)             Overall demand for balancing services
+  EQ_BS00(R,T,C,S,ALLSOW)             Overall demands for balancing services
   EQ_BS01(R,YEAR,C,S,ITEM,L,ALLSOW)   Max and Diff over stochastic & determistic demand
   EQ_BS02(R,T,S,ITEM,ALLSOW)          Load levels by process category
   EQ_BS03(R,T,C,S,ALLSOW)             Stochastic demand for balancing services
@@ -30,6 +30,7 @@
   EQ_BS23(R,YEAR,T,P,S,ALLSOW)        Limit for negative reserve from storage
   EQ_BS24(R,YEAR,T,P,S,ALLSOW)        Limits for negative reserve from end-use
   EQ_BS25(R,YEAR,T,P,S,ALLSOW)        Limits for positive reserve from end-use
+  EQ_BS26(R,T,P,C,S,ALLSOW)           Bounds for process reserves
   EQ_BS27(R,YEAR,T,P,S,ALLSOW)        Maintenance 1
   EQ_BS28(R,YEAR,T,P,S,ALLSOW)        Maintenance 2
   ;
@@ -41,10 +42,11 @@
   RPT_OPT('RATE','1')$(RPT_OPT('RATE','1')<=0)=SMAX(R,BS_CAPACT(R))$(RPT_OPT('RATE','1')=0);
 
 * Set bounds on reserve flows
-  BS_BNDPRS(RTP,C,S,BDNEQ)$BS_BNDPRS(RTP,C,S,'FX') = 0;
-  LOOP((RTP(R,T,P),C,S,BD)$(BS_RTYPE(R,C)$BS_BNDPRS(RTP,C,S,BD)),
-   %var%_bsprs.LO(RTP_VINTYR(r,v,t,p),c,TS,LNX%SOW%)$(TS_MAP(R,S,TS)$BDLOX(BD)) = BS_BNDPRS(RTP,C,S,BD);
-   %var%_bsprs.UP(RTP_VINTYR(r,v,t,p),c,TS,LNX%SOW%)$(TS_MAP(R,S,TS)$BDUPX(BD)) = BS_BNDPRS(RTP,C,S,BD));
+  BS_BNDPRS(RTP,C,S,BDNEQ)$=BS_BNDPRS(RTP,C,S,'FX');
+  BS_BNDPRS(RTP,C,S,'N')$SUM(BDNEQ$BS_BNDPRS(RTP,C,S,BDNEQ),1) = 1;
+  LOOP((L(BDUPX),BD)$(BDSIG(L)*BDSIG(BD)<0),
+  %var%_bsprs.LO(r,t,t,p,c,s,l%SOW%)$(RTP(R,T,P)$BS_COMTS(R,C,S)) $= BS_BNDPRS(R,T,P,C,S,BD);
+  %var%_bsprs.UP(r,t,t,p,c,s,l%SOW%)$(RTP(R,T,P)$BS_COMTS(R,C,S)) $= BS_BNDPRS(R,T,P,C,S,L));
 
 $IFI NOT %OBMAC%==YES $EXIT
 * Spines macros

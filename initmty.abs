@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================
@@ -18,7 +18,7 @@ $ SETGLOBAL ABS YES
   BS_CAPACT(R)              'Conversion factor from exogenous reserve demand to activity' //
   BS_RTYPE(R,C)             'Types of reserve commodities, positive or negative 1-4' //
   BS_DEMDET(R,YEAR,RSP,C,S) 'Deterministic demands of reserves - EXOGEN and WMAXSI' //
-  BS_STIME(R,P,COM,BD)      'Minimum times for reserve provision form storage (hours)' //
+  BS_STIME(R,P,COM,BD)      'Minimum times for reserve provision from storage (hours)' //
   BS_DETWT(R,YEAR,C)        'Weights for deterministic reserve demands' //
   BS_LAMBDA(R,YEAR,C)       'Fudge factors for dependencies in reserve requirements' //
   BS_SIGMA(R,YEAR,C,ITEM,S) 'Standard deviation of imbalance source ITEM' //

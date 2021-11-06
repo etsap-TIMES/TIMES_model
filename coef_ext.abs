@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -18,6 +18,7 @@
   BS_STGP(RP_PRC(RP))$SUM(TOP(RPC_STG(RP,C),'OUT'),NOT TRACKPC(RP,C))=NO;
   BS_STGP(RP_PRC(RP))$(((NOT BS_ENDP(RP))+TRACKP(RP))$PRC_SC(RP))=NO;
   BS_STIME(BS_STGP(R,P),C,'UP')$BS_RTYPE(R,C)=SMAX(BD,BS_STIME(R,P,C,BD));
+  BS_STIME(RP,C,BD)$((NOT BS_STGP(RP))$BS_STIME(RP,C,BD))=NO;
   BS_BSC(BS_STGP,C)=NO;
 * Qualify as power supply
   OPTION RP_GRP<NCAP_AFCS;
