@@ -183,7 +183,7 @@ $     BATINCLUDE %cal_red% C COM TS P T
     )$RP_STD(R,P)+SUM(RPCS_VAR(RPC_STG(R,P,C),TS)$TS_MAP(R,S,TS),V_U(SIN,R,V,T,P,C,TS)$(PRC_NSTTS(R,P,TS)+PRC_STGTSS(R,P,C))));
 *-----------------------------------------------------------------------------
 * ABSEQ26 : Bound on process reserve provision
-  EQ_BS26(RTP(R,T,P),C,RTS(S)%SWX%)$(%SWTX%BS_COMTS(R,C,S)$(BS_BSC(R,P,C)+YES$BS_STIME(R,P,C,'UP'))$BS_BNDPRS(RTP,C,S,'N'))..
+  EQ_BS26(RTP(%R_T%,P),C,RTS(S)%SWX%)$(%SWTX%BS_COMTS(R,C,S)$(BS_BSC(R,P,C)+YES$BS_STIME(R,P,C,'UP'))$BS_BNDPRS(RTP,C,S,'N'))..
   SUM((RTP_VINTYR(R,V,T,P),BS_PRS(R,P,TS))$RS_FR(R,TS,S),
     (VAR_BSFSP(R,V,T,P,C,TS)+VAR_BSFNSP(R,V,T,P,C,TS)$(ABS(BS_RTYPE(R,C))>2)$BS_SUPP(R,P))*RS_FR(R,TS,S))
   =E=  VAR_BSLACK(R,T,P,C,S);
