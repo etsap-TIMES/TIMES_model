@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -31,9 +31,6 @@ $ SETGLOBAL UPSCAPS -SUM(TS_MAP(R,ALL_TS,S)$RPS_UPS(R,P,ALL_TS),%VAR%_UPS(R,V,T,
 $ IFI %OBMAC%==YES $macro var_sts(r,v,t,p,ts,bd) sum(rp_stl(r,p,tsl,bd)$ts_group(r,tsl,ts),%var%_udp(r,v,t,p,ts,bd%sow%))
 $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
 *-----------------------------------------------------------------------------
-* Allow using NCAP_CLED as NCAP_CLAG if no ICOM
-  NCAP_CLAG(RTP(R,V,P),C,IO)$((NOT NCAP_ICOM(RTP,C))$TOP(R,P,C,IO)) $= NCAP_CLED(RTP,C);
-  NCAP_CLED(R,V,P,C)$(NOT NCAP_ICOM(R,V,P,C)) = 0;
 * Get AF-UPs for processes having storage level constrained
   COEF_AFUPS(RTP(R,V,P),S)$(NOT RPS_CAFLAC(R,P,S,'UP')) $= NCAP_AF(RTP,S,'UP')$RPS_STG(R,P,S);
   COEF_AFUPS(RTP(R,V,P),S(STL))$RPS_STG(R,P,S) $= NCAP_AFC(RTP,%PGPRIM%,STL);

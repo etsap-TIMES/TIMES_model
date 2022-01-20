@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -67,14 +67,12 @@ $IFI %STAGES%==YES +SUM(SW_TSW(SOW,T,WW)$OBJ_SIC(R,T,P,WW),OBJ_SIC(R,T,P,WW)*OBJ
     SUM((RPC_CAPFLO(R,V,P,C),RDCUR(R,CUR)),
 * Flows related to investment / decommissioning
       SUM(VNT(V,T)$(COEF_ICOM(R,V,T,P,C)+COEF_OCOM(R,V,T,P,C)),(COEF_ICOM(R,V,T,P,C)+COEF_OCOM(R,V,T,P,C)) *
-        SUM(RPCS_VAR(R,P,C,TS), RS_FR(R,TS,'ANNUAL') * SUM(TS_ANN(TS,SL),SUM(%TPULSE%(OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR)))))) +
+        SUM(RPCS_VAR(R,P,C,TS), G_YRFR(R,TS) * SUM(TS_ANN(TS,SL),SUM(%TPULSE%(OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR)))))) +
 * Flows related to existing capacity over lifetime
       SUM((RTP_CPTYR(R,V,T,P),IO)$NCAP_COM(R,V,P,C,IO),
-        COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,IO) *
-        SUM(RPCS_VAR(R,P,C,TS), RS_FR(R,TS,'ANNUAL') * SUM(TS_ANN(TS,SL),SUM(%TPULSE%(OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR))))) *
-        (1 + (MAX(0, E(T)+1-MAX(B(V)+NCAP_ILED(R,V,P)+NCAP_CLAG(R,V,P,C,IO),B(T))) /
-              MAX(.1,E(T)+1-MAX(B(V)+NCAP_ILED(R,V,P),B(T)))-1)$NCAP_CLAG(R,V,P,C,IO)))
-     );
+        COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,IO) * (1 + COEF_CIO(R,V,T,P,C,IO)) *
+        SUM(RPCS_VAR(R,P,C,TS), G_YRFR(R,TS) * SUM(TS_ANN(TS,SL),SUM(%TPULSE%(OBJ_FCOST(R,Y_EOH,P,C,SL,CUR)+OBJ_FDELV(R,Y_EOH,P,C,SL,CUR)+OBJ_FTAX(R,Y_EOH,P,C,SL,CUR))))))
+    );
 *-------------------------------------------------------------------------------
 $LABEL SALVAGE
 * Salvage coefficient

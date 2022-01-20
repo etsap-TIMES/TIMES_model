@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=========================================================================
@@ -139,7 +139,7 @@ $ LABEL SYSD
   SET TRACKP(R,P);
   SET TRACKPC(R,P,C);
   SET TRACKPG(R,P,CG);
-  SET RVT(R,ALLYEAR,T); 
+  SET RVT(R,ALLYEAR,T);
   SET RTPX(R,T,P);
   SET RT_PP(R,T) //;
   PARAMETER NO_RT(ALL_R,T) //;
@@ -160,6 +160,7 @@ $ LABEL SYSD
   PARAMETER COEF_CPT(R,ALLYEAR,T,PRC)          'Fraction of capacity available'         //;
   PARAMETER COEF_ICOM(R,ALLYEAR,T,PRC,C)       'Commodity flow at investment time'      //;
   PARAMETER COEF_OCOM(R,ALLYEAR,T,PRC,C)       'Commodity flow at decommissioning time' //;
+  PARAMETER COEF_CIO(R,ALLYEAR,T,P,C,IO)       'Capacity-related commodity in/out flows'//;
   PARAMETER COEF_PTRAN(REG,ALLYEAR,PRC,CG,C,CG,S) 'Multiplier for EQ_PTRANS'            //;
   PARAMETER COEF_RPTI(R,ALLYEAR,P)             'Repeated investment cycles'             //;
   PARAMETER COEF_ILED(R,ALLYEAR,P)             'Investment lead time'                   //;
@@ -230,11 +231,8 @@ $LABEL RESTOBJ
 * flags used in extrapolation
   SET BACKWARD(ALLYEAR) //;
   SET FORWARD(ALLYEAR)  //;
-* DM_YEAR is the union of the sets MODLYEAR and DATAYEAR (used in IE routines)
+* DM_YEAR is the union of the sets MODLYEAR and DATAYEAR
   SET DM_YEAR(ALLYEAR)  //;
-* Interpolation defaults
-  SET INT_DEFAULT(*) //;
-  PARAMETER IE_DEFAULT(*) //;
 
 *------------------------------------------------------------------------------
 * Additional system declarations
@@ -248,7 +246,8 @@ $LABEL RESTOBJ
     RXX(ALL_R,*,*)       'General triples related to a region'
     UNCD1(*)             'Non-domain-controlled set'
     UNCD7(*,*,*,*,*,*,*) 'Non-domain-controlled set of 7-tuples';
-  ALIAS (LIFE,AGE);
+  ALIAS(LIFE,AGE);
+  SET OPYEAR(AGE,LIFE) //;
 
 *------------------------------------------------------------------------------
 * Sets and parameters used in reduction algorithm
@@ -269,7 +268,7 @@ $LABEL RESTOBJ
   SET  PRC_CAP(REG,PRC)               'Process requiring capacity variable'                 //;
   SET  PRC_ACT(REG,PRC)               'Process requiring activity equation'                 //;
   SET  PRC_TS2(REG,PRC,TS)            'Alias for PRC_TS of processes with RPC_ACT'          //;
-  ALIAS (CG3,CG4,COM_GRP);
+  ALIAS(CG3,CG4,COM_GRP);
 
 *------------------------------------------------------------------------------
 * Parameters used in report routine

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -116,6 +116,7 @@ $BATINCLUDE fillparm NCAP_CDME R 'P' ",'0','0','0','0','0'" V 'RVP(R,V,P)' 'GE 0
 $BATINCLUDE fillparm NCAP_CEH R 'P' ",'0','0','0','0','0'" V 'RVP(R,V,P)' 'GE 0' X_RP
 $BATINCLUDE fillparm NCAP_CHPR R 'P,BD' ",'0','0','0','0'" V 'RVP(R,V,P)' 'GE 0' X_RPB
 $BATINCLUDE fillparm NCAP_CLED R 'P,C' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm NCAP_CLAG R 'P,C,IO' ",'0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm NCAP_COM R 'P,C,IO' ",'0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm NCAP_DELIF R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
 $BATINCLUDE fillparm NCAP_DLAG R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP

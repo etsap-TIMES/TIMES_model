@@ -2450,3 +2450,23 @@ coef_ext.abs  : (1)
 mod_vars.abs  : (1)
 equ_ext.abs   : (1)
 mod_ext.abs   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.0
+-----------------------------------------------------------------------------------------
+Date: 20-Jan-2022 [AL]: Maintenance release
+1) Added support for shaping NCAP_COM flows with FLO_FUNCX
+2) Improved performance and QA for FLO_FUNCX
+3) Cosmetic fixes
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.0
+initmty.mod   : (1),(3)
+setglobs.gms  : (1),(3)
+preppm.mod    : (2)
+coef_nio.mod  : (3)
+coef_shp.mod  : (1),(2)
+cal_cap.mod   : (1)
+cal_caps.mod  : (1)
+rpt_objc.rpt  : (1)
+rptmisc.rpt   : (1)

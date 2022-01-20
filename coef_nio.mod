@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -36,11 +36,11 @@
 *V05c 980921 - include the PASTInvestments, was looping over MILESTONYR
 *V05c 980923 - use the capacity flow control set
      LOOP(RPC_CAPFLO(R,V,P,C)$NCAP_OCOM(R,V,P,C),
-       F = NCAP_ILED(R,V,P); MY_F = NCAP_TLIFE(R,V,P); 
+       F = NCAP_ILED(R,V,P); MY_F = NCAP_TLIFE(R,V,P);
        Z = MAX(1,NCAP_DLIFE(R,V,P)); DFUNC = COEF_RPTI(R,V,P);
        IF(DFUNC GT 1,
          FOR(CNT = 1 TO CEIL(DFUNC),
-           COEF_OCOM(R,V,T,P,C)$(YEARVAL(T) >= YEARVAL(V)) = 
+           COEF_OCOM(R,V,T,P,C)$(YEARVAL(T) >= YEARVAL(V)) =
                                  COEF_OCOM(R,V,T,P,C) + MIN(1,DFUNC-CNT+1) *
                                  (MAX(0,(MIN(B(V)+F+(CNT*MY_F)+NCAP_DLAG(R,V,P)+Z,E(T)+1) -
                                          MAX(B(V)+F+(CNT*MY_F)+NCAP_DLAG(R,V,P),B(T))
@@ -60,9 +60,12 @@
   OPTION CLEAR = CNT;
 *display coef_icom, coef_ocom;
 
-* [AL] Modification: Convert negative ICOM to OCOM so that NCAP-related outputs can also be modeled
-* [AL] Modification: Convert negative OCOM to ICOM so that DECOM-related inputs can also be modeled
- COEF_OCOM(R,V,T,P,C)$((COEF_ICOM(R,V,T,P,C) LT 0)$COEF_ICOM(R,V,T,P,C)) = COEF_OCOM(R,V,T,P,C)-COEF_ICOM(R,V,T,P,C);
- COEF_ICOM(R,V,T,P,C)$((COEF_ICOM(R,V,T,P,C) LT 0)$COEF_ICOM(R,V,T,P,C)) = 0;
- COEF_ICOM(R,V,T,P,C)$((COEF_OCOM(R,V,T,P,C) LT 0)$COEF_OCOM(R,V,T,P,C)) = COEF_ICOM(R,V,T,P,C)-COEF_OCOM(R,V,T,P,C);
- COEF_OCOM(R,V,T,P,C)$((COEF_OCOM(R,V,T,P,C) LT 0)$COEF_OCOM(R,V,T,P,C)) = 0;
+* Modification: Convert negative ICOM to OCOM so that NCAP-related outputs can also be modeled
+* Modification: Convert negative OCOM to ICOM so that DECOM-related inputs can also be modeled
+  COEF_OCOM(R,V,T,P,C)$((COEF_ICOM(R,V,T,P,C) LT 0)$COEF_ICOM(R,V,T,P,C)) = COEF_OCOM(R,V,T,P,C)-COEF_ICOM(R,V,T,P,C);
+  COEF_ICOM(R,V,T,P,C)$((COEF_ICOM(R,V,T,P,C) LT 0)$COEF_ICOM(R,V,T,P,C)) = 0;
+  COEF_ICOM(R,V,T,P,C)$((COEF_OCOM(R,V,T,P,C) LT 0)$COEF_OCOM(R,V,T,P,C)) = COEF_ICOM(R,V,T,P,C)-COEF_OCOM(R,V,T,P,C);
+  COEF_OCOM(R,V,T,P,C)$((COEF_OCOM(R,V,T,P,C) LT 0)$COEF_OCOM(R,V,T,P,C)) = 0;
+
+* Allow using NCAP_CLED as NCAP_CLAG, if no NCAP_ICOM
+  NCAP_CLAG(RTP,C,IO)$((NOT NCAP_ICOM(RTP,C))$NCAP_COM(RTP,C,IO)) $= NCAP_CLED(RTP,C);

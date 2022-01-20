@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -135,9 +135,9 @@ $ONEMPTY
   SET G_UCNRG(U)                 'Unit for capacity of energy process'   //;
   SET G_RCUR(REG,CUR)            'Main currency unit by region'          //;
 
-* One predefined system CG and COM:
+* Predefined system CGs and one COM:
 $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
-  SET COM_GRP   / %PGPRIM% /;
+  SET COM_GRP   / %PGPRIM%, CAPFLO /;
   SET ACTCG(CG) / %PGPRIM% /;
   SET COM       / %PGPRIM% /;
 
@@ -363,6 +363,9 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
 $ SETGLOBAL DFLBL '0'
   YEARVAL('%DFLBL%') = 0;
   SET LASTLL(LL) /%DFLBL%/; Z=SUM(LASTLL(LL),ORD(LL)); ABORT$(Z NE CARD(LL)) 'FATAL';
+* Interpolation defaults
+  SET INT_DEFAULT(*) //;
+  PARAMETER IE_DEFAULT(*) //;
 
 * ---------------------------------------------------------------------------------------------
 *GG* V07_2 Initializations for BLENDing
@@ -483,7 +486,7 @@ $ IF NOT %G2X6%==YES $GOTO RUN
 $ IF NOT SET RUN_NAME $SETNAMES %SYSTEM.INCPARENT% . RUN_NAME .
 $ IF NOT EXIST %RUN_NAME%~data.gdx $GOTO RUN
 $ hiddencall gdxdump %RUN_NAME%~data.gdx NODATA > _dd_.dmp
-$ hiddencall sed "/^\(Alias\|[^($]*(\*) Alias\|[^$].*empty *$\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /$LOAD /I" _dd_.dmp > _dd_.dd
+$ hiddencall sed "/^\(Alias\|[^($]*(\*) Alias\|[^$].*empty *$\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /\$LOAD /I" _dd_.dmp > _dd_.dd
 $ INCLUDE _dd_.dd
 $ hiddencall rm -f _dd_.dmp
 $ TITLE %SYSTEM.TITLE%#
