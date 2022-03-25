@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -47,7 +47,7 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
   RPG_PACE(RXX(RPC_SPG(R,P,C))) = NOT RP_PGACT(R,P);
   TRACKPC(RPC_SPG) = NO;
 * Convert any ACT_EFF for 'ACT' to SPG if ACT_EFF not provided for SPG
-  ACT_EFF(RTP(R,V,P),CG,S)$RXX(R,P,CG) $= ACT_EFF(R,V,P,%PGPRIM%,S);
+  ACT_EFF(RTP(R,V,P),CG,S)$RXX(R,P,CG) $= ACT_EFF(RTP,%PGPRIM%,S);
   ACT_EFF(R,LL,P,%PGPRIM%,S) = 0;
 * Set the commodity type as the Group for remaining commodities
   LOOP((TOP(TRACKPC(R,P,C),IO),COM_TMAP(R,COM_TYPE,C))$(NOT RP_INOUT(R,P,IO)),RXX(R,P,COM_TYPE) = YES);
@@ -64,7 +64,7 @@ $ BATINCLUDE PP_ACTEF.%1 LVL
   FLO_FUNCX(R,LL,P,%PGPRIM%,%PGPRIM%) = 0;
   FLO_FUNCX(R,V,P,CG,COM)$(RPC_PG(R,P,COM)$RP_GRP(R,P,CG)) $= FLO_FUNCX(R,V,P,CG,%PGPRIM%);
   FLO_FUNCX(R,V,P,CG,%PGPRIM%)$RP_GRP(R,P,CG) = 0;
-  FLO_FUNCX(R,V,P,CG,CG2)$RP_PG(R,P,CG) $= FLO_FUNCX(R,V,P,%PGPRIM%,CG2););
+  FLO_FUNCX(R,V,P,CG,CG2)$RP_PG(R,P,CG) $= FLO_FUNCX(R,V,P,%PGPRIM%,CG2));
 * Ensure that ACT_EFF modeled flows are not reduced:
   LOOP(RPG_ACE(R,P,CG,IO), TRACKP(R,P) = YES);
   LOOP(RPCG_PTRAN(TRACKP(R,P),COM1,COM2,CG1,CG2)$(RPC_ACE(R,P,COM1)+RPC_ACE(R,P,COM2)),RPCC_FFUNC(R,P,CG1,CG2) = NO);
@@ -94,7 +94,7 @@ $LABEL DONEFUNC
   SET RPG_AFCX(R,P,C,IE); OPTION RP_GRP<NCAP_AFC;
   RP_GRP(RP_PG(R,P,CG))$(NOT C(CG)+COM_TYPE(CG)) = NO;
   PRC_SC(RP_STG(RP))$SUM(RP_GRP(RP,CG),1)=SUM(PRC_TSL(RP,TSL),LOG(G_CYCLE(TSL)));
-  NCAP_AFCS(R,LL,P,CG,S)$RP_GRP(R,P,CG) $= SUM(TS_GROUP(R,TSL(STL),S),NCAP_AFC(R,LL,P,CG,STL));
+  LOOP(TSL(STL),NCAP_AFCS(R,LL,P,CG,S)$TS_GROUP(R,TSL,S) $= NCAP_AFC(R,LL,P,CG,STL)$RP_GRP(R,P,CG));
   NCAP_AFCS(R,LL,P,CG,S(STL))$RP_GRP(R,P,CG) $= NCAP_AFC(R,LL,P,CG,STL); OPTION CLEAR=NCAP_AFC;
   NCAP_AFCS(R,LL,P,CG,S)$(NOT PRC_CAP(R,P))=0;
 * Handle independent AFCs
@@ -134,7 +134,7 @@ $LABEL DONEFUNC
 * The maximum of the technical AF for ELC, corrected with ACTFLO:
   VDA_CEH(RVP(R,V,P)) = MAX(0,SMAX((PRC_TS(R,P,S),CHP_ELC(R,P,C)),NCAP_AF(RVP,S,'UP')*PRC_ACTFLO(RVP,C)));
   RVP(RTP)$(VDA_CEH(RTP)<=0) = NO;
-  RPS_CAFLAC(R,P,'ANNUAL','UP') $= SUM(RVP(R,V,P)$VDA_CEH(RVP),1);
+  RPS_CAFLAC(R,P,ANNUAL,'UP') $= SUM(RVP(R,V,P)$VDA_CEH(RVP),1);
 * AFAC for heat = (heat share)/(1/AFA-(elec share)/AF):
   NCAP_AFCS(RVP(R,V,P),C,ANNUAL)$RPC_PG(R,P,C) =
     (1/(1+1/NCAP_CHPR(RVP,'UP'))) / NCAP_AFA(RVP,'UP') / PRC_ACTFLO(RVP,C) /

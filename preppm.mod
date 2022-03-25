@@ -164,12 +164,12 @@ $BATINCLUDE fillparm STG_SIFT R 'P,C,S' ",'0','0','0'" T 'RTP(R,T,P)' 'GE 0'
 *-----------------------------------------------------------------------------
 * User constraints
 *-----------------------------------------------------------------------------
-$BATINCLUDE fillparm UC_ACT 'UC_N,SIDE,R' 'P,TS' ",'0','0'" T 1 'GE 0'
+$BATINCLUDE fillparm UC_ACT 'UC_N,SIDE,R' 'P,TS' ",'0','0'" T 'RTP(R,T,P)' 'GE 0'
 $BATINCLUDE fillparm UC_CAP 'UC_N,SIDE,R' 'P' ",'0','0','0'" T 1 'GE 0'
 $BATINCLUDE fillparm UC_COM 'UC_N,COM_VAR,SIDE,R' 'C,TS,UC_GRPTYPE' "" T 1 'GE 0'
 $BATINCLUDE fillparm UC_FLO 'UC_N,SIDE,R' 'P,C,TS' ",'0'" T 1 'GE 0'
-$BATINCLUDE fillparm UC_IRE 'UC_N,SIDE,R' 'P,C,TS,IE' "" T 1 'GE 0'
-$BATINCLUDE fillparm UC_NCAP 'UC_N,SIDE,R' 'P' ",'0','0','0'" T 'RTP(R,T,P)' 'GE 0'
+$BATINCLUDE fillparm UC_IRE 'UC_N,SIDE,R' 'P,C,TS,IE' "" T 'RTP(R,T,P)' 'GE 0'
+$BATINCLUDE fillparm UC_NCAP 'UC_N,SIDE,R' P ",'0','0','0'" T 'RTP(R,T,P)' 'GE 0'
 $BATINCLUDE fillparm UC_UCN 'UC_N,SIDE,R' UCN ",'0','0','0'" T 1 'GE 0'
 $BATINCLUDE filparam UC_TIME 'UC_N,R,' '' ",'0','0','0'" DATAYEAR T '' '' '' "YEAR,"
 *=============================================================================

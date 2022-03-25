@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -1173,43 +1173,41 @@ $ BATINCLUDE prepxtra.mod UCINT
 *-----------------------------------------------------------------------------
 * Assigning commodities and processes to UC group map sets
 
- SET UC_MAP_FLO(UC_N,SIDE,ALL_REG,PRC,COM) 'Assigning processes to UC_GRP';
- SET UC_MAP_IRE(UC_N,ALL_REG,PRC,COM,IE)   'Assigning processes to UC_GRP';
+  SET UC_MAP_FLO(UC_N,SIDE,ALL_REG,PRC,COM) 'Assigning processes to UC_GRP';
+  SET UC_MAP_IRE(UC_N,ALL_REG,PRC,COM,IE)   'Assigning processes to UC_GRP';
 
 * FLO / IRE / COM
- OPTION UC_MAP_FLO < UC_FLO;
- UC_CAPFLO(UC_N,SIDE,R,P,C)$(NOT UC_MAP_FLO(UC_N,SIDE,R,P,C)) = NO;
- UC_MAP_FLO(UC_N,SIDE,RP_IRE,C) = NO;
- OPTION UC_MAP_IRE < UC_IRE;
- UC_MAP_IRE(UC_N,R,P,C,IE)$(NOT RPC_IRE(R,P,C,IE)) = NO;
- OPTION UC_GMAP_C < UC_COM;
- UC_ATTR(R,UCN,SIDE,UC_GRPTYPE,UC_DYNT)$UC_ATTR(R,UCN,SIDE,'COMCON',UC_DYNT)$=SUM(UC_GMAP_C(R,UCN,COM_VAR,C,'COMCON')$COV_MAP(COM_VAR,UC_GRPTYPE),1);
+  OPTION UC_MAP_FLO < UC_FLO;
+  UC_CAPFLO(UC_N,SIDE,R,P,C)$(NOT UC_MAP_FLO(UC_N,SIDE,R,P,C)) = NO;
+  UC_MAP_FLO(UC_N,SIDE,RP_IRE,C) = NO;
+  OPTION UC_MAP_IRE < UC_IRE;
+  UC_MAP_IRE(UC_N,R,P,C,IE)$(NOT RPC_IRE(R,P,C,IE)) = NO;
+  OPTION UC_GMAP_C < UC_COM;
+  UC_ATTR(R,UCN,SIDE,UC_GRPTYPE,UC_DYNT)$UC_ATTR(R,UCN,SIDE,'COMCON',UC_DYNT)$=SUM(UC_GMAP_C(R,UCN,COM_VAR,C,'COMCON')$COV_MAP(COM_VAR,UC_GRPTYPE),1);
 
 * ACT / CAP / NCAP
- OPTION CLEAR=UNCD7;
- UNCD7('1',UCN,SIDE,R,'ACT',T--ORD(T),P)  $= SUM(S$UC_ACT(UCN,SIDE,R,T,P,S),1);
- UNCD7('2',UCN,SIDE,R,'CAP',T--ORD(T),P)  $= UC_CAP(UCN,SIDE,R,T,P);
- UNCD7('3',UCN,SIDE,R,'NCAP',T--ORD(T),P) $= UC_NCAP(UCN,SIDE,R,T,P);
- LOOP(UNCD7(J,UCN,SIDE,R,UC_GRPTYPE,T,P),UC_GMAP_P(UC_ON(R,UCN),UC_GRPTYPE,P)=YES);
+  OPTION CLEAR=UNCD7;
+  UNCD7('1',UCN,SIDE,R,'ACT',T--ORD(T),P)  $= SUM(S$UC_ACT(UCN,SIDE,R,T,P,S),1);
+  UNCD7('2',UCN,SIDE,R,'CAP',T--ORD(T),P)  $= UC_CAP(UCN,SIDE,R,T,P);
+  UNCD7('3',UCN,SIDE,R,'NCAP',T--ORD(T),P) $= UC_NCAP(UCN,SIDE,R,T,P);
+  LOOP(UNCD7(J,UCN,SIDE,R,UC_GRPTYPE,T,P),UC_GMAP_P(UC_ON(R,UCN),UC_GRPTYPE,P)=YES);
 
 * Mark those processes that have UC_CAP / COMXXX to also have VAR_CAP / VAR_COMXXX
- LOOP(UC_GMAP_P(R,UCN,'CAP',P),TRACKP(R,P)=YES);
- RTP_VARP(RTP(R,T,P))$TRACKP(R,P) = YES;
- OPTION CLEAR=TRACKP,CLEAR=RXX;
- UC_ON(R,UCN) $= SUM(UC_DYNBND(UCN,BD),1);
- LOOP(UC_GMAP_C(UC_ON(R,UCN),COM_VAR,C,UC_GRPTYPE),RXX(R,COM_VAR,C)=YES);
- RHS_COMPRD(RTCS_VARC(R,T,C,S))$RXX(R,'PRD',C) = YES;
- RXX(R,'NET',C)$COM_LIM(R,C,'FX')=NO;
- RXX(R,'PRD',C)$(NOT COM_LIM(R,C,'LO'))=NO;
- LOOP(COM_VAR,RHS_COMBAL(RTCS_VARC(R,T,C,S))$RXX(R,COM_VAR,C) = YES);
+  LOOP(UC_GMAP_P(R,UCN,'CAP',P),TRACKP(R,P)=YES);
+  RTP_VARP(RTP(R,T,P))$TRACKP(R,P) = YES;
+  OPTION CLEAR=TRACKP,CLEAR=RXX;
+  UC_ON(R,UCN) $= SUM(UC_DYNBND(UCN,BD),1);
+  LOOP(UC_GMAP_C(UC_ON(R,UCN),COM_VAR,C,UC_GRPTYPE),RXX(R,COM_VAR,C)=YES);
+  RHS_COMPRD(RTCS_VARC(R,T,C,S))$RXX(R,'PRD',C) = YES;
+  RXX(R,'NET',C)$COM_LIM(R,C,'FX')=NO;
+  RXX(R,'PRD',C)$(NOT COM_LIM(R,C,'LO'))=NO;
+  LOOP(COM_VAR,RHS_COMBAL(RTCS_VARC(R,T,C,S))$RXX(R,COM_VAR,C) = YES);
 
-*-----------------------------------------------------------------------------
-
-* handle UC_FLO/IRE/ACT/COM leveling by aggregation/inheritance
-$   BATINCLUDE pp_lvlus.mod UC_ACT 'P' PRC_TS ",'0','0'"
-$   BATINCLUDE pp_lvlus.mod UC_FLO 'P,C' RPCS_VAR ",'0'"
-$   BATINCLUDE pp_lvlus.mod UC_IRE 'P,C' RPCS_VAR "" ',IE'
-$   BATINCLUDE pp_lvlus.mod UC_COM 'C' COM_TS "" ,UC_GRPTYPE ,COM_VAR
+*...Handle UC_FLO/IRE/ACT/COM leveling by aggregation/inheritance
+$   BATINCLUDE pp_lvlus.mod UC_ACT 'P'   PRC_TS ",'0','0'" "" "" P RC
+$   BATINCLUDE pp_lvlus.mod UC_FLO 'P,C' RPCS_VAR ",'0'" "" "" P RC PRC_SGL(R,P) ,C
+$   BATINCLUDE pp_lvlus.mod UC_IRE 'P,C' PRC_TS "" ',IE' "" P RC
+$   BATINCLUDE pp_lvlus.mod UC_COM 'C'   COM_TS "" ,UC_GRPTYPE ,COM_VAR C OM
 
 *-----------------------------------------------------------------------------
 * Control set for balance/production equations based on TS-resolution and RHS
@@ -1338,5 +1336,5 @@ $ BATINCLUDE pp_reduce.red
 *----------------------------------------------------------------
 $ IF %MACRO%==YES $BATINCLUDE ppmain.tm
 
-PUTCLOSE QLOG;
-IF(PUTOUT, QLOG.AP = 1);
+  PUTCLOSE QLOG;
+  IF(PUTOUT, QLOG.AP = 1);

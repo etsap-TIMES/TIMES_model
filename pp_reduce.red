@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 
 * Remove activity equation from processes that didn't have activity attributes
   PRC_ACT(NO_ACT) = NO;
-* We can keep RTP_VARA even if no VAR_ACT is not needed
+* We can keep RTP_VARA even when no VAR_ACT is needed
 * RTP_VARA(R,T,P)$NO_ACT(R,P) = NO;
 
 *--------------------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
   RPCG_PTRAN(RP_SGS(R,P),C,COM,CG1,CG2) = NO;
   LOOP(RPCG_PTRAN(RP_FLO(R,P),C,COM,CG1,CG2),
       IF(RPC_ACT(R,P,C), RPC_FFUNC(R,P,COM) = YES; ELSE RPC_FFUNC(R,P,C) = YES);
- );
+  );
 * Remove activity flows and emission flows from RPC_FFUNC
   RPC_FFUNC(RPC)$(RPC_ACT(RPC)+RPC_EMIS(RPC)) = NO;
 
@@ -181,6 +181,7 @@ $LABEL REDDONE
   LOOP(FS_EMIS(R,P,CG,C,COM), RPCC_FFUNC(R,P,CG,COM) = YES);
   OPTION CLEAR=FSCK;
   PRC_TS2(PRC_TS(RP_PGACT(RP_STD),S)) = YES;
+  RPC_PKF(RPC_PKC(PRC_CAP,C)) = 0;
 
 * Remove timeslices turned off if DYNTS enabled
 $IF NOT %RTS%==S $BATINCLUDE dynslite.vda REDUCE

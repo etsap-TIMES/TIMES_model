@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -17,14 +17,14 @@
   TS_GROUP(ALL_R,'ANNUAL',S) = ANNUAL(S);
   OPTION STOAL < TS_GROUP;
   TS_MAP(R,ANNUAL,S) = STOAL(R,S);
+  TS_MAP(R,ALL_TS,TS)$SUM(TS_MAP(R,ALL_TS,S),TS_MAP(R,S,TS)) = YES;
   TS_MAP(R,S,S) = STOAL(R,S);
   STOAL(ALL_R,S)$STOAL(ALL_R,S) = STOAL(ALL_R,S)-1;
   IF(CARD(STOAL),ABORT "Error: Timeslice on several levels.");
-  TS_MAP(R,ALL_TS,TS)$SUM(TS_MAP(R,ALL_TS,S),TS_MAP(R,S,TS)) = YES;
-* Build a set for timeslices strictly below
+* Set for timeslices strictly below
   RS_BELOW(TS_MAP(R,S,TS))$(NOT TS_MAP(R,TS,S)) = YES;
 * Set for timeslices strictly ONE level below
-  RS_BELOW1(R,S,TS)$(SUM(TS_MAP(R,S,ALL_TS),RS_BELOW(R,ALL_TS,TS)*1) = 1) = YES;
+  RS_BELOW1(RS_BELOW(R,S,TS))$(SUM(TS_MAP(R,S,ALL_TS)$RS_BELOW(R,ALL_TS,TS),1)=1) = YES;
 *-----------------------------------------------------------------------------
 * Prepare dynamic timeslice tree
 $ SET MX '(MIYR_1)' SETGLOBAL RTS S
