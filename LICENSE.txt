@@ -1,5 +1,5 @@
 *------------------------------------------------------------------------------
-*  Copyright (C) 2000-2020 IEA Energy Technology Systems Analysis Programme.
+*  Copyright (C) 2000-2022 IEA Energy Technology Systems Analysis Programme.
 *------------------------------------------------------------------------------
 *  This software "The Integrated MARKAL-EFOM System - TIMES" is open source:
 *  you can redistribute it and/or modify it under the terms of the 

@@ -2489,3 +2489,15 @@ pp_reduce.red : (1)
 ppm_ext.vda   : (1)
 eqpeak.mod    : (1)
 rptmisc.rpt   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.2
+-----------------------------------------------------------------------------------------
+Date: 22-May-2022 [AL]: Minor release
+1) Added option for including input flows in power level reporting per MVU's wish
+2) Cosmetic fix
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.2
+coef_nio.mod  : (2)
+rptmisc.rpt   : (1)
