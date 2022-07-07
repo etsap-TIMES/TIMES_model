@@ -58,7 +58,7 @@ $ONEMPTY
 
 * energy
   SET NRG_FMAP(REG,NRG_FORM,COM)     'Grouping of NRG by Solid/Liquid/Gas' //;
-  SET NRG_GMAP(REG,NRG_GRID,COM)     'Association with energy carriers to grids' //;
+  SET NRG_GMAP(REG,NRG_GRID,COM)     'Association of energy carriers to grids'//;
   SET NRG_TMAP(REG,NRG_TYPE,COM)     'Grouping of energy carriers by type' //;
 
 * process
@@ -276,8 +276,9 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   PARAMETER PRC_CAPACT(REG,PRC)                     'Factor for going from capacity to activity' //;
 
 * globals
-  PARAMETER G_CHNGMONY(REG,ALLYEAR,CUR)             'Exchange rate for currency'    //;
-  PARAMETER G_DRATE(REG,ALLYEAR,CUR)                'Discount rate for a currency'  //;
+  PARAMETER G_CHNGMONY(REG,ALLYEAR,CUR)             'Exchange rate for currency'  //;
+  PARAMETER G_DRATE(REG,ALLYEAR,CUR)                'Discount rate for a currency'//;
+  PARAMETER G_RFRIR(REG,ALLYEAR)                    'Riskfree real interest rate' //;
   PARAMETER G_YRFR(ALL_REG,TS)                      'Seasonal fraction of the year' //;
   PARAMETER TS_CYCLE(REG,TS)                        'Length of cycles below timeslice, in days' //;
   PARAMETER G_OFFTHD(ALLYEAR)                       'Threshold for OFF ranges';

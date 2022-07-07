@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -63,6 +63,8 @@ $ BATINCLUDE filparam.gms G_DRATE 'R,' CUR  ",'','','','',''" ALLYEAR LL FIL(LL)
       IF(ABS(F-Z) LT 1E-7, G_RCUR(R,CUR) = YES; Z = 0)));
   OBJ_PVT(R,T,CUR)$RDCUR(R,CUR) = SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR));
   COEF_PVT(R,T) = SUM(G_RCUR(R,CUR),OBJ_PVT(R,T,CUR));
+  OBJ_RFR(R,V,CUR) $= G_DRATE(R,V,CUR);
+  OBJ_RFR(R,V,CUR)$RDCUR(R,CUR) $= G_RFRIR(R,V);
 *-----------------------------------------------------------------------------
 * move original data from input to annual value arrays
 * commodity costs

@@ -174,6 +174,7 @@ $ LABEL SYSD
   PARAMETER RVPRL(R,YEAR,P) //;
 
 * OBJ function yearly values established in COEF_OBJ and used in OBJ_*
+  PARAMETER OBJ_RFR(R,YEAR,CUR)            'Risk-free rates'          //;
   PARAMETER OBJ_PVT(R,YEAR,CUR)            'Present value of period'  //;
   PARAMETER OBJ_CRF(R,ALLYEAR,P,CUR)       'Capital recovery factor'  //;
   PARAMETER OBJ_CRFD(R,ALLYEAR,P,CUR)      'Capital recovery factor for Decommissioning' //;

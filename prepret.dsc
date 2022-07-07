@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -65,9 +65,9 @@ $SETGLOBAL RCAPSBM -SUM(VNRET(MODLYEAR,T),%VART%_SCAP(R,MODLYEAR,T,P%SWS%))$PRC_
    RCAP_BLK(R,V,P) * %VAR%_DRCAP(R,V,T,P%SOW%,'2') + (NCAP_PASTI(R,V,P)-RTFORC(R,V,T,P)) * %VAR%_DRCAP(R,V,T,P%SOW%,'1');
 
 * Cumulative retirements
-  %EQ%_CUMRET(R,VNRET(V,T),P%SWT%)$(RTP_CPTYR(R,V,T,P)$PRC_RCAP(R,P))..
+  %EQ%_CUMRET(R,VNRET(V,K(T-1)),P%SWT%)$(RTP_CPTYR(R,V,T,P)$PRC_RCAP(R,P))..
 
-   SUM(RTP_CPTYR(R,V,MODLYEAR(T+1),P),%VARM%_SCAP(R,V,MODLYEAR,P%SWS%)-%VARM%_RCAP(R,V,MODLYEAR,P%SWS%)-%VAR%_SCAP(R,V,T,P%SOW%))
+   SUM(RTP_CPTYR(R,V,MODLYEAR(K),P),%VAR%_SCAP(R,V,T,P%SOW%)-%VAR%_RCAP(R,V,T,P%SOW%)-%VARM%_SCAP(R,V,K,P%SWS%))
    =E= 0;
 
 * Maximum salvage capacity

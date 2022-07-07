@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -10,7 +10,7 @@
 *=============================================================================*
 *GaG Questions/Comments:
 *  - Note that V=T in OBJ.DOC, but in the code V is assocated with the vintage year,
-*    that is the of investment as distinguished from T = the current MILESTONYR.
+*    that is the year of investment as distinguished from T = the current MILESTONYR
 *  - COEF_RPTI calculated in PPMAIN.MOD
 *  - combining all the INVs into a single equation at the moment
 *-----------------------------------------------------------------------------
@@ -26,23 +26,21 @@ $SETGLOBAL DECLIF DELIF
 * For loop controls
   ALIAS(AGE,JOT);
   SCALARS OBJ_C /0/, OBJ_D /0/;
-* OBJ coefficient SUM control set with the 3 ALLYEAR indexes in sequence =
-*   Y-running OBJ year, V-variables' investment period, K-cost value counter & index
+* OBJ coefficient SUM control set with the ALLYEAR indexes in sequence =
+*   V - investment vintage year, K - commissioning index, Y - decommissioning index
   SET OBJ_SUMII(R,ALLYEAR,P,AGE,ALLYEAR,AGE)      //;
-  SET OBJ_SUMIII(R,ALLYEAR,P,ALLYEAR,ALLYEAR,ALLYEAR) //;
-* new investment in each year, number of repeated investments, decommssioning total
-  PARAMETER OBJ_PASTI(REG,ALLYEAR,P,CUR)          //;
+  SET OBJ_SUMIII(R,ALLYEAR,P,ALLYEAR,YEAR,ALLYEAR)//;
   SET OBJ_YES(REG,ALLYEAR,P)                      //;
-  SET OBJ_ICUR(REG,ALLYEAR,P,CUR)                 //;
-  PARAMETER SALV_INV(REG,ALLYEAR,PRC,ALLYEAR)     //;
-  PARAMETER COR_SALVI(REG,ALLYEAR,PRC,CUR)        //;
-  PARAMETER COR_SALVD(REG,ALLYEAR,PRC,CUR)        //;
   SET OBJ_I2(REG,ALLYEAR,P)                       //;
   SET YKAGE(ALLYEAR,ALLYEAR,AGE)                  //;
   SET KAGE(ALLYEAR,AGE)                           //;
   SET OBJ_SPRED(R,ALLYEAR,P,AGE)                  //;
   SET INVSTEP(ALLYEAR,AGE,ALLYEAR,AGE)            //;
   SET INVSPRED(ALLYEAR,AGE,ALLYEAR,ALLYEAR)       //;
+  PARAMETER OBJ_PASTI(REG,ALLYEAR,P,CUR)          //;
+  PARAMETER SALV_INV(REG,ALLYEAR,PRC,ALLYEAR)     //;
+  PARAMETER COR_SALVI(REG,ALLYEAR,PRC,CUR)        //;
+  PARAMETER COR_SALVD(REG,ALLYEAR,PRC,CUR)        //;
   PARAMETER OBJ_DIVI(REG,ALLYEAR,PRC)             //;
   PARAMETER OBJ_DIVIII(REG,ALLYEAR,PRC)           //;
   SET OBJ_IDC(R,ALLYEAR,P,LIFE,ALLYEAR,AGE);
@@ -57,12 +55,12 @@ $SETGLOBAL DECLIF DELIF
 $IF '%ETL%'==YES  OBJ_ICUR(RTP(R,V,TEG),CUR)$G_RCUR(R,CUR) = YES;
 * Decommissioning
   OBJ_ICUR(RTP(R,V,P),CUR)$OBJ_DCOST(R,V,P,CUR) = YES;
-  LOOP(CUR,OBJ_SUMS3(RTP(R,V,P))$OBJ_DCOST(R,V,P,CUR) = YES;);
-  LOOP((RTP(R,V,P),COM)$NCAP_OCOM(R,V,P,COM),OBJ_SUMS3(R,V,P) = YES);
+  LOOP(CUR,OBJ_SUMS3(RTP(R,V,P))$OBJ_DCOST(R,V,P,CUR) = YES);
+  LOOP((RTP,COM)$NCAP_OCOM(RTP,COM),OBJ_SUMS3(RTP) = YES);
 * Currency independent OBJ_YES
-  OBJ_ICUR(RTP_OFF(R,T,P),CUR)$(NOT NCAP_PASTI(R,T,P)) = NO;
-  OBJ_ICUR(R,LL,P,CUR)$(NOT RDCUR(R,CUR)) = NO; OPTION OBJ_YES < OBJ_ICUR;
-  OBJ_YES(OBJ_SUMS3(R,V,P)) = YES;
+  OBJ_ICUR(RTP_OFF,CUR)$(NOT NCAP_PASTI(RTP_OFF)) = NO;
+  OBJ_ICUR(R,LL,P,CUR)$(NOT RDCUR(R,CUR)) = NO; 
+  OPTION OBJ_YES < OBJ_ICUR; OBJ_YES(OBJ_SUMS3) = YES;
 
 * Correct small TLIFE and DLIFE values, because rounded values are used as divisors
   NCAP_TLIFE(OBJ_YES(R,V,P))$(ROUND(NCAP_TLIFE(R,V,P)) LE 0) = 1;
@@ -70,14 +68,14 @@ $IF '%ETL%'==YES  OBJ_ICUR(RTP(R,V,TEG),CUR)$G_RCUR(R,CUR) = YES;
   NCAP_DLIFE(OBJ_SUMS3(R,V,P))$(ROUND(NCAP_DLIFE(R,V,P)) LE 0) = 1;
   NCAP_DELIF(OBJ_SUMS3(R,V,P)) = MAX(1,NCAP_DELIF(R,V,P));
 * Classify processes into I1 / I2 Cases
-  OBJ_I2(RTP(R,V,P))$NCAP_ILED(R,V,P) = YES;
+  OBJ_I2(RTP)$NCAP_ILED(RTP) = YES;
   LOOP(SAMEAS(LIFE,'1'),OBJ_SPRED(OBJ_YES(R,V,P),LIFE+MAX(0,MIN(CARD(AGE),NCAP_%INVLIF%(R,V,P))-1))=YES);
 *------------------------------------------------------------------------------
 * COR_SALVI can be used to take into account technology-specific discount rate
 * Take also into account a user-defined discounting shift (0/0.5/1 years):
-  COR_SALVI(OBJ_ICUR(R,V,P,CUR))=(((((1+NCAP_DRATE(R,V,P))/(1+G_DRATE(R,V,CUR)))**%DISCSHIFT%)*
-                                   ((1-1/(1+NCAP_DRATE(R,V,P)))*(1-(1+G_DRATE(R,V,CUR))**(-NCAP_ELIFE(R,V,P))))/
-                                   ((1-1/(1+G_DRATE(R,V,CUR)))*(1-(1+NCAP_DRATE(R,V,P))**(-NCAP_ELIFE(R,V,P))))
+  COR_SALVI(OBJ_ICUR(R,V,P,CUR))=(((((1+NCAP_DRATE(R,V,P))/(1+OBJ_RFR(R,V,CUR)))**%DISCSHIFT%)*
+                                   ((1-1/(1+NCAP_DRATE(R,V,P)))*(1-(1+OBJ_RFR(R,V,CUR))**(-NCAP_ELIFE(R,V,P))))/
+                                   ((1-1/(1+OBJ_RFR(R,V,CUR)))*(1-(1+NCAP_DRATE(R,V,P))**(-NCAP_ELIFE(R,V,P))))
                                 -1)$(NCAP_DRATE(R,V,P) GT 0) + 1)*(1+G_DRATE(R,V,CUR))**%DISCSHIFT%;
   COR_SALVI(OBJ_ICUR(OBJ_I2(R,V,P),CUR)) = COR_SALVI(R,V,P,CUR) / ((1+G_DRATE(R,V,CUR))**%DISCSHIFT%);
 * OBJ_CRF/OBJ_CRFD must now be based on G_DRATE because we use COR_SALVI and COR_SALVD for the correction
@@ -89,7 +87,6 @@ $IF '%ETL%'==YES  OBJ_ICUR(RTP(R,V,TEG),CUR)$G_RCUR(R,CUR) = YES;
                          ((1+G_DRATE(R,V,CUR))**NCAP_%INVLIF%(R,V,P)-1))));
 *------------------------------------------------------------------------------
 * Operating years for all technical lifetimes
-  SET OPYEAR(AGE,LIFE) //;
   Z=SMAX((RTP(R,PYR_S(V),P),T)$PRC_RESID(R,T,P),E(T))-MIYR_V1+2;
   MAXLIFE = MAX(SMAX(T,2*D(T)),Z,CEIL(MAXLIFE));
   OPYEAR(LIFE,AGE)$((ORD(AGE) LE ORD(LIFE))$(ORD(LIFE) LE MAXLIFE)) = YES;

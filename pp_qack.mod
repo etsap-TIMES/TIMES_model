@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -312,7 +312,7 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Commodity fractions do not sum
   PUTGRP = 0;
 * NCAP_CLED duration check
    LOOP((R,V,P,C)$NCAP_CLED(R,V,P,C),
-     IF(NCAP_CLED(R,V,P,C) > NCAP_ILED(R,V,P),
+     IF(NCAP_CLED(R,V,P,C) > COEF_ILED(R,V,P),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Too Long Commodity Lead Time'
          PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' C=',C.TL;
      ));

@@ -2501,3 +2501,21 @@ Modified files: (reason)
 initsys.mod   : Increased version number to 4.6.2
 coef_nio.mod  : (2)
 rptmisc.rpt   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.3
+-----------------------------------------------------------------------------------------
+Date: 7-Jul-2022 [AL]: Minor release
+1) Added new attribute G_RFRIR for defining risk-free reference rate for hurdle rates
+2) Fixed bug that allowed some early retirements revoked when using multi-stage stochastics and early retirements
+3) Cosmetic fixes
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.3
+initmtty.mod  : (1)
+setglobs.gms  : (1)
+preppm.mod    : (1)
+coef_obj.mod  : (1)
+eqobjinv.mod  : (1)
+pp_qack.mod   : (3)
+prepret.dsc   : (2)

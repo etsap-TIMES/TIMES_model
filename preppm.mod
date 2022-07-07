@@ -75,6 +75,7 @@ $ BATINCLUDE fillvint
 * General attributes
 *-----------------------------------------------------------------------------
 *$BATINCLUDE prepparm G_DRATE R 'CUR' ",'0','0','0','0','0'" YEAR 1
+$BATINCLUDE filparam G_RFRIR 'R,' '' ",'0','0','0','0','0'" YEAR V
 *-----------------------------------------------------------------------------
 * Capacity related attributes
 *-----------------------------------------------------------------------------
@@ -111,24 +112,24 @@ $IF DEFINED DAM_COST $BATINCLUDE prepparm DAM_COST R 'C,CUR' ",'0','0','0'" T 1 
 $BATINCLUDE fillparm NCAP_AF R 'P,TS,BD' ",'0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RPSB
 $BATINCLUDE fillparm NCAP_AFA R 'P,BD' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RPB
 $BATINCLUDE fillparm NCAP_AFS R 'P,TS,BD' ",'0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RPSB
-$BATINCLUDE fillparm NCAP_BPME R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
-$BATINCLUDE fillparm NCAP_CDME R 'P' ",'0','0','0','0','0'" V 'RVP(R,V,P)' 'GE 0'
-$BATINCLUDE fillparm NCAP_CEH R 'P' ",'0','0','0','0','0'" V 'RVP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_BPME R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm NCAP_CDME R P ",'0','0','0','0','0'" V 'RVP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm NCAP_CEH R P ",'0','0','0','0','0'" V 'RVP(R,V,P)' 'GE 0' X_RP
 $BATINCLUDE fillparm NCAP_CHPR R 'P,BD' ",'0','0','0','0'" V 'RVP(R,V,P)' 'GE 0' X_RPB
 $BATINCLUDE fillparm NCAP_CLED R 'P,C' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm NCAP_CLAG R 'P,C,IO' ",'0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm NCAP_COM R 'P,C,IO' ",'0','0','0'" V 'RTP(R,V,P)' 'GE 0'
-$BATINCLUDE fillparm NCAP_DELIF R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
-$BATINCLUDE fillparm NCAP_DLAG R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
-$BATINCLUDE fillparm NCAP_DLIFE R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
-$BATINCLUDE fillparm NCAP_DRATE R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
-$BATINCLUDE fillparm NCAP_FDR R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
-$BATINCLUDE fillparm NCAP_ELIFE R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_DELIF R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_DLAG R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_DLIFE R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_DRATE R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_FDR R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_ELIFE R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
 $BATINCLUDE fillparm NCAP_ICOM R 'P,C' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
-$BATINCLUDE fillparm NCAP_ILED R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_ILED R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
 $BATINCLUDE fillparm NCAP_OCOM R 'P,C' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm NCAP_PKCNT R 'P,TS' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
-$BATINCLUDE fillparm NCAP_TLIFE R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
+$BATINCLUDE fillparm NCAP_TLIFE R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RP
 *-----------------------------------------------------------------------------
 * Commodity related attributes
 *-----------------------------------------------------------------------------
@@ -158,14 +159,14 @@ $BATINCLUDE fillparm IRE_FLOSUM R 'P,C,TS,IE,COM,IO' "" V 'RVP(R,V,P)' 'GE 0'
 * Storage attributes
 *-----------------------------------------------------------------------------
 $BATINCLUDE fillparm STG_CHRG R 'P,S' ",'0','0','0','0'" V '(M(V) GE MIYR_V1-1)' 'GE 0'
-$BATINCLUDE fillparm STG_EFF R 'P' ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
+$BATINCLUDE fillparm STG_EFF R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm STG_LOSS R 'P,S' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm STG_SIFT R 'P,C,S' ",'0','0','0'" T 'RTP(R,T,P)' 'GE 0'
 *-----------------------------------------------------------------------------
 * User constraints
 *-----------------------------------------------------------------------------
 $BATINCLUDE fillparm UC_ACT 'UC_N,SIDE,R' 'P,TS' ",'0','0'" T 'RTP(R,T,P)' 'GE 0'
-$BATINCLUDE fillparm UC_CAP 'UC_N,SIDE,R' 'P' ",'0','0','0'" T 1 'GE 0'
+$BATINCLUDE fillparm UC_CAP 'UC_N,SIDE,R' P ",'0','0','0'" T 1 'GE 0'
 $BATINCLUDE fillparm UC_COM 'UC_N,COM_VAR,SIDE,R' 'C,TS,UC_GRPTYPE' "" T 1 'GE 0'
 $BATINCLUDE fillparm UC_FLO 'UC_N,SIDE,R' 'P,C,TS' ",'0'" T 1 'GE 0'
 $BATINCLUDE fillparm UC_IRE 'UC_N,SIDE,R' 'P,C,TS,IE' "" T 'RTP(R,T,P)' 'GE 0'
@@ -189,7 +190,7 @@ $BATINCLUDE prepparm FLO_BND R 'P,CG,TS,BD' ",'0'" T 'RTP(R,T,P)' 1
 $BATINCLUDE prepparm FLO_FR R 'P,C,TS,LIM' ",'0'" T 'RTP(R,T,P)' 1
 $BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" V 'RVP(R,V,P)' 1 '' +
 $BATINCLUDE prepparm IRE_BND R 'C,TS,ALL_REG,IE,BD' "" T 1 1
-$BATINCLUDE prepparm IRE_XBND 'ALL_REG' 'C,TS,IE,BD' ",'0'" T 1 1
+$BATINCLUDE prepparm IRE_XBND ALL_REG 'C,TS,IE,BD' ",'0'" T 1 1
 *-----------------------------------------------------------------------------
 * Storage attributes
 *-----------------------------------------------------------------------------
@@ -198,10 +199,10 @@ $BATINCLUDE prepparm STGOUT_BND R 'P,C,S,BD' ",'0'" T 'RTP(R,T,P)' 1
 *-----------------------------------------------------------------------------
 * User constraints
 *-----------------------------------------------------------------------------
-$BATINCLUDE prepparm UC_RHSRT 'ALL_R,UC_N' 'LIM' ",'0','0','0'" T 1 1
+$BATINCLUDE prepparm UC_RHSRT 'ALL_R,UC_N' LIM ",'0','0','0'" T 1 1
 $BATINCLUDE prepparm UC_RHSRTS 'ALL_R,UC_N' 'TS,LIM' ",'0','0'" T 1 1
-$BATINCLUDE prepparm UC_RHST 'UC_N' 'LIM' ",'0','0','0','0'" T 1 1
-$BATINCLUDE prepparm UC_RHSTS 'UC_N' 'TS,LIM' ",'0','0','0'" T 1 1
+$BATINCLUDE prepparm UC_RHST UC_N LIM ",'0','0','0','0'" T 1 1
+$BATINCLUDE prepparm UC_RHSTS UC_N 'TS,LIM' ",'0','0','0'" T 1 1
 $BATINCLUDE prepparm REG_BNDCST R 'COSTAGG,CUR,BD' ",'0','0'" T 1 1
 *-----------------------------------------------------------------------------
 * Parameters that are by default inter/extrapolated over PASTYEARS
@@ -242,7 +243,7 @@ $BATINCLUDE preshape NCAP_CPX R P "" V RXX RTP(R,V,P)
 $IF NOT %VINTOPT%==1 $EXIT
 $BATINCLUDE fillvint FLO_FUNC R 'P,CG1,CG2,TS' X_RPGGS
 $BATINCLUDE fillvint FLO_SUM R 'P,CG1,C,CG2,TS' X_RPGCGS
-$BATINCLUDE fillvint NCAP_CDME R 'P' X_RP
+$BATINCLUDE fillvint NCAP_CDME R P X_RP
 $BATINCLUDE fillvint NCAP_CHPR R 'P,BD' X_RPB
 $BATINCLUDE fillvint FLO_SHAR R 'P,C,CG,TS,BD' X_RPCGSB
 OPTION CLEAR=PASTSUM;
