@@ -2512,10 +2512,27 @@ Date: 7-Jul-2022 [AL]: Minor release
 
 Modified files: (reason)
 initsys.mod   : Increased version number to 4.6.3
-initmtty.mod  : (1)
+initmty.mod   : (1)
 setglobs.gms  : (1)
 preppm.mod    : (1)
 coef_obj.mod  : (1)
 eqobjinv.mod  : (1)
 pp_qack.mod   : (3)
+prepret.dsc   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.4
+-----------------------------------------------------------------------------------------
+Date: 14-Jul-2022 [AL]: Minor release
+1) Fixed small reporting bugs relater to retrofit processes
+2) Improvements in retrofit and lifetime extension implementation
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.4
+setglobs.gms  : (1)
+ppmain.mod    : (2)
+rpt_obj.rpt   : (2)
+rpt_objc.rpt  : (1)
+rptmisc.rpt   : (1)
+eqobsalv.mod  : (2)
 prepret.dsc   : (2)

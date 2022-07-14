@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -18,8 +18,8 @@ $IFI '%STAGES%'==YES PASTSUM(NCAP_YES(R,T,P)) = SUM(SW_TSW(SOW,T,WW),OBJ_SIC(R,T
 *------------------------------------------------------------------------------
 * Hurdle rates
   COEF_CRF(OBJ_ICUR(NCAP_YES(R,V,P),CUR))$(NCAP_DRATE(R,V,P)>0) = MAX(0,1-
-   ((1-(1+NCAP_DRATE(R,V,P))**(-NCAP_ELIFE(R,V,P))) / (1-(1+G_DRATE(R,V,CUR))**(-NCAP_ELIFE(R,V,P)))) /
-   (NCAP_DRATE(R,V,P)/G_DRATE(R,V,CUR)*((1+NCAP_DRATE(R,V,P))/(1+G_DRATE(R,V,CUR)))**MIN(%DISCSHIFT%-1,-0.5$NCAP_ILED(R,V,P))));
+   ((1-(1+NCAP_DRATE(R,V,P))**(-NCAP_ELIFE(R,V,P))) / (1-(1+OBJ_RFR(R,V,CUR))**(-NCAP_ELIFE(R,V,P)))) /
+   (NCAP_DRATE(R,V,P)/OBJ_RFR(R,V,CUR)*((1+NCAP_DRATE(R,V,P))/(1+OBJ_RFR(R,V,CUR)))**MIN(%DISCSHIFT%-1,-0.5$NCAP_ILED(R,V,P))));
 *------------------------------------------------------------------------------
 * Lump-sum investment costs
 *------------------------------------------------------------------------------
@@ -58,7 +58,8 @@ $IF '%ETL%'==YES (VAR_IC.L(R,T,P)*COR_SALVI(R,T,P,CUR))$SEG(R,P) +
       (VAR_NCAP.L(R,V,P)$T(V) + OBJ_PASTI(R,V,P,CUR)) * COR_SALVI(R,V,P,CUR) / OBJ_DIVI(R,V,P));
 
 $IF NOT DEFINED PRC_RCAP $GOTO ISUM
-  PAR_OBJCAP(OBJ_ICUR(NCAP_YES(R,V,P),CUR))$RVPRL(R,V,P)=OBJSCC(R,V,P,CUR)*OBJ_DCEOH(R,CUR)*(RTP_CAPVL(R,V,P)-VAR_SCAP.L(R,V,'0',P));
+  VAR_SCAP.L(R,T,'0',P)$(NCAP_FDR(R,T,P)$RVPRL(R,'0',P)$RVPRL(R,T,P)) = RTP_CAPVL(R,T,P);
+  PAR_OBJCAP(OBJ_ICUR(NCAP_YES(R,V,P),CUR))$RVPRL(R,V,P)=OBJSCC(R,V,P,CUR)*OBJ_DCEOH(R,CUR)*(RTP_CAPVL(R,V,P)-VAR_SCAP.L(R,V,'0',P))$OBJ_SUMS(R,V,P);
   RTP_OBJ('1',R,V,P,CUR)$PAR_OBJCAP(R,V,P,CUR) = RTP_OBJ('1',R,V,P,CUR)+PAR_OBJCAP(R,V,P,CUR)*(1-(1/(1+RTP_OBJ('1',R,V,P,CUR)/RTP_OBJ('2',R,V,P,CUR)))$(RTP_OBJ('2',R,V,P,CUR)>0));
   RTP_OBJ('2',R,V,P,CUR)$((RTP_OBJ('2',R,V,P,CUR)>0)$PAR_OBJCAP(R,V,P,CUR)) = RTP_OBJ('2',R,V,P,CUR)+PAR_OBJCAP(R,V,P,CUR)/(1+RTP_OBJ('1',R,V,P,CUR)/RTP_OBJ('2',R,V,P,CUR));
   RTP_ISHPR(RTP(R,V,P))$PRC_RCAP(R,P)=YES;

@@ -89,7 +89,7 @@ $ LABEL SYSD
   SET RTP_VARA(R,ALLYEAR,P)     'The VAR_ACT control set'                //;
   SET RTP_VARP(R,T,P)           'RTPs that have a VAR_CAP'               //;
   SET RTP_VINTYR(ALL_REG,ALLYEAR,ALLYEAR,PRC) 'v/t years when vintaging involved'//;
-  SET RTP_TT(R,T,YEAR,PRC)      'Retrofit control periods'               //;
+  SET RTP_TT(R,YEAR,T,PRC)      'Retrofit control periods'               //;
   SET RVP(R,ALLYEAR,P)          'ALIAS(RTP) for Process/time'            //;
   SET RTP_CAPYR(R,YEAR,YEAR,P)  'Capacity vintage years'                 //;
   SET RTP_CGC(REG,YEAR,P,CG,CG) 'Multi-purpose work set'                //;

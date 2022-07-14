@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -31,10 +31,10 @@ $IF NOT '%CTST%'=='' $SET PFT (T)
   LOOP(OBJ_SUMII(R,V%PFT%,P,AGE,K_EOH,JOT), Z=NCAP_TLIFE(R,V,P)-1;
     IF(YEARVAL(K_EOH)+ORD(JOT)+Z GT MIYR_VL,
        LOOP(INVSPRED(K_EOH,JOT,LL,K)$(YEARVAL(LL)+Z GT MIYR_VL),OBJ_SUMSI(R,V,P,LL) = YES;)));
-  OPTION OBJ_SUMS <= OBJ_SUMSI;
 
 * No retrofit salvage
-  LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),OBJ_SUMS(R,T,P)$(PRC_REFIT(RP,P)<0) = NO);
+  LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<0, OBJ_SUMSI(R,T,P,K)=NO));
+  OPTION OBJ_SUMS <= OBJ_SUMSI;
 
 * Salvaging of Decommissioning
   LOOP(OBJ_SUMIII(OBJ_SUMS(R,V,P),LL,K,Y), OBJ_SUMS3(R,V,P) = YES);
@@ -72,8 +72,8 @@ $IF %ETL% == 'YES'     SUM((OBJ_SUMII(R,V,P,AGE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL
 *===============================================================================
 *GG* only if decommissioning lifetime provided by user
   COR_SALVD(RTP(R,V,P),CUR)$OBJ_DCOST(R,V,P,CUR) =
-                   (((1-1/(1+NCAP_DRATE(R,V,P)))*(1-1/(1+G_DRATE(R,V,CUR))**NCAP_DELIF(R,V,P)))/
-                    ((1-1/(1+G_DRATE(R,V,CUR)))*(1-1/(1+NCAP_DRATE(R,V,P))**NCAP_DELIF(R,V,P)))
+                   (((1-1/(1+NCAP_DRATE(R,V,P)))*(1-1/(1+OBJ_RFR(R,V,CUR))**NCAP_DELIF(R,V,P)))/
+                    ((1-1/(1+OBJ_RFR(R,V,CUR)))*(1-1/(1+NCAP_DRATE(R,V,P))**NCAP_DELIF(R,V,P)))
                     )$(NCAP_DRATE(R,V,P) GT 0) + 1$(NCAP_DRATE(R,V,P) EQ 0);
   OBJ_CRFD(RTP(R,V,P),CUR)$OBJ_DCOST(R,V,P,CUR) = COR_SALVD(R,V,P,CUR) * (1-(1/(1+G_DRATE(R,V,CUR)))) / (1-(1+G_DRATE(R,V,CUR))**(-ROUND(NCAP_%DECLIF%(R,V,P))));
 *------------------------------------------------------------------------------

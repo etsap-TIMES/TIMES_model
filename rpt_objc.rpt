@@ -79,7 +79,7 @@ $LABEL SALVAGE
   OPTION CLEAR=PAR_OBJSAL,CLEAR=COEF_RTP;
   PAR_OBJSAL(RTP(R,T,P),CUR)$RDCUR(R,CUR) =
 *   Cases I - Investment Cost and II - Taxes/Subsidies
-    SUM(OBJ_SUMS(R,T,P), OBJSCC(R,T,P,CUR)) * OBJ_DCEOH(R,CUR) +
+    SUM(OBJ_SUMS(R,T,P), OBJSCC(R,T,P,CUR)) * OBJ_DCEOH(R,CUR) * (1+SUM(NCAP_YES(RTP),VAR_SCAP.L(R,T,'0',P)/RTP_CAPVL(RTP)-1)$RVPRL(RTP)) +
 *   Cases III - Decommissioning
     SUM(OBJ_SUMS3(R,T,P), SALV_DEC(R,T,P,CUR)) * OBJ_DCEOH(R,CUR) +
 *   Cases IV - Decommissioning Surveillance

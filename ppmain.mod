@@ -460,6 +460,8 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
   OPTION CLEAR=PRC_YMAX,CLEAR=RCS,CLEAR=PRC_ACT,CLEAR=TRACKC,CLEAR=TRACKP,CLEAR=TRACKPC;
 
 *-----------------------------------------------------------------------------
+* adjustment of life and construction lead if below threshold
+*-----------------------------------------------------------------------------
 * NCAP_TLIFE duration check
   LOOP(SAMEAS(AGE,'1'), OPTION CLEAR=RXX; PUTGRP = 0;
    LOOP(RTP(R,T,P)$((NOT LIFE(AGE+(NCAP_TLIFE(RTP)-.999)))$NCAP_TLIFE(RTP)),
@@ -474,13 +476,17 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'NCAP_TLIFE out of feasible range
 * set the technical lifetime if none set
    NCAP_TLIFE(RTP)$(NOT NCAP_TLIFE(RTP)) = G_TLIFE;
 *-----------------------------------------------------------------------------
-* adjustment of construction lead if below threshold
-*-----------------------------------------------------------------------------
    G_ILEDNO = (G_ILEDNO+2)%CTST%-2;
 * Adjust fractional and negative ILED if such exist (only integral ILED can be fully consistent)
-   COEF_ILED(RTP(R,V,P))$NCAP_ILED(R,V,P) = MAX(ABS(NCAP_ILED(R,V,P)),COEF_ILED(R,V,P));
-   NCAP_ILED(RTP(R,V,P))$NCAP_ILED(R,V,P) = MAX(EPS,CEIL(NCAP_ILED(R,V,P)-0.5))$(COEF_ILED(R,V,P) > MIN(D(V),NCAP_TLIFE(R,V,P))/G_ILEDNO);
+   COEF_ILED(RTP)$NCAP_ILED(RTP) = MAX(ABS(NCAP_ILED(RTP)),COEF_ILED(RTP));
+   NCAP_ILED(RTP(R,V,P))$NCAP_ILED(RTP) = MAX(EPS,CEIL(NCAP_ILED(RTP)-0.5))$(COEF_ILED(RTP) > MIN(D(V),NCAP_TLIFE(RTP))/G_ILEDNO);
    NCAP_ILED(RTP(R,PHYR,P)) = NCAP_ILED(RTP)+COEF_RTP(RTP)+EPS;
+* Checks for host processes of refits
+   PARAMETER PRC_REFIT //;
+   PRC_REFIT(R,P,PRC)$PRC_REFIT(R,P,PRC)=MAX(ABS(ROUND(PRC_REFIT(R,P,PRC))),ABS(ROUND(PRC_REFIT(R,P,P))))*MOD(ROUND(PRC_REFIT(R,P,PRC)),2);
+   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<-3,NCAP_ELIFE(RTP(R,T,P))$(NOT NCAP_ELIFE(RTP))=NCAP_TLIFE(RTP);
+      NCAP_TLIFE(RTP(R,T,P))=MAX(NCAP_TLIFE(R,T,PRC)+NCAP_ILED(R,T,PRC)-1,NCAP_TLIFE(RTP))));
+$IF NOT DEFINED PRC_RCAP LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),RTP_OFF(R,T,P)=YES);
 
 *-----------------------------------------------------------------------------
 * capacity transfer v = year of installation and thus data values where
@@ -531,10 +537,6 @@ $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP IFQ 'Inconsistent CAP_BND(UP/FX) defi
    CAP_BND(RTP,BD)$MAPVAL(CAP_BND(RTP,BD)) = 0;
 * Check whether both UP and LO bounds (then it pays to have VAR_CAP)
    RTP_VARP(RTP(R,T,P))$(CAP_BND(RTP,'UP')*CAP_BND(RTP,'LO')) = YES;
-* Check for host processes of refits
-   PARAMETER PRC_REFIT //;
-   PRC_REFIT(R,P,PRC)$PRC_REFIT(R,P,PRC)=MAX(ABS(ROUND(PRC_REFIT(R,P,PRC))),ABS(ROUND(PRC_REFIT(R,P,P))))*MOD(ROUND(PRC_REFIT(R,P,PRC)),2);
-$IF NOT DEFINED PRC_RCAP LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),RTP_OFF(R,T,P)=YES);
 
 *-----------------------------------------------------------------------------
 * turn off RTP/CPTYR if no new investment & installed capacity no longer available
@@ -634,7 +636,7 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 *-----------------------------------------------------------------------------
 
 * economic life = technical life if not provided
-    NCAP_ELIFE(RTP(R,V,P))$(NOT NCAP_ELIFE(RTP)) = NCAP_TLIFE(RTP);
+    NCAP_ELIFE(RTP)$(NOT NCAP_ELIFE(RTP)) = NCAP_TLIFE(RTP);
 * commodity release always in next year if no time provided but release
     NCAP_DLIFE(RTP(R,T,P))$((NOT NCAP_DLIFE(RTP))$SUM(RPC(R,P,C)$NCAP_OCOM(RTP,C),1)) = 1;
     NCAP_DELIF(RTP(R,T,P))$(NOT NCAP_DELIF(RTP))$= NCAP_DLIFE(RTP);
