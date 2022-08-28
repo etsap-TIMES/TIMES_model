@@ -2524,7 +2524,7 @@ prepret.dsc   : (2)
 TIMES Version 4.6.4
 -----------------------------------------------------------------------------------------
 Date: 14-Jul-2022 [AL]: Minor release
-1) Fixed small reporting bugs relater to retrofit processes
+1) Fixed small reporting bugs related to retrofit processes
 2) Improvements in retrofit and lifetime extension implementation
 
 Modified files: (reason)
@@ -2536,3 +2536,16 @@ rpt_objc.rpt  : (1)
 rptmisc.rpt   : (1)
 eqobsalv.mod  : (2)
 prepret.dsc   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.5
+-----------------------------------------------------------------------------------------
+Date: 28-Aug-2022 [AL]: Maintenance release
+1) Fixed reporting bug related to retirements when filtering off small capacity values
+2) Cosmetic fixes
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.5
+setglobs.gms  : (2)
+pp_reduce.red : (2)
+rptmisc.rpt   : (1)

@@ -89,7 +89,7 @@ $IF %1==S %1PAR_COMBALGM(%2RTC,S) $= EQG_COMBAL.L(RTC,S);
     Z=RPT_OPT('ACT','9'); IF(Z>0,%1PAR_ACTL(%2R,V,T,P,S)$((%1PAR_ACTL(%2R,V,T,P,S)<Z)$%1PAR_ACTL(%2R,V,T,P,S))=0);
     Z=RPT_OPT('CAP','9');
     IF(Z>0,%1PAR_CAPL(%2RTP)$((%1PAR_CAPL(%2RTP)<Z)$%1PAR_CAPL(%2RTP))=0;
-           %1PAR_PASTI(%2RTP(R,T,P),'¤')$((ABS(%1PAR_PASTI(%2RTP,'¤')<Z))$%1PAR_PASTI(%2RTP,'¤'))=0);
+           %1PAR_PASTI(%2RTP(R,T,P),'¤')$((ABS(%1PAR_PASTI(%2RTP,'¤'))<Z)$%1PAR_PASTI(%2RTP,'¤'))=0);
     Z=RPT_OPT('NCAP','9');IF(Z>0,%1PAR_NCAPL(%2RTP)$((%1PAR_NCAPL(%2RTP)<Z)$%1PAR_NCAPL(%2RTP))=0);
     Z=RPT_OPT('FLO','9');
     IF(Z>0,%1F_OUT(%2R,V,T,P,C,S)$((ABS(%1F_OUT(%2R,V,T,P,C,S))<Z)$%1F_OUT(%2R,V,T,P,C,S)) = 0;

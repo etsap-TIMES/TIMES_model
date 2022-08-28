@@ -5,11 +5,6 @@
 *-----------------------------------------------------------------------------
 * Reduction of model size
 *-----------------------------------------------------------------------------
-* Set for FLO_FUNC/FLO_SUM based substitution
- SET RPCG_PTRAN(R,P,COM,COM,CG,CG) //;
- SET RP_CGG(REG,PRC,C,CG,CG);
- SET OBJ_ICUR(REG,ALLYEAR,P,CUR);
-
 * when no reduction all processes have capacity variables and activity equations
  PRC_CAP(RP)     = YES;
  PRC_ACT(RP)     = RP_STD(RP)+RP_IRE(RP);
@@ -18,49 +13,48 @@ $SETGLOBAL CAL_RED 'cal_nored.red'
 * skip reduction algorithm by setting REDUCE to NO in *run file
 $IF %REDUCE% == NO $GOTO REDDONE
 
-*------------------------------------------
+*-----------------------------------------------------------------------------
 * limiting the number of capacity variables
-*------------------------------------------
+*-----------------------------------------------------------------------------
 * determining processes that need capacity variables
-* [AL] Changed checks to faster scanning loops
-PRC_CAP(RP(R,P)) = NO;
-LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'CAP',P),  PRC_CAP(R,P) = YES);
-LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'NCAP',P), PRC_CAP(R,P) = YES);
-LOOP((RTP(R,PYR,P))$NCAP_PASTI(R,PYR,P),    PRC_CAP(R,P) = YES);
-LOOP((RTP(R,T,P),BD)$CAP_BND(R,T,P,BD),     PRC_CAP(R,P) = YES);
-LOOP((RTP(R,T,P),BD)$NCAP_BND(R,T,P,BD),    PRC_CAP(R,P) = YES);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_COST(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_FOM(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_ISUB(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_ITAX(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_FSUB(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_FTAX(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_DCOST(R,LL,P,CUR) NE 0);
-OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_DLAGC(R,LL,P,CUR) NE 0);
-LOOP(OBJ_ICUR(R,LL,P,CUR), PRC_CAP(R,P) = YES);
+  PRC_CAP(RP(R,P)) = NO;
+  LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'CAP',P),  PRC_CAP(R,P) = YES);
+  LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'NCAP',P), PRC_CAP(R,P) = YES);
+  LOOP((RTP(R,PYR,P))$NCAP_PASTI(R,PYR,P),    PRC_CAP(R,P) = YES);
+  LOOP((RTP(R,T,P),BD)$CAP_BND(R,T,P,BD),     PRC_CAP(R,P) = YES);
+  LOOP((RTP(R,T,P),BD)$NCAP_BND(R,T,P,BD),    PRC_CAP(R,P) = YES);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_COST(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_FOM(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_ISUB(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_ITAX(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_FSUB(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_FTAX(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_DCOST(R,LL,P,CUR) NE 0);
+  OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_DLAGC(R,LL,P,CUR) NE 0);
+  LOOP(OBJ_ICUR(R,LL,P,CUR), PRC_CAP(R,P) = YES);
 *[UR]: added checks for fixed availabilities
-RTPS_BD(R,T--ORD(T),P,S--ORD(S),'FX') $= NCAP_AF(R,T,P,S,'FX');
-RTPS_BD(R,T--ORD(T),P,S--ORD(S),'FX') $= NCAP_AFS(R,T,P,S,'FX');
-RTPS_BD(R,T--ORD(T),P,ANNUAL,'FX')    $= NCAP_AFA(R,T,P,'FX');
-LOOP(RTPS_BD(R,T,P,S,BD), PRC_CAP(R,P) = YES);
-OPTION CLEAR=OBJ_ICUR,CLEAR=RTPS_BD;
+  RTPS_BD(R,T--ORD(T),P,S--ORD(S),'FX') $= NCAP_AF(R,T,P,S,'FX');
+  RTPS_BD(R,T--ORD(T),P,S--ORD(S),'FX') $= NCAP_AFS(R,T,P,S,'FX');
+  RTPS_BD(R,T--ORD(T),P,ANNUAL,'FX')    $= NCAP_AFA(R,T,P,'FX');
+  LOOP(RTPS_BD(R,T,P,S,BD), PRC_CAP(R,P) = YES);
+  OPTION CLEAR=OBJ_ICUR,CLEAR=RTPS_BD;
 $IF '%ETL%'==YES PRC_CAP(R,P)$SEG(R,P) = YES;
 
 *--------------------------------------------------------------------------------------------
 * Occurence of emission flow variable can be replaced by term (source flow x emission factor)
 *--------------------------------------------------------------------------------------------
-OPTION CLEAR=TRACKPC;
+  OPTION CLEAR=TRACKPC;
 * Get emission commodity candidates:
-TRACKPC(RP_STD(R,P),C)$(TOP(R,P,C,'OUT')$ENV(R,C)) = YES;
-TRACKPC(RPC_PG) = NO;
+  TRACKPC(RP_STD(R,P),C)$(TOP(R,P,C,'OUT')$ENV(R,C)) = YES;
+  TRACKPC(RPC_PG) = NO;
 
 * Select only those emissions that have been modeled with FLO_SUM on input flows
-OPTION FSCK <= FLO_SUM;
-FS_EMIS(FSCK(R,P,CG,C,COM))$((COM_GMAP(R,CG,C)$TOP(R,P,C,'IN'))$TRACKPC(R,P,COM)) = YES;
-LOOP(FS_EMIS(R,P,CG,C,COM), RPC_EMIS(R,P,COM) = YES);
-OPTION CLEAR=TRACKPC;
+  OPTION FSCK <= FLO_SUM;
+  FS_EMIS(FSCK(R,P,CG,C,COM))$((COM_GMAP(R,CG,C)$TOP(R,P,C,'IN'))$TRACKPC(R,P,COM)) = YES;
+  LOOP(FS_EMIS(R,P,CG,C,COM), RPC_EMIS(R,P,COM) = YES);
+  OPTION CLEAR=TRACKPC;
 *------------------------------------------------------------------------------------------
-$IF NOT %REDUCE% == 'YES' $GOTO REDDONE
+$IF NOT %REDUCE% == YES $GOTO REDDONE
 $SETGLOBAL CAL_RED 'cal_red.red'
 *--------------------------------------------------------------
 * only 1 commodity in PCG
@@ -78,12 +72,12 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 * Process without capacity variable and without activity related parameters
 * does not need activity variable
 *--------------------------------------------------------------------------------------------
- NO_ACT(PRC_ACT(R,P))$(NOT PRC_CAP(R,P)) = YES;
- LOOP((RTP(R,T,P),S,BDUPX)$ACT_BND(R,T,P,S,BDUPX), NO_ACT(R,P) = NO;);
- LOOP((RTP(R,T,P),S)$((ACT_BND(R,T,P,S,'LO') GT 0)$ACT_BND(R,T,P,S,'LO')), NO_ACT(R,P) = NO;);
- LOOP((R,DM_YEAR,P,CUR)$ACT_COST(R,DM_YEAR,P,CUR), NO_ACT(R,P) = NO;);
- LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'ACT',P), NO_ACT(R,P) = NO;);
- NO_ACT(R,P)$SUM(RPC_CUMFLO(R,P,%PGPRIM%,YEAR,LL),1) = NO;
+  NO_ACT(PRC_ACT(R,P))$(NOT PRC_CAP(R,P)) = YES;
+  LOOP((RTP(R,T,P),S,BDUPX)$ACT_BND(R,T,P,S,BDUPX), NO_ACT(R,P) = NO);
+  LOOP((RTP(R,T,P),S)$((ACT_BND(R,T,P,S,'LO')>0)$ACT_BND(R,T,P,S,'LO')), NO_ACT(R,P) = NO);
+  LOOP((R,DM_YEAR,P,CUR)$ACT_COST(R,DM_YEAR,P,CUR), NO_ACT(R,P) = NO);
+  LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'ACT',P), NO_ACT(R,P) = NO);
+  NO_ACT(R,P)$SUM(RPC_CUMFLO(R,P,%PGPRIM%,YEAR,LL),1) = NO;
 
 * Remove activity equation from processes that didn't have activity attributes
   PRC_ACT(NO_ACT) = NO;
@@ -101,7 +95,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
   CG_GRP(R,P,CG,CG2)$(SUM(RPC(R,P,C)$COM_GMAP(R,CG,C),1) NE 1) = NO;
   CG_GRP(R,P,CG1,CG)$(SUM(RPC(RP_PGACT(R,P),C)$COM_GMAP(R,CG,C),1) NE 1) = NO;
   RPCG_PTRAN(RPC(R,P,C),COM,CG1,CG2)$((COM_GMAP(R,CG1,C)*RPC(R,P,COM)*COM_GMAP(R,CG2,COM))$CG_GRP(R,P,CG1,CG2)) = YES;
-* [AL] Ensure that possible reverse ordering due to FLO_SUM is taken into account:
+* Ensure that possible reverse ordering due to FLO_SUM is taken into account
   LOOP(FSCK(R,P,CG1,C,CG2)$CG_GRP(R,P,CG2,CG1),RPCG_PTRAN(R,P,C,COM,CG1,CG2)$COM_GMAP(R,CG2,COM) = YES);
   RPCG_PTRAN(R,P,C,COM,CG1,CG2)$(NOT (RPC_ACT(R,P,C)+RPC_ACT(R,P,COM))) = NO;
 
@@ -118,7 +112,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 
 * Add to RPCC_FFUNC all the CG1-CG2 PTRANS equations that are to be eliminated:
   RPCG_PTRAN(R,P,C,COM,CG1,CG2)$(NOT (RPC_FFUNC(R,P,C)+RPC_FFUNC(R,P,COM))) = NO;
-  LOOP(RPCG_PTRAN(R,P,C,COM,CG1,CG2), RPCC_FFUNC(R,P,CG1,CG2) = YES;);
+  LOOP(RPCG_PTRAN(R,P,C,COM,CG1,CG2), RPCC_FFUNC(R,P,CG1,CG2) = YES);
 
   OPTION CLEAR=CG_GRP,CLEAR=RP_CGG;
 *--------------------------------------------------------------------------------------------
@@ -143,7 +137,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
   LOOP(RTPS_OFF(R,T,P,S),IF(RP_STD(R,P),RTCS_SING(R,T,C,S,IO)$TOP(R,P,C,IO) = YES;
                                    ELSE RTCS_SING(R,T,C,S,'OUT')$RPC_IRE(R,P,C,'IMP') = YES));
 * Track commodities which are turned off by some process: by IO only:
-  LOOP(RTCS_SING(R,T,C,S,IO),RXX(R,C,IO) = YES;);
+  LOOP(RTCS_SING(R,T,C,S,IO),RXX(R,C,IO) = YES);
   RXX(ENV,'IN') = NO; RXX(DEM,'IN') = NO; RXX(R,C,'IN')$RC_AGP(R,C,'LO') = NO;
   LOOP((R,T,COM,C)$(RXX(R,C,'OUT')$COM_AGG(R,T,COM,C)),TRACKC(R,C) = YES);
   RXX(TRACKC,'OUT') = NO;

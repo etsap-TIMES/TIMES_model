@@ -40,7 +40,8 @@ $ LABEL SYSD
   SET MI_DMAS(REG,COM,COM)          'Micro aggregation map' //;
 
 * currency
-  SET RDCUR(REG,CUR)            'Discounted currencies by region';
+  SET RDCUR(REG,CUR)              'Discounted currencies by region';
+  SET OBJ_ICUR(REG,ALLYEAR,P,CUR) 'Capacity-related cost indicator';
 
 * commodity types (basic)
   SET DEM(REG,COM)              'Demand commodities'                  //;
@@ -135,6 +136,7 @@ $ LABEL SYSD
   SET RP_PRC(R,P);
   SET RP_GRP(REG,PRC,CG);
   SET RP_CCG(REG,PRC,C,CG);
+  SET RP_CGG(REG,PRC,C,CG,CG);
   SET TRACKC(R,C);
   SET TRACKP(R,P);
   SET TRACKPC(R,P,C);
@@ -269,6 +271,7 @@ $LABEL RESTOBJ
   SET  PRC_CAP(REG,PRC)               'Process requiring capacity variable'                 //;
   SET  PRC_ACT(REG,PRC)               'Process requiring activity equation'                 //;
   SET  PRC_TS2(REG,PRC,TS)            'Alias for PRC_TS of processes with RPC_ACT'          //;
+  SET  RPCG_PTRAN(R,P,COM,COM,CG,CG)  'Set for FLO_FUNC/FLO_SUM based substitution'         //;
   ALIAS(CG3,CG4,COM_GRP);
 
 *------------------------------------------------------------------------------
