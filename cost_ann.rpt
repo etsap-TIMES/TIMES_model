@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -14,7 +14,7 @@
 *=============================================================================*
   OBJ_YES(NCAP_YES)=YES;
   OPTION CLEAR=COEF_CAP; CNT=1$ROUND(RPT_OPT('OBJ','2'));
-$IF DEFINED PRC_RCAP COEF_CAP(RTP_CPTYR(R,V,T,P))$(NCAP_YES(R,V,P)$PRC_RCAP(R,P)) = VAR_SCAP.L(R,V,T,P)/RTP_CAPVL(R,V,P);
+  COEF_CAP(RTP_CPTYR(R,V,T,P))$(NCAP_YES(R,V,P)$PRC_RCAP(R,P)) = VAR_SCAP.L(R,V,T,P)/RTP_CAPVL(R,V,P);
 * Levelized annual investment and fixed costs
   IF(CNT, OPTION CLEAR=PAR_OBJCAP;
     PAR_OBJCAP(OBJ_ICUR(NCAP_YES(R,V,P),CUR)) = SUM(RTP_CPTYR(R,V,T,P),COEF_CPT(R,V,T,P)*OBJ_PVT(R,T,CUR));
@@ -104,11 +104,11 @@ LOOP(OBJ_FCUR(R,FIL(V),P,CUR)$PRC_RESID(R,'0',P),
                                                                           OBJ_FSB(R,V,P,CUR) * (1+SUM(RTP_SHAPE(R,V,P,'3',J,JJ),MULTI(JJ,T)-1)));
 );
 
-$IF NOT DEFINED PRC_RCAP $GOTO RETDONE
- COEF_CAP(RTP_CPTYR(R,V,T,P))$COEF_CAP(R,V,T,P) = 1-COEF_CAP(R,V,T,P)+EPS;
- %1CST_FIXC(%2RTP_CPTYR(R,V,T,P)) $= COEF_CAP(R,V,T,P)*%1CST_FIXC(%2R,V,T,P);
- %1CST_FIXX(%2RTP_CPTYR(R,V,T,P)) $= COEF_CAP(R,V,T,P)*%1CST_FIXX(%2R,V,T,P);
-$LABEL RETDONE
+ IF(CARD(PRC_RCAP),
+  COEF_CAP(RTP_CPTYR(R,V,T,P))$COEF_CAP(R,V,T,P) = 1-COEF_CAP(R,V,T,P)+EPS;
+  %1CST_FIXC(%2RTP_CPTYR(R,V,T,P)) $= COEF_CAP(R,V,T,P)*%1CST_FIXC(%2R,V,T,P);
+  %1CST_FIXX(%2RTP_CPTYR(R,V,T,P)) $= COEF_CAP(R,V,T,P)*%1CST_FIXX(%2R,V,T,P);
+ );
  NCAP_YES(OBJ_YES)=YES;
 
 *-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -44,7 +44,8 @@ $IF '%VALIDATE%'==YES COEF_CPT(RTP_CPTYR(R,T,T,P)) = 1;
   TRACKP(RP)$(NOT PRC_CAP(RP)) = NO;
   TRACKP(RP)$RP_UPL(RP,'FX') = NO;
   TRACKP(PRC_CAP(PRC_VINT)) = YES;
-$ BATINCLUDE pp_shapr.%1 NCAP_AF (R,V,P,S,BD) "TRACKP(R,P)*PRC_TS(R,P,S)" COEF_AF(RTP_CPTYR(R,V,T,P),S,BD) NCAP_AFM(R,V,P)
+  NCAP_AFBX(RTP(R,V,P),BD)$(RP_AFB(R,P,BD)>0) $= NCAP_AFX(RTP);
+$ BATINCLUDE pp_shapr.%1 NCAP_AF (R,V,P,S,BD) "TRACKP(R,P)*PRC_TS(R,P,S)" COEF_AF(RTP_CPTYR(R,V,T,P),S,BD) NCAP_AFM(R,V,P) B
 
   TRACKP(PRC_CAP(R,P)) = (NOT TRACKP(R,P));
   COEF_AF(RTP_CPTYR(R,V,T,P),S,BD)$(PRC_TS(R,P,S)$TRACKP(R,P)) $= NCAP_AF(R,T,P,S,BD);
@@ -52,11 +53,11 @@ $ BATINCLUDE pp_shapr.%1 NCAP_AF (R,V,P,S,BD) "TRACKP(R,P)*PRC_TS(R,P,S)" COEF_A
 
 *V07_2 add seasonal AF in addition to process tslvl
   OPTION RP_PRC < NCAP_AFSM; NCAP_AFSM(R,V,P)$(NOT RP_PRC(R,P)) $= NCAP_AFM(R,V,P);
-  NCAP_AFSX(RTP)$NCAP_AFSM(RTP) = NCAP_AFSX(RTP)+EPS;
-  RTPS_BD(RTP(R,V,P),S,BD)$((PRC_VINT(R,P)+ANNUAL(S)+YES$NCAP_AFSX(R,V,P))$NCAP_AFS(R,V,P,S,BD)) = YES;
-  OPTION RP_PRC<NCAP_AFSX; NCAP_AFSX(R,V,P)$SUM(RTPS_BD(R,V,P,S,BD),1) $= NCAP_AFX(R,V,P)$(NOT RP_PRC(R,P));
+  NCAP_AFSX(RTP,BD)$NCAP_AFSM(RTP) = NCAP_AFSX(RTP,BD)+EPS;
+  RTPS_BD(RTP(R,V,P),S,BD)$((PRC_VINT(R,P)+ANNUAL(S)+YES$NCAP_AFSX(RTP,BD))$NCAP_AFS(RTP,S,BD)) = YES;
+  OPTION RP_PRC<NCAP_AFSX; NCAP_AFSX(R,V,P,BD)$SUM(RTPS_BD(R,V,P,S,BD),1) $= NCAP_AFX(R,V,P)$(NOT RP_PRC(R,P));
 $ BATINCLUDE pp_shapr.%1 NCAP_AFS (R,V,P,S,BD) "RTPS_BD(R,V,P,S,BD)" COEF_AF(RTP_CPTYR(R,V,T,P),S,BD) NCAP_AFSM(R,V,P)
 
   COEF_AF(RTP_CPTYR(R,V,T,P),S,BD)$(NOT RTPS_BD(R,V,P,S,BD)) $= NCAP_AFS(R,T,P,S,BD)$PRC_CAP(R,P);
   COEF_AF(RTP_CPTYR(R,V,T,P),ANNUAL,BDNEQ)$NCAP_AFA(R,T,P,'FX') = 0;
-  OPTION CLEAR=TRACKP,CLEAR=RTPS_BD,CLEAR=NCAP_AFSX;
+  OPTION CLEAR=TRACKP,CLEAR=RTPS_BD,CLEAR=NCAP_AFBX;

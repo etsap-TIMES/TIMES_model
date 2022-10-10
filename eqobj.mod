@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -36,7 +36,7 @@
   SET OBJ_SUMS(R,ALLYEAR,P)   //;
   SET OBJ_SUMS3(R,ALLYEAR,P)  //;
   SET OBJ_SUMSI(R,ALLYEAR,P,ALLYEAR) //;
-$IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc EQOBJ
+$IF DECLARED VNRET $BATINCLUDE prepret.dsc EQOBJ
 
 *===============================================================================
 * Investment Cost, Tax/Subsidy and Decomissioning components

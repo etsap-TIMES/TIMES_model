@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -31,7 +31,7 @@
   TM_GROWV(R,T)  = TM_GR(R,T);
   PAR_GRGDP(R,T) = TM_GR(R,T);
   PAR_MC(R,T,DM)$TM_DEM(R,T,DM) = TM_DMC(R,T,DM);
-  MSAREG(MR)   = YES;
+  MREG(MR)     = YES;
   TM_NWT(MR)   = 1;
   TM_HDF(MR,T) = 1;
   VAR_NTX.FX(MR,PP)=0;
@@ -41,8 +41,8 @@
   LOOP(NITER$DOITER,
 $   INCLUDE ddfupd.msa
     IF(ORD(NITER)<5,
-      LOOP(MSAREG, MR(R)= NO; MR(MSAREG)=YES;
-        SOLVE MCE MAXIMIZING VAR_UTIL USING NLP); MR(MSAREG)=YES;
+      LOOP(MREG, MR(R)= NO; MR(R(MREG))=YES;
+        SOLVE MCE MAXIMIZING VAR_UTIL USING NLP); MR(R(MREG))=YES;
     ELSE SOLVE MCE MAXIMIZING VAR_UTIL USING NLP);
 
     TM_GDP(R,T) = VAR_C.L(R,T) + VAR_INV.L(R,T);

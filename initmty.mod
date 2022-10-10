@@ -94,7 +94,7 @@ $ONEMPTY
   SET MILESTONYR(ALLYEAR)             'Projection years for which model to be run' //;
       ALIAS(MILESTONYR,T,TT);
   SET DATAYEAR(ALLYEAR)               'Years for which user data is provided' //;
-  SET PASTYEAR(ALLYEAR)               'The years before 1st MILESTONYR for which PASTI needs to be handled' //;
+  SET PASTYEAR(ALLYEAR)               'Years before 1st MILESTONYR for which PASTI needs to be handled' //;
   SET MODLYEAR(ALLYEAR)               'Years for which the model is to be run (MILESTONYR+PASTYEAR)' //;
       ALIAS(TSLVL,TSL);
 
@@ -114,7 +114,7 @@ $ONEMPTY
   SET PRC_STGIPS(REG,PRC,COM)         'Storage process and stored commodity for inter-period storage' //;
 
 * user constraints
-  SET UC_N(*)                         'Names of all manual constraints'             //;
+  SET UC_N(*)                         'Names of all manual constraints'     / OBJVAR /;
   SET UC_T_SUCC(ALL_R,UC_N,ALLYEAR)   'Specification of periods, if UC_DYN=SUCC'    //;
   SET UC_T_SUM(ALL_R,UC_N,ALLYEAR)    'Specification of periods, if UC_DYN=SEVERAL' //;
   SET UC_T_EACH(ALL_R,UC_N,ALLYEAR)   'Specification of periods, if UC_DYN=EACH'    //;
@@ -164,6 +164,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   PARAMETER NCAP_AFA(REG,ALLYEAR,PRC,BD)        'Annual Availability of capacity'         //;
   PARAMETER NCAP_AFS(REG,ALLYEAR,PRC,TS,BD)     'Seasonal Availability of capacity'       //;
   PARAMETER NCAP_AFX(R,ALLYEAR,P)               'Change in capacity availability'         //;
+  PARAMETER NCAP_AFSX(R,ALLYEAR,P,BD)           'Change in seasonal capacity availability'//;
   PARAMETER NCAP_AFM(R,ALLYEAR,P)               'Pointer to availity change multiplier'   //;
   PARAMETER NCAP_BND(REG,ALLYEAR,PRC,LIM)       'Bound on overall capacity in a period'   //;
   PARAMETER NCAP_BPME(REG,ALLYEAR,PRC)          'Back pressure mode efficiency (or total eff.)' //;
@@ -220,7 +221,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   PARAMETER COM_BNDPRD(REG,ALLYEAR,COM,TS,LIM)      'Limit on production of a commodity'       //;
   PARAMETER COM_CUMNET(REG,BOHYEAR,EOHYEAR,COM,LIM) 'Cumulative net bound on commodity (e.g. emissions)' //;
   PARAMETER COM_CUMPRD(REG,BOHYEAR,EOHYEAR,COM,LIM) 'Cumulative limit on production of a commodity' //;
-  PARAMETER COM_CSTNET(REG,ALLYEAR,COM,TS,CUR)      'Cost on Net of commodity (e.g., emissions tax)' //;
+  PARAMETER COM_CSTNET(REG,ALLYEAR,COM,TS,CUR)      'Cost on Net of commodity (e.g. emissions tax)' //;
   PARAMETER COM_CSTPRD(REG,ALLYEAR,COM,TS,CUR)      'Cost on production of a commodity'        //;
   PARAMETER COM_FR(REG,ALLYEAR,COM,TS)              'Seasonal distribution of a commodity'     //;
   PARAMETER COM_IE(REG,ALLYEAR,COM,TS)              'Seasonal efficiency of commodity'         //;

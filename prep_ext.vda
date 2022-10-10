@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -67,14 +67,6 @@ $IFI %WAVER%==YES PRC_YMAX(R,P)=Z+1$(MY_F>0); IF(MY_F=0, PRC_RESID(R,LL+(Z-MIYR_
 * INF-QA override
   IFQ$SUM(COM_TYPE(CG(R)),1)=0;
   COM_LIM(RC,BDNEQ)$COM_LIM(RC,'FX')=NO;
-*-----------------------------------------------------------------------------
-* Have NCAP_AFSX / NCAP_AFSM by control option
-$SET X1 'FLOOR(NCAP_AF' SET X2 R,'0',P)/1000
-  FIL(LL)=V(LL)+LASTLL(LL);
-  NCAP_AFSX(R,FIL(LL),P) $= NCAP_AFX(R,LL,P)$(%X1%X(%X2%) GT 1$V(LL));
-  NCAP_AFX(R,LL,P)$((%X1%X(%X2%) EQ 2)$NCAP_AFX(R,'0',P)) = 0;
-  NCAP_AFSM(R,FIL(LL),P) $= NCAP_AFM(R,LL,P)$(%X1%M(%X2%) GT 1$V(LL));
-  NCAP_AFM(R,LL,P)$((%X1%M(%X2%) EQ 2)$NCAP_AFM(R,'0',P)) = 0;
 *-----------------------------------------------------------------------------
   ACT_MINLD(RTP) $= ACT_UPS(RTP,'ANNUAL','FX');
 * Move non-standard share parameters to dedicated parameter

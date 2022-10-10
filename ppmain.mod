@@ -482,11 +482,11 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'NCAP_TLIFE out of feasible range
    NCAP_ILED(RTP(R,V,P))$NCAP_ILED(RTP) = MAX(EPS,CEIL(NCAP_ILED(RTP)-0.5))$(COEF_ILED(RTP) > MIN(D(V),NCAP_TLIFE(RTP))/G_ILEDNO);
    NCAP_ILED(RTP(R,PHYR,P)) = NCAP_ILED(RTP)+COEF_RTP(RTP)+EPS;
 * Checks for host processes of refits
-   PARAMETER PRC_REFIT //;
+   SET PRC_RCAP //; PARAMETER PRC_REFIT //;
    PRC_REFIT(R,P,PRC)$PRC_REFIT(R,P,PRC)=MAX(ABS(ROUND(PRC_REFIT(R,P,PRC))),ABS(ROUND(PRC_REFIT(R,P,P))))*MOD(ROUND(PRC_REFIT(R,P,PRC)),2);
-   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<-3,NCAP_ELIFE(RTP(R,T,P))$(NOT NCAP_ELIFE(RTP))=NCAP_TLIFE(RTP);
+   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<-3,NCAP_ELIFE(RTP(R,T,P))$(NCAP_ELIFE(RTP)<1)=NCAP_TLIFE(RTP);
       NCAP_TLIFE(RTP(R,T,P))=MAX(NCAP_TLIFE(R,T,PRC)+NCAP_ILED(R,T,PRC)-1,NCAP_TLIFE(RTP))));
-$IF NOT DEFINED PRC_RCAP LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),RTP_OFF(R,T,P)=YES);
+   LOOP((RP(R,PRC),P)$((NOT PRC_RCAP(RP))$PRC_REFIT(RP,P)),RTP_OFF(R,T,P)=YES);
 
 *-----------------------------------------------------------------------------
 * capacity transfer v = year of installation and thus data values where
@@ -524,8 +524,8 @@ $IF %VALIDATE% == YES    RTP_CPTYR(R,T,T,P)$RTP(R,T,P) = YES;
 * Migrate CAP_BND + QA check
    OPTION CLEAR=RVP; PUTGRP=0;
    CAP_BND(RTP,BDNEQ) $= CAP_BND(RTP,'FX');
-   LOOP((RTP(R,T,P),L('UP'))$((CAP_BND(RTP,L)<=PRC_RESID(RTP))$CAP_BND(RTP,L)), Z=PRC_RESID(RTP);
-$IF DEFINED PRC_RCAP Z$PRC_RCAP(R,P)=0;
+   LOOP((RTP(R,T,P),L('UP'))$((CAP_BND(RTP,L)<=PRC_RESID(RTP))$CAP_BND(RTP,L)),
+    IF(PRC_RCAP(R,P), Z=0; ELSE Z=PRC_RESID(RTP));
     IF(Z, F=CAP_BND(RTP,L); CAP_BND(RTP,L)$(IFQ<10)=EPS; F$(0**(IFQ+F+1$RP_FLO(R,P)))=Z;
      IF(F<Z, RCAP_BND(RTP,'N')=Z;
 $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP IFQ 'Inconsistent CAP_BND(UP/FX) defined for process capacity'
@@ -537,6 +537,10 @@ $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP IFQ 'Inconsistent CAP_BND(UP/FX) defi
    CAP_BND(RTP,BD)$MAPVAL(CAP_BND(RTP,BD)) = 0;
 * Check whether both UP and LO bounds (then it pays to have VAR_CAP)
    RTP_VARP(RTP(R,T,P))$(CAP_BND(RTP,'UP')*CAP_BND(RTP,'LO')) = YES;
+   PUTGRP=0;
+   LOOP(RTP(RTP_VARP)$((CAP_BND(RTP,'LO')>CAP_BND(RTP,'UP'))$CAP_BND(RTP,'UP')),
+$    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 1 'Inconsistent CAP_BND(UP/LO/FX) defined for process capacity'
+     PUT ' WARNING       - Lower bound set equal to upper bound,   R.T.P= ',RTP.TE(RTP));
 
 *-----------------------------------------------------------------------------
 * turn off RTP/CPTYR if no new investment & installed capacity no longer available
@@ -686,14 +690,14 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 * commodity based costs, subsidies and taxes
 * elastic demands base price, quantity, elasticity and steps
 
-$   BATINCLUDE pp_lvlfc.mod COM_IE     'C' COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C)
-$   BATINCLUDE pp_lvlfc.mod COM_FR     'C' COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C) 1
-$   BATINCLUDE pp_lvlfc.mod COM_PKFLX  'C' COM_TS '' ",'0','0','0','0'" ALL_TS T YES
-$   BATINCLUDE pp_lvlfc.mod OBJ_COMNT  'C' COM_TS ',COSTYPE,CUR' ",'0','0'" ALL_TS DATAYEAR RC(R,C)
-$   BATINCLUDE pp_lvlfc.mod OBJ_COMPD  'C' COM_TS ',COSTYPE,CUR' ",'0','0'" ALL_TS DATAYEAR RC(R,C)
-$   BATINCLUDE pp_lvlfc.mod COM_ELAST  'C' COM_TS ',BD' ",'0','0','0'"  ALL_TS DATAYEAR RC(R,C)
-$   BATINCLUDE pp_lvlfc.mod COM_BPRICE 'C' COM_TS ',CUR' ",'0','0','0'" ALL_TS DATAYEAR RC(R,C)
-$   BATINCLUDE pp_lvlfc.mod COM_BQTY   'COM' COM_TS '' ",'0','0','0','0','0'" ALL_TS '' RC(R,COM) 1
+$   BATINCLUDE pp_lvlfc.mod COM_IE     C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C)
+$   BATINCLUDE pp_lvlfc.mod COM_FR     C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C) 1
+$   BATINCLUDE pp_lvlfc.mod COM_PKFLX  C COM_TS '' ",'0','0','0','0'" ALL_TS T YES
+$   BATINCLUDE pp_lvlfc.mod OBJ_COMNT  C COM_TS ',COSTYPE,CUR' ",'0','0'" ALL_TS DATAYEAR RC(R,C)
+$   BATINCLUDE pp_lvlfc.mod OBJ_COMPD  C COM_TS ',COSTYPE,CUR' ",'0','0'" ALL_TS DATAYEAR RC(R,C)
+$   BATINCLUDE pp_lvlfc.mod COM_ELAST  C COM_TS ',BD' ",'0','0','0'"  ALL_TS DATAYEAR RC(R,C)
+$   BATINCLUDE pp_lvlfc.mod COM_BPRICE C COM_TS ',CUR' ",'0','0','0'" ALL_TS DATAYEAR RC(R,C)
+$   BATINCLUDE pp_lvlfc.mod COM_BQTY   C COM_TS '' ",'0','0','0','0','0'" ALL_TS '' RC(R,C) 1
 
 * Defaults for infrastructure efficiency and seasonal fraction
     OPTION RCS < COM_IE;
@@ -891,7 +895,7 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Unsupported diverging trade topo
     ELSE F = SUM((RTP(R,T,P),S)$IRE_FLO(R,T,P,C,R,COM,S),1);
       LOOP((REG,COM1)$(TOP_IRE(R,C,REG,COM1,P)$(NOT F)),
         F = SUM((RTP(R,T,P),S)$IRE_FLO(R,T,P,C,REG,COM1,S),1);
-        IF(F, IRE_FLO(RTP(R,V,P),C,R,COM,S)$RPCS_VAR(R,P,COM,S) = IRE_FLO(R,V,P,C,REG,COM1,S);))));
+        IF(F, IRE_FLO(RTP(R,V,P),C,R,COM,S)$RPCS_VAR(R,P,COM,S) = IRE_FLO(R,V,P,C,REG,COM1,S)))));
 
 * Set standard EQIRE control for all imports other than from marketplace region
   LOOP(TOP_IRE(R,C,REG,COM,P)$RPC_MARKET(R,P,C,'EXP'),IF(NOT SAMEAS(R,REG),TRACKPC(REG,P,COM) = YES));
@@ -1100,13 +1104,13 @@ $ BATINCLUDE pp_lvlfc.mod STG_SIFT 'P,C' RPCS_VAR '' ",'0','0','0'" ALL_TS T RTP
 * Default values
 $ BATINCLUDE prepxtra.mod UCINT
 *-----------------------------------------------------------------------------
-* Levelized RHS
+* Levelized UC_RHSRTS
   LOOP(T,UC_TSL(R,UC_N,SIDE,TSL)$UC_T_SUCC(R,UC_N,T)=NO);
-  OPTION R_UC < UC_TSL; UC_TSL(R_UC,'LHS',TSL) $= UC_TSL(R_UC,'RHS',TSL);
-  LOOP(UC_TSL(R_UC(R,UC_N),'LHS',TSL),
-    LOOP(RJLVL(J,R,TSLVL)$(ORD(TSL)>ORD(TSLVL)),
-      LOOP(TS_GROUP(R,TSLVL,TS),UC_RHSRTS(R_UC,T,S,L)$(NOT UC_RHSRTS(R_UC,T,S,L)) $= UC_RHSRTS(R_UC,T,TS,L)$RS_BELOW(R,TS,S)$TS_GROUP(R,TSL,S));
-    IF(SUM(UC_TS_EACH(R_UC,S),1),UC_RHSRTS(R_UC,T,S,L)$((NOT UC_TS_EACH(R_UC,S))$TS_GROUP(R,TSL,S))=0)));
+  OPTION R_UC<UC_TSL, MREG<R_UC;
+  UC_TSL(R_UC,'LHS',TSL) $= UC_TSL(R_UC,'RHS',TSL);
+  LOOP((RJLVL(J,R(MREG),TSLVL),TSL)$(ORD(TSL)>ORD(TSLVL)),
+    LOOP(TS_GROUP(R,TSLVL,TS),UC_RHSRTS(R_UC(R,UCN),T,S,L)$((NOT UC_RHSRTS(R_UC,T,S,L))$UC_TSL(R_UC,'LHS',TSL)) $= UC_RHSRTS(R_UC,T,TS,L)$RS_BELOW(R,TS,S)$TS_GROUP(R,TSL,S)));
+  LOOP(UC_TSL(R_UC(R,UCN),'LHS',TSL)$SUM(UC_TS_EACH(R_UC,S),1),UC_RHSRTS(R_UC,T,S,L)$((NOT UC_TS_EACH(R_UC,S))$TS_GROUP(R,TSL,S))=0);
   UC_TS_EACH(R_UC,S) = NO; UC_ATTR(R_UC,SIDE,UC_GRPTYPE,UC_NAME(TSL)) = NO;
 * Support for the obsolete
   UC_RHS(UC_N,L)$(NOT UC_RHS(UC_N,L)) $= UC_RHSS(UC_N,'ANNUAL',L);
@@ -1125,25 +1129,25 @@ $ BATINCLUDE prepxtra.mod UCINT
   OPTION CLEAR=UC_DT,UC_ON<UC_R_EACH; UC_ON(UC_R_SUM)=YES;
 * --- Set UC_TS_EACH / UC_TS_SUM defaults
   UC_DT(UC_R_SUM(R,UC_N))$((NOT SUM(UC_TS_SUM(R,UC_N,S),1))$(NOT SUM(UC_TS_EACH(R,UC_N,S),1))) = YES;
-  UC_TS_EACH(UC_DT(R,UC_N),ANNUAL)$SUM(LIM$UC_RHS(UC_N,LIM),1) = YES;
-  UC_TS_EACH(UC_DT(R,UC_N),S)$SUM((T,LIM)$UC_RHSTS(UC_N,T,S,LIM),1) = YES;
-  UC_TS_SUM(UC_DT(R,UC_N),ANNUAL)$SUM((T,LIM)$UC_RHST(UC_N,T,LIM),1) = YES;
+  UC_TS_EACH(UC_DT(R,UC_N),ANNUAL)$SUM(L$UC_RHS(UC_N,L),1) = YES;
+  UC_TS_EACH(UC_DT(R,UC_N),S)$SUM((T,L)$UC_RHSTS(UC_N,T,S,L),1) = YES;
+  UC_TS_SUM(UC_DT(R,UC_N),ANNUAL)$SUM((T,L)$UC_RHST(UC_N,T,L),1) = YES;
   UC_DT(UC_R_SUM)$(NOT UC_R_EACH(UC_R_SUM)) = NO;
   UC_DT(UC_R_EACH(R,UC_N))$((NOT SUM(UC_TS_SUM(R,UC_N,S),1))$(NOT SUM(UC_TS_EACH(R,UC_N,S),1))) = YES;
-  UC_TS_SUM(UC_DT,ANNUAL)$SUM((T,LIM)$UC_RHSRT(UC_DT,T,LIM),1) = YES;
-  UC_TS_EACH(UC_DT,ANNUAL)$SUM(LIM$UC_RHSR(UC_DT,LIM),1) = YES; UC_DT(R_UC) = NO;
-  UC_TS_EACH(UC_DT,S)$SUM((T,LIM)$UC_RHSRTS(UC_DT,T,S,LIM),1) = YES;
+  UC_TS_SUM(UC_DT,ANNUAL)$SUM((T,L)$UC_RHSRT(UC_DT,T,L),1) = YES;
+  UC_TS_EACH(UC_DT,ANNUAL)$SUM(L$UC_RHSR(UC_DT,L),1) = YES; UC_DT(R_UC) = NO;
+  UC_TS_EACH(UC_DT,S)$SUM((T,L)$UC_RHSRTS(UC_DT,T,S,L),1) = YES;
 * --- Set UC_T_EACH / UC_T_SUM defaults
 * Assume T_EACH and T_SUCC cannot be used at the same time; Let T_SUCC override T_EACH.
 * First, copy T_SUCC to T_EACH to reduce testing in what follows:
   UC_T_EACH(UC_T_SUCC) = YES; OPTION UC_DT < UC_ON;
   UC_DT(UC_DT)$SUM(UC_T_EACH(UC_DT,T),1) = NO; UC_DT(UC_DT)$SUM(UC_T_SUM(UC_DT,T),1) = NO;
-  UC_T_SUM(UC_R_SUM(UC_DT(R,UC_N)),T)$SUM(LIM$UC_RHS(UC_N,LIM),1) = YES;
-  UC_T_SUM(UC_R_EACH(UC_DT),T)$SUM(LIM$UC_RHSR(UC_DT,LIM),1) = YES;
+  UC_T_SUM(UC_R_SUM(UC_DT(R,UC_N)),T)$SUM(L$UC_RHS(UC_N,L),1) = YES;
+  UC_T_SUM(UC_R_EACH(UC_DT),T)$SUM(L$UC_RHSR(UC_DT,L),1) = YES;
   UC_T_EACH(UC_DT,T)$(NOT UC_T_SUM(UC_DT,T)) = YES;
 
 * Defaults for cumulative UCs
-  OPTION CLEAR=UC_DT;
+  OPTION CLEAR=MREG,CLEAR=UC_DT;
   LOOP(T,UC_DT(R,UC_N)$(UC_TS_EACH(R,UC_N,'ANNUAL')$UC_T_SUM(R,UC_N,T)) = YES);
   UC_TS_SUM(UC_DT,ANNUAL) = YES; UC_TS_EACH(UC_TS_SUM(R,UC_N,ANNUAL)) = NO;
   UC_DT(R,UC_N)$UC_TSL(R,UC_N,'LHS','ANNUAL') = NO;
@@ -1234,7 +1238,7 @@ SET BLE_OPR(R,COM,COM)        //;
 SET BLE_INP(R,COM,COM)        //;
 SET BLE_SPEINP(R,COM,SPE,COM) //;
 SET BLE_ENV(R,COM,COM,OPR)    //;
-PARAMETER BLE_BAL(R,ALLYEAR,COM,COM) //;
+PARAMETER BLE_BAL(R,YEAR,C,C) //;
 
 * for each refined product determine SPEcifications used from TYPE since required
 BLE_SPE(R,COM,SPE)$BL_TYPE(R,COM,SPE) = YES;

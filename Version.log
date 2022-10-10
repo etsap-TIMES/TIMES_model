@@ -2549,3 +2549,48 @@ initsys.mod   : Increased version number to 4.6.5
 setglobs.gms  : (2)
 pp_reduce.red : (2)
 rptmisc.rpt   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.6
+-----------------------------------------------------------------------------------------
+Date: 9-Oct-2022 [AL]: Minor release
+1) Added new input attribute NCAP_AFSX for shaping seasonal availability factors
+2) Improved a few QA checks
+3) Cosmetic fixes
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.6
+initmty.mod   : (1)
+setglobs.gms  : (1),(3)
+ppmain.mod    : (2),(3)
+preppm.mod    : (1)
+pp_lvlbr.mod  : (3)
+pp_reduce.red : (3)
+pp_chp.mod    : (2)
+coef_cpt.mod  : (1)
+pp_shapr.mod  : (1)
+mod_vars.mod  : (3)
+eqobj.mod     : (3)
+eqobjfix.mod  : (3)
+eqobsalv.mod  : (3)
+cal_caps.mod  : (3)
+mod_equa.mod  : (3)
+pp_qack.mod   : (2)
+solve.stp     : (3)
+rpt_obj.rpt   : (3)
+cost_ann.rpt  : (3)
+rptmisc.rpt   : (3)
+solputta.ans  : (3)
+solsetv.v3    : (3)
+rptmain.stc   : (3)
+prep_ext.vda  : (1)
+ppm_ext.vda   : (1)
+coef_ext.vda  : (3)
+eqobjann.tm   : (3)
+eqobjcst.tm   : (3)
+initmty.msa   : (3)
+rpt_ext.msa   : (3)
+solve.msa     : (3)
+prep_ext.mlf  : (3)
+calibase.mlf  : (3)
+eqpk_ect.ier  : (3)

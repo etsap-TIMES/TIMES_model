@@ -22,7 +22,7 @@ $SET PFT ''
 $IF SET TIMESTEP OPTION CLEAR=OBJ_SUMS,CLEAR=OBJ_SUMS3,CLEAR=SALV_INV,CLEAR=OBJSCC;
 $IF %STEPPED%==+
 $IFI %1==mod $GOTO EQUA
-$IF NOT DEFINED PRC_RCAP
+$IF NOT DEFINED VNRET
 $IF NOT '%CTST%'=='' $SET PFT (T)
 *===============================================================================
 * Salvaging of Investments
@@ -30,7 +30,7 @@ $IF NOT '%CTST%'=='' $SET PFT (T)
 *[UR] 19.12.2003 added -1 in line below, since lifetime starts at the beginning of year K
   LOOP(OBJ_SUMII(R,V%PFT%,P,AGE,K_EOH,JOT), Z=NCAP_TLIFE(R,V,P)-1;
     IF(YEARVAL(K_EOH)+ORD(JOT)+Z GT MIYR_VL,
-       LOOP(INVSPRED(K_EOH,JOT,LL,K)$(YEARVAL(LL)+Z GT MIYR_VL),OBJ_SUMSI(R,V,P,LL) = YES;)));
+       LOOP(INVSPRED(K_EOH,JOT,LL,K)$(YEARVAL(LL)+Z GT MIYR_VL),OBJ_SUMSI(R,V,P,LL) = YES)));
 
 * No retrofit salvage
   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<0, OBJ_SUMSI(R,T,P,K)=NO));
@@ -39,13 +39,13 @@ $IF NOT '%CTST%'=='' $SET PFT (T)
 * Salvaging of Decommissioning
   LOOP(OBJ_SUMIII(OBJ_SUMS(R,V,P),LL,K,Y), OBJ_SUMS3(R,V,P) = YES);
 * Salvaging of Decommissioning surveillance
-  LOOP(OBJ_SUMIVS(R,V,P,K,Y)$(YEARVAL(K)+NCAP_TLIFE(R,V,P)-1 GT MIYR_VL), 
-    OBJ_SUMS3(R,V,P) = YES; OBJ_SUMSI(R,V,P,K) = YES;);
+  LOOP(OBJ_SUMIVS(R,V,P,K,Y)$(YEARVAL(K)+NCAP_TLIFE(R,V,P)-1 GT MIYR_VL),
+    OBJ_SUMS3(R,V,P) = YES; OBJ_SUMSI(R,V,P,K) = YES);
 
 *===============================================================================
   LOOP(RDCUR(R,CUR),
 * Salvage proportion of investments at the commissioning year K:
-   SALV_INV(OBJ_SUMSI(R,V,P,K))$OBJ_ICUR(R,V,P,CUR) = 
+   SALV_INV(OBJ_SUMSI(R,V,P,K))$OBJ_ICUR(R,V,P,CUR) =
        MIN(1,(((1+G_DRATE(R,V,CUR))*EXP(NCAP_FDR(R,V,P)))**(NCAP_TLIFE(R,V,P)+YEARVAL(K)-MIYR_VL-1)-1) /
              (((1+G_DRATE(R,V,CUR))*EXP(NCAP_FDR(R,V,P)))**NCAP_TLIFE(R,V,P)-1));
   );
@@ -63,9 +63,9 @@ $IF NOT '%CTST%'=='' $SET PFT (T)
     SUM((OBJ_SUMII(R,V,P,AGE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL,K))$SALV_INV(R,V,P,LL),%CAPJD%
         (OBJ_ICOST(R,K,P,CUR)+OBJ_ITAX(R,K,P,CUR)-OBJ_ISUB(R,K,P,CUR)) * SALV_INV(R,V,P,LL) * OBJ_DISC(R,K,CUR));
 * Handle ETL in similar fashion
-$IF %ETL% == 'YES' LOOP((OBJ_SUMS(R,T,P),G_RCUR(R,CUR))$SEG(R,P),
-$IF %ETL% == 'YES'   OBJSIC(R,T,P) = COR_SALVI(R,T,P,CUR) / OBJ_DCEOH(R,CUR) / OBJ_DIVI(R,T,P) *
-$IF %ETL% == 'YES'     SUM((OBJ_SUMII(R,V,P,AGE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL,K)),%CAPJD% SALV_INV(R,T,P,LL)*OBJ_DISC(R,K,CUR)));
+$IF %ETL%==YES  LOOP((OBJ_SUMS(R,T(V),P),G_RCUR(R,CUR))$SEG(R,P),
+$IF %ETL%==YES    OBJSIC(R,T,P) = COR_SALVI(R,T,P,CUR) / OBJ_DCEOH(R,CUR) / OBJ_DIVI(R,T,P) *
+$IF %ETL%==YES      SUM((OBJ_SUMII(R,V,P,AGE,K_EOH,JOT),INVSPRED(K_EOH,JOT,LL,K)),%CAPJD% SALV_INV(R,T,P,LL)*OBJ_DISC(R,K,CUR)));
 *===============================================================================
 * Additional constant term
   OBJ_IAD(RDCUR(R,CUR)) = SUM(OBJ_ICUR(OBJ_SUMS(R,PASTMILE(V),P),CUR)$((OBJ_PASTI(R,V,P,CUR)=0)+0%CTST%),OBJSCC(R,V,P,CUR)*NCAP_PASTI(R,V,P)*OBJ_DCEOH(R,CUR));
@@ -103,13 +103,13 @@ $IF NOT '%VALIDATE%'==YES
 $IF %ETL% == YES
       SUM((OBJ_SUMS(R,T,TEG(P)),G_RCUR(R,CUR)), OBJSIC(R,T,P) * %VART%_IC(R,T,P %SWS%)) * OBJ_DCEOH(R,CUR) +
 
-$IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc OBSALV
+$IF DEFINED VNRET $BATINCLUDE prepret.dsc OBSALV
 
 *------------------------------------------------------------------------------
 * Cases III - Decommissioning
 *------------------------------------------------------------------------------
 * [AL] Note that discounting to EOH+1 is imbedded in SALV_DEC
-          
+
       SUM(OBJ_SUMS3(R,T,P), %VART%_NCAP(R,T,P %SWS%) * SALV_DEC(R,T,P,CUR)) * OBJ_DCEOH(R,CUR)
       +
 * Past investments
@@ -119,9 +119,9 @@ $IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc OBSALV
 *------------------------------------------------------------------------------
 * Cases IV - Decommissioning Surveillance
 *------------------------------------------------------------------------------
-* The same proportion SALV_INV is salvaged from investments and surveillance costs 
+* The same proportion SALV_INV is salvaged from investments and surveillance costs
       SUM(OBJ_SUMIVS(R,V,P,K,Y)$SALV_INV(R,V,P,K),
-            OBJ_DISC(R,Y,CUR) * OBJ_DLAGC(R,K,P,CUR) * SALV_INV(R,V,P,K) * 
+            OBJ_DISC(R,Y,CUR) * OBJ_DLAGC(R,K,P,CUR) * SALV_INV(R,V,P,K) *
             (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)))
       +
 *------------------------------------------------------------------------------
@@ -129,10 +129,10 @@ $IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc OBSALV
 *------------------------------------------------------------------------------
 * [AL] LATEREVENUES identical to decommissioning, with DCOST replaced by OCOM*VALU
 * Revenues are obtained in the proportion 1-SALV_INV of the total revenues
-        
+
     SUM((OBJ_SUMIII(R,V,P,LL,K,Y),COM)$((NOT Y_EOH(Y))$NCAP_OCOM(R,V,P,COM)),
-        (1-SALV_INV(R,V,P,LL)) * NCAP_VALU(R,K,P,COM,CUR) * OBJ_DISC(R,Y,CUR) * 
-        (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) * 
+        (1-SALV_INV(R,V,P,LL)) * NCAP_VALU(R,K,P,COM,CUR) * OBJ_DISC(R,Y,CUR) *
+        (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) *
         NCAP_OCOM(R,V,P,COM) / OBJ_DIVIII(R,V,P))
 
 

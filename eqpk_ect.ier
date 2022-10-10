@@ -1,11 +1,11 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
 * [UR]: 04/22/2003: adjustment for extraction condensing CHP plants
-           $(NOT ECT_CHP(R,P)))
-           +  ((G_YRFR(R,S)*SUM(RTP_CPTYR(R,V,T,P),PRC_CAPACT(R,P)*
-                                    NCAP_PKCNT(R,V,P,S)*COEF_CPT(R,V,T,P)*
-                                    (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(R,V,P)$PASTYEAR(V))
-                         ))$(ECT_CHP(R,P)*ECT_ELC(R,P,C))
+     + SUM(ECT_ELC(ECT_CHP(R,P),C)$((NOT PRC_CAP(R,P)*RPC_PKC(R,P,C))$TOP(R,P,C,'OUT')),
+$            BATINCLUDE cal_fflo.mod OUT O '*(-(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C)))$RPC_PKF(R,P,C)'
+             (G_YRFR(R,S)*SUM(RTP_CPTYR(R,V,T,P),PRC_CAPACT(R,P)*
+                               NCAP_PKCNT(R,V,P,S)*COEF_CPT(R,V,T,P)*
+                               (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(R,V,P)$PASTYEAR(V)))))

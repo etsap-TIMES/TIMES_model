@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *-----------------------------------------------------------------------------
@@ -11,7 +11,7 @@
   SET MACST / VAR, IRE, DAM /;
   LOOP(T,MR(R)$(REG_FIXT(R) LT YEARVAL(T)) = YES);
   MR(R)$(NOT SUM(ALLYEAR$TM_GR(R,ALLYEAR),YES)) = NO;
-  MSAREG(MR) = YES;
+  MREG(MR) = YES;
 *-----------------------------------------------------------------------------
 $ SET SOLVEDA 1
 $ BATINCLUDE rptlite.rpt

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2022 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *---------------------------------------------------------------------
 * SOLPUTTA.ANS
 *
@@ -71,7 +71,7 @@ $ BATINCLUDE solsubta.ans PUTI5 '(RTP_VARA(R,T,P)*PRC_TS(R,P,S))'               
 $ BATINCLUDE solsubta.ans PUTI2 '((RTP_VINTYR(R,V,T,P)*PRC_TS(R,P,S))$PRC_VINT(R,P))' VAR_ACTV  'R.TL' 'P.TL' "' '" 'V.TL' 'S.TL' '.L' '%1PAR_ACTL(%3R,V,T,P,S)' (%3R,V,TT,P,S) (%3R,V,TT(T--ORD(T)),P,S)
 $ BATINCLUDE solsubta.ans PUTI2 '((RTP_VINTYR(R,V,T,P)*PRC_TS(R,P,S))$PRC_VINT(R,P))' VAR_ACTV  'R.TL' 'P.TL' "' '" 'V.TL' 'S.TL' '.M' '%1PAR_ACTM(%3R,V,T,P,S)' (%3R,V,TT,P,S) (%3R,V,TT(T--ORD(T)),P,S)
 * For retirements
-$IF NOT DEFINED PRC_RCAP $GOTO NORET
+$IF NOT DEFINED VNRET $GOTO NORET
   LOOP(TT(T--1),Z=ORD(T)-1;%1PAR_RET(%3RTP_CPTYR(R,V,T,P))$PRC_RCAP(R,P) = MAX(0,%VART%_SCAP.L(R,V,T,P%SWS%)-RTFORC(R,V,T,P)-(%VART%_SCAP.L(R,V,TT,P%SWS%)-RTFORC(R,V,TT,P))$Z));
 $ BATINCLUDE solsubta.ans PUTI1 '(RTP_CPTYR(R,V,T,P)$PRC_RCAP(R,P))'                  VAR_RCAPGV 'R.TL' 'P.TL' "' '" 'V.TL'  "' '" '.L' '%1PAR_RET(%3R,V,T,P)' (%3R,V,TT,P) (%3R,V,TT(T--ORD(T)),P)
   OPTION CLEAR=%1PAR_RET; LOOP(RTP(R,V,P)$PRC_RCAP(R,P),Z=1;LOOP(RTP_CPTYR(R,VNRET(V,T),P)$Z,Z=0; %1PAR_RET(%3R,V,T,P) $= %VART%_SCAP.L(R,V,T,P%SWS%)));

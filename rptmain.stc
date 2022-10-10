@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -49,7 +49,7 @@ $ BATINCLUDE clearsol.stc
     VAR_UPS.L(R,V,T,P,S,L)    $= %VART%_UPS.L(R,V,T,P,S,L %SWS%);
     VAR_UPT.L(R,V,T,P,S,UPT)  $= %VART%_UPT.L(R,V,T,P,S,UPT %SWS%);
     VAR_UDP.L(R,V,T,P,S,L)    $= %VART%_UDP.L(R,V,T,P,S,L %SWS%);
-$IF DEFINED PRC_RCAP VAR_SCAP.L(R,V,T,P) $= %VART%_SCAP.L(R,V,T,P %2); VAR_SCAP.L(R,V,'0',P) $= %VAR%_SCAP.L(R,V,'0',P,%1);
+    VAR_SCAP.L(R,V,T,P)       $= %VART%_SCAP.L(R,V,T,P%2); VAR_SCAP.L(R,V,'0',P) $= %VAR%_SCAP.L(R,V,'0',P,%1);
 $IF %ETL% == YES  OPTION CLEAR=VAR_IC; VAR_IC.L(R,T,P) $= %VART%_IC.L(R,T,P %2);
 
 * Get variable marginals

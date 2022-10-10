@@ -6,18 +6,19 @@
 * Reduction of model size
 *-----------------------------------------------------------------------------
 * when no reduction all processes have capacity variables and activity equations
- PRC_CAP(RP)     = YES;
- PRC_ACT(RP)     = RP_STD(RP)+RP_IRE(RP);
+  PRC_CAP(RP)     = YES;
+  PRC_ACT(RP)     = RP_STD(RP)+RP_IRE(RP);
+  OPTION RP_AFB < NCAP_AF;
 
 $SETGLOBAL CAL_RED 'cal_nored.red'
-* skip reduction algorithm by setting REDUCE to NO in *run file
+* skip reduction algorithm by setting REDUCE to NO in run file
 $IF %REDUCE% == NO $GOTO REDDONE
 
 *-----------------------------------------------------------------------------
 * limiting the number of capacity variables
 *-----------------------------------------------------------------------------
 * determining processes that need capacity variables
-  PRC_CAP(RP(R,P)) = NO;
+  PRC_CAP(RP) = NO;
   LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'CAP',P),  PRC_CAP(R,P) = YES);
   LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'NCAP',P), PRC_CAP(R,P) = YES);
   LOOP((RTP(R,PYR,P))$NCAP_PASTI(R,PYR,P),    PRC_CAP(R,P) = YES);
@@ -33,7 +34,7 @@ $IF %REDUCE% == NO $GOTO REDDONE
   OBJ_ICUR(R,LL--ORD(LL),P,CUR)$DM_YEAR(LL) $= (NCAP_DLAGC(R,LL,P,CUR) NE 0);
   LOOP(OBJ_ICUR(R,LL,P,CUR), PRC_CAP(R,P) = YES);
 *[UR]: added checks for fixed availabilities
-  RTPS_BD(R,T--ORD(T),P,S--ORD(S),'FX') $= NCAP_AF(R,T,P,S,'FX');
+  PRC_CAP(RP(R,P))                      $= RP_AFB(RP,'FX');
   RTPS_BD(R,T--ORD(T),P,S--ORD(S),'FX') $= NCAP_AFS(R,T,P,S,'FX');
   RTPS_BD(R,T--ORD(T),P,ANNUAL,'FX')    $= NCAP_AFA(R,T,P,'FX');
   LOOP(RTPS_BD(R,T,P,S,BD), PRC_CAP(R,P) = YES);
@@ -133,10 +134,10 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 * Process with upper/fixed activity of zero cannot be used in current period
 *--------------------------------------------------------------------------------------------
   OPTION CLEAR=RXX;
-* Track commodity which are turned off by some process: by T, timeslice and IO:
+* Track commodities turned off by some process, by T, timeslice and IO:
   LOOP(RTPS_OFF(R,T,P,S),IF(RP_STD(R,P),RTCS_SING(R,T,C,S,IO)$TOP(R,P,C,IO) = YES;
                                    ELSE RTCS_SING(R,T,C,S,'OUT')$RPC_IRE(R,P,C,'IMP') = YES));
-* Track commodities which are turned off by some process: by IO only:
+* Track commodities turned off by some process, by IO only:
   LOOP(RTCS_SING(R,T,C,S,IO),RXX(R,C,IO) = YES);
   RXX(ENV,'IN') = NO; RXX(DEM,'IN') = NO; RXX(R,C,'IN')$RC_AGP(R,C,'LO') = NO;
   LOOP((R,T,COM,C)$(RXX(R,C,'OUT')$COM_AGG(R,T,COM,C)),TRACKC(R,C) = YES);

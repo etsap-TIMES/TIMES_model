@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2021 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2022 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *-----------------------------------------------------------------------------
 * SOLSETV.VDA
 *
@@ -169,8 +169,8 @@ SETS
    UC_DYNBD(R,UC_N) 'Dynamic UC bound constraints';
   LOOP(R,UC_CONST('NONE',UC_N)$UC_R_SUM(R,UC_N)=YES);
   LOOP(RMKC(R,ITEM,C)$RPT_OPT('COMPRD','4'),UC_MARKS(R,ITEM)=YES);
-  REG_ACT(ALL_R,'ACT') = ALL_REG(ALL_R);
-  REG_ACT(NONSET,'ACT') = YES;
+  REG_ACT(ALL_R,%PGPRIM%) = ALL_REG(ALL_R);
+  REG_ACT(NONSET,%PGPRIM%) = YES;
   OTHCOM(CG) $= SUM(COM_PEAK(R,CG),1);
   OTHCOM(CUR) $= SUM(RDCUR(R,CUR),1);
 

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *==============================================================================*
@@ -33,7 +33,7 @@
    NCAP_BPME(RVP) = MIN(0,SMIN(BD$NCAP_CHPR(RVP,BD),NCAP_CHPR(RVP,BD))*((NCAP_CEH(RVP)+1)$NCAP_CEH(RVP)-1));
    NCAP_CEH(RVP)$(NCAP_CEH(RVP)<0) = -NCAP_CEH(RVP);
 * If slope is different from 1, we should always have a maximum heat share:
-   NCAP_CHPR(RVP,'FX')$((ABS(NCAP_CEH(RVP)-1)>.01)$(NOT NCAP_CHPR(RVP,'UP'))) = COEF_RTP(RVP);
+   NCAP_CHPR(RVP,'FX')$((ABS(NCAP_CEH(RVP)-1)>.01)$(NOT NCAP_CHPR(RVP,'UP'))) = COEF_RTP(RVP)+EPS;
   );
 *-----------------------------------------------------------------------------
 * Calculate ACTFLOs for pg and elc
@@ -60,7 +60,7 @@
 *-----------------------------------------------------------------------------
 * Adjust PKCNT
   LOOP(RPC_PKC(CHP_ELC(R,P,C)),NCAP_PKCNT(RVP(R,V,P),S)$COM_TS(R,C,S)=NCAP_PKCNT(RVP,S)/MAX(1,PRC_ACTFLO(RVP,C)));
-  RVP(RVP)$(NCAP_CEH(RVP)+NCAP_CHPR(RVP,'FX')+NCAP_CHPR(RVP,'LO')>0) = NO;
+  RVP(RVP)$(NCAP_CEH(RVP)+1$NCAP_CHPR(RVP,'FX')+NCAP_CHPR(RVP,'LO')>0) = NO;
   PUTGRP = 0;
   LOOP(RVP(R,V,P)$(T(V)+PRC_VINT(R,P)),
 $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'CHP process with zero CEH but only upper bound on CHPR.'

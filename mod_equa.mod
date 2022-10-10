@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -209,7 +209,7 @@ $LABEL UCDONE
 $IF DEFINED DAM_COST
 $IF NOT %DAMAGE%==NO  %EQ%_DAMAGE, %EQ%_OBJDAM
 
-$IF DEFINED PRC_RCAP  %EQ%_DSCRET, %EQ%_CUMRET, %EQ%L_SCAP, %EQ%L_REFIT
+$IF DEFINED VNRET     %EQ%_DSCRET, %EQ%_CUMRET, %EQ%L_SCAP, %EQ%L_REFIT
 $IFI %SPINES%==YES    %EQ%_OBW1
 
 * [AL] Commented out the end of MODEL statement - now in maindrvx.mod

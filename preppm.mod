@@ -17,7 +17,7 @@ $   IFI %PREP_ANS% == YES        $EXIT
  MODLYEAR(LL) = MILESTONYR(LL)+PASTYEAR(LL);
  DATAYEAR(PASTYEAR)  = YES;
  DATAYEAR('%DFLBL%') = YES;
-* Build DM_YEAR for interpolation; ensure exclusion of special year:
+* Build DM_YEAR for interpolation, excluding the special year:
  DM_YEAR(MILESTONYR) = YES;
  DM_YEAR(DATAYEAR) = (YEARVAL(DATAYEAR)>0);
 * Set migrating years MY_FIL, and FIL2 of each MY_FIL to the period year, if within periods:
@@ -51,10 +51,9 @@ $IF DEFINED R_CUREX $INCLUDE curex
  FLO_TAX(R,LL--ORD(LL),P,C,S,CUR)$((NOT FLO_TAX(R,'%DFLBL%',P,C,S,CUR))$FLO_TAX(R,LL,P,C,S,CUR)$OBJ_VFLO(R,P,C,CUR,'SUB')) = 3;
  FLO_SUB(R,LL--ORD(LL),P,C,S,CUR)$((NOT FLO_SUB(R,'%DFLBL%',P,C,S,CUR))$FLO_SUB(R,LL,P,C,S,CUR)$OBJ_VFLO(R,P,C,CUR,'SUB')) = 3;
 *-----------------------------------------------------------------------------
-* Starting data pre-preprocessing. Using temporary control sets for parameters.
+* Starting data pre-preprocessing with temporary control sets for parameters
 $IF NOT SET DEF_IEBD $SET DEF_IEBD 10
   IE_DEFAULT(INT_DEFAULT) = 3;
-$IF NOT SET RETIRE $KILL PRC_RCAP
 $IF SET RETIRE $BATINCLUDE prepret.dsc PREP PRC_RCAP RCAP_BND
 *-----------------------------------------------------------------------------
 * Use RVP for extrapolating vintaged flow parameters
@@ -74,7 +73,7 @@ $ BATINCLUDE fillvint
 *-----------------------------------------------------------------------------
 * General attributes
 *-----------------------------------------------------------------------------
-*$BATINCLUDE prepparm G_DRATE R 'CUR' ",'0','0','0','0','0'" YEAR 1
+*$BATINCLUDE prepparm G_DRATE R CUR ",'0','0','0','0'" YEAR 1 1
 $BATINCLUDE filparam G_RFRIR 'R,' '' ",'0','0','0','0','0'" YEAR V
 *-----------------------------------------------------------------------------
 * Capacity related attributes
@@ -219,6 +218,7 @@ $   IFI %INTEXT_ONLY%==YES  $BATINCLUDE prepxtra.mod XTIE
 ***************************** SHAPE/MULTI INDEXES ****************************
 *-----------------------------------------------------------------------------
 $BATINCLUDE preshape NCAP_AFX R P "" V RXX RTP(R,V,P)
+$BATINCLUDE preshape NCAP_AFSX R 'P,BD' ",'0','0','0'" V UNCD7 RTP(R,V,P)
 $BATINCLUDE preshape NCAP_AFM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_FOMX R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_FSUBX R P "" V RXX RTP(R,V,P)

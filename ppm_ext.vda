@@ -142,6 +142,14 @@ $LABEL DONEFUNC
   NCAP_AFCS(RVP(R,V,P),C,ANNUAL)$CHP_ELC(R,P,C) = VDA_CEH(RVP) / NCAP_AFA(RVP,'UP') / PRC_ACTFLO(RVP,C);
   OPTION CLEAR=RVP,VDA_CEH<NCAP_CEH;
 *-----------------------------------------------------------------------------
+* Have NCAP_AFSX / NCAP_AFSM by control option
+  FIL(LL)=V(LL)+LASTLL(LL);
+  PRC_YMIN(R,P)$NCAP_AFX(R,'0',P) = FLOOR(NCAP_AFX(R,'0',P)/1000);
+  NCAP_AFSX(R,FIL(LL),P,BD)$((NCAP_AFSX(R,LL,P,BD)=0)$((MOD(PRC_YMIN(R,P),2)*2-1)*(1-2$BDUPX(BD))<0)$MOD(PRC_YMIN(R,P),7-4$V(LL))) $= NCAP_AFX(R,LL,P);
+  RP_AFB(R,P,BD)$((MOD(PRC_YMIN(R,P)$((MOD(PRC_YMIN(R,P),2)*2-1)*(1-2$BDUPX(BD))<0),5)=0)$PRC_YMIN(R,P)) = -1;
+  NCAP_AFSM(R,FIL(LL),P)$MOD(FLOOR(NCAP_AFM(R,LL,P)/1000),7-4$V(LL)) $= NCAP_AFM(R,LL,P);
+  NCAP_AFM(RTP(R,V,P))$((MOD(MAX(1,FLOOR(NCAP_AFM(R,'0',P)/1000)),5)=0)$NCAP_AFM(RTP)) = 0;
+*-----------------------------------------------------------------------------
 * Prepare dynamic process bound equations
 $ BATINCLUDE equcrtp.vda PPM_EXT
 * Remove timeslices turned off if DYNTS enabled

@@ -102,13 +102,15 @@ $ LABEL SYSD
   SET RPC_LS(R,P,C)             'Load sifting control'                  //;
 
 * region
-  SET RREG(ALL_REG,ALL_REG) 'The set of paired regions' //;
+  SET MREG(ALL_R)           'Set of active regions' //;
+  SET RREG(ALL_REG,ALL_REG) 'Set of paired regions' //;
 
 * cumulatives & UCs
   SET UC_ON(ALL_R,UC_N)                          'Active UCs by region' //;
   SET UC_GMAP_C(REG,UC_N,COM_VAR,COM,UC_GRPTYPE) 'Assigning commodities to UC_GRP';
   SET UC_GMAP_P(REG,UC_N,UC_GRPTYPE,PRC)         'Assigning processes to UC_GRP';
   SET UC_GMAP_U(ALL_R,UC_N,UC_N)                 'Assigning constraints to UC_GRP' //;
+  SET UC_DYNBND(UC_N,BD)                         'Dynamic process-wise UC bounds' //;
   SET RC_CUMCOM(REG,COM_VAR,ALLYEAR,ALLYEAR,COM) 'Cumulative commodity PRD/NET';
   SET RPC_CUMFLO(REG,PRC,COM,ALLYEAR,ALLYEAR)    'Cumulative process flows';
 
@@ -171,7 +173,7 @@ $ LABEL SYSD
   PARAMETER COEF_RTP(R,ALLYEAR,P)              'Generic re-usable work parameter';
   PARAMETER COEF_RVPT(R,ALLYEAR,PRC,T)         'Generic re-usable work parameter';
   PARAMETER RTP_CPX(R,ALLYEAR,P,LL)            'Shape multipliers for capacity transfer'//;
-  PARAMETER NCAP_AFSX(R,ALLYEAR,P) //;
+  PARAMETER NCAP_AFBX(R,ALLYEAR,P,BD) //;
   PARAMETER NCAP_AFSM(R,ALLYEAR,P) //;
   PARAMETER RVPRL(R,YEAR,P) //;
 
@@ -209,6 +211,7 @@ $LABEL RESTOBJ
     PRC_SEMI(R,P)       'Semi-continuous indicator' //
     RD_NLP(R,C)         'NLP demand indicator' //
     RD_SHAR(R,T,C,C)    'Demand aggregation share' //
+    RP_AFB(REG,PRC,BD)  'Processes with NCAP_AF by bound type' //
     RS_STG(R,ALL_TS)    'Lead from previous storage timeslice'
     RS_UCS(R,S,SIDE)    'Lead for TS-dynamic UC'
     RS_STGPRD(R,ALL_TS) 'Number of storage periods for each timeslice'

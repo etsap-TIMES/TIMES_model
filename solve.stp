@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -224,15 +224,15 @@ $IF DEFINED %VAR%_DAM VAR_DAM.L(R,T,C,BD,J)$NO=0; %VAR%_DAM.FX(R,T(BACKWARD),C,B
    OPTION CLEAR=NO_RVP; NO_RVP(RTP_VARP(R,SUBT(T),P))$SUM(RTP_CPTYR(R,BACKWARD(TT),T,P),1) = YES;
    %VAR%_CAP.UP(NO_RVP(R,T,P)%SOW%)$CAP_BND(R,T,P,'UP') = CAP_BND(R,T,P,'UP');
    %VAR%_CAP.LO(NO_RVP(R,T,P)%SOW%)$CAP_BND(R,T,P,'LO') = CAP_BND(R,T,P,'LO');
-$IF DEFINED PRC_RCAP %VAR%_SCAP.FX(RTP_CPTYR(R,V,BACKWARD(T),P)%SOW%)$PRC_RCAP(R,P) = VAR_SCAP.L(R,V,T,P);
+   %VAR%_SCAP.FX(RTP_CPTYR(R,V,BACKWARD(T),P)%SOW%)$PRC_RCAP(R,P) = VAR_SCAP.L(R,V,T,P);
 * Cumulative variables
    Z = (SMAX(T,M(T)) > MIYR_VL);
    FIL(LL) = Z*(MIYR_VL LT YEARVAL(LL));
 * Get new modifiers for flexible model horizon
 $IFI NOT %SENSIS%==YES $BATINCLUDE bnd_cum.mod COM_VAR
 * Remove LO bounds if years only partially in current horizon and no adjustment for shorter horizon
-   %VAR%_CUMFLO.LO(R,P,C,ALLYEAR,LL %SOW%)$((NOT FLO_CUM(R,P,C,ALLYEAR,LL,'N'))$FIL(LL)) = 0;
-   %VAR%_CUMCOM.LO(R,C,COM_VAR,ALLYEAR,LL %SOW%)$((NOT COM_CUM(R,COM_VAR,ALLYEAR,LL,C,'N'))$FIL(LL)) = 0;
+   %VAR%_CUMFLO.LO(R,P,C,YEAR,LL %SOW%)$((NOT FLO_CUM(R,P,C,YEAR,LL,'N'))$FIL(LL)) = 0;
+   %VAR%_CUMCOM.LO(R,C,COM_VAR,YEAR,LL %SOW%)$((NOT COM_CUM(R,COM_VAR,YEAR,LL,C,'N'))$FIL(LL)) = 0;
 $LABEL DONECUM
 * Blending
    VAR_BLND.L(RT_PP,BLE,OPR)=0;

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -94,7 +94,7 @@ $IF '%VALIDATE%'==YES $GOTO M2T_2
       ELSE CNT = %ISTEP%; OBJ_D = CNT-1; MY_F = B(T)-YEARVAL(T)-FLOOR(CNT/2);
         FOR(OBJ_C = 1 TO COEF_RPTI(R,T,P),
          F = MY_F; MY_F = F+Z; CNT = ROUND(MY_F)-ROUND(F)-1;
-         OBJ_SUMIV(LL+F,R,T,P,AGE+OBJ_D,AGE+CNT) = YES;));
+         OBJ_SUMIV(LL+F,R,T,P,AGE+OBJ_D,AGE+CNT) = YES));
        );
 
 * create square for investment costing if validating MARKAL
@@ -211,7 +211,7 @@ $IF NOT %VALIDATE% == 'YES'
             * (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) / OBJ_DIVIV(R,V,P)
          ) +
 
-$IF DEFINED PRC_RCAP $BATINCLUDE prepret.dsc OBJFIX
+$IF DEFINED VNRET $BATINCLUDE prepret.dsc OBJFIX
 
 * Decommissioning Surveillance
       SUM(OBJ_SUMIVS(R,V,P,K,Y),
