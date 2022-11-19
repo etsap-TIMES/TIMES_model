@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2022 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *=============================================================================*
 * CUREX.GMS oversees the currency conversions
 *   %1 - name of cost attribute
@@ -65,6 +65,7 @@ $BATINCLUDE curex ACT_CSTPL RYPM 'R,LL,P'
 $IF DEFINED TL_CT_COST $BATINCLUDE curex TL_CT_COST RYPM       'R,LL,P'
 $IF DEFINED DAM_COST   $BATINCLUDE curex DAM_COST   RYCSM      'R,LL,C' ",'ANNUAL'"
 $IF DEFINED S_DAM_COST $BATINCLUDE curex S_DAM_COST S_DAM_COST 'R,LL,C' '' ',J,ALLSOW'
+$IF DEFINED S_COM_TAX  $BATINCLUDE curex S_COM_TAX  S_COM_TAX  'R,LL,C,S,COM_VAR' '' ',J,ALLSOW'
 *--------------------------------------------------------------------------
 OPTION PRO%PRF%,CLEAR=RYPM,CLEAR=RYPCSM,CLEAR=RYPCSRXM,CLEAR=RYCSM;
 $OFFRECURSE

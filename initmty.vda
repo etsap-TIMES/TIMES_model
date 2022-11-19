@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -26,8 +26,8 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
   NCAP_AFC(REG,ALLYEAR,PRC,CG,STL)   'Availability of capacity for commodity group CG'
   NCAP_AFCS(REG,ALLYEAR,PRC,CG,TS)   'Availability of capacity for commodity group CG'//;
 *-----------------------------------------------------------------------------
-* Dynamic UC variable bounds (UC_DYNBND user defined)
-  SET UC_DYNBND(UC_N,BD) 'Dynamic process-wise UC bounds' //;
+* Dynamic UC variable bounds (UC_DYNBND user-defined)
+  SET UC_DYNBND(UC_N,LIM)     'Dynamic process-wise UC bounds' //;
 *-----------------------------------------------------------------------------
 * Activity efficiency and dispatching options
   PARAMETERS

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -15,6 +15,7 @@ $  BATINCLUDE pp_clean.mod
 %MODEL_NAME%.PRIOROPT=(OPTFILEID=2);
 * set the model solver status
 %MODEL_NAME%.MODELSTAT = 0;
+%MODEL_NAME%.TOLPROJ= 1e-8;
 
 * MACRO: Loading solution from GDX file replaced by activating the SPOINT utility
 

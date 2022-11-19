@@ -1,13 +1,14 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2021 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2022 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *=============================================================================*
 * Filtering Domain Violations via GDX
 $ GOTO %1
 $ LABEL MAIN
-$ SET MX
+$ SET TMP "'" SET MX
+$ IFI %SYSTEM.FILESYS%==MSNT $SET TMP '"'
   DISPLAY 'GAMS Warnings detected; Data have been Filtered via GDX';
 $ hiddencall gdxdump _dd_.gdx NODATA > _dd_.dmp
-$ hiddencall sed "/^\(Scalar\|[^$(]*([^,]*)\|[^$].*empty *$\)/{N;d;}; /^\([^$]\|$\)/d; s/\$LOAD.. /\$LOADR /I" _dd_.dmp > _dd_.dd
+$ hiddencall sed %TMP%/^\(Scalar\|[^$(]*([^,]*)\|[^$].*empty *$\)/{N;d;}; /^\([^$]\|$\)/d; s/\$LOAD.. /\$LOADR /I%TMP% _dd_.dmp > _dd_.dd
 $ IF gamsversion 301 $onFiltered
 * Half-baked workaround for GAMS 342
 $ IF %SYSTEM.GAMSVERSION%==342

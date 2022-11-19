@@ -124,7 +124,7 @@ SETS
   COMM(R,COM)  'Commercial Sector Demands'
   TRN(R,COM)   'Transporation Sector Demands'
   AGR(REG,COM) 'Agriculature Sector Demands'
-  OTH(REG,COM) 'Other Demands'
+  OTHD(R,COM)  'Other Demands'
   IND(REG,COM) 'Industrial Demands'
   NE(REG,COM)  'Non-energy Demands'
   NRGFOS(R,C)  'Fossil'
@@ -139,7 +139,7 @@ SETS
   TRN(RC(R,C))  $= DEM_SMAP(R,'TRN',C);
   AGR(RC(R,C))  $= DEM_SMAP(R,'AGR',C);
   IND(RC(R,C))  $= DEM_SMAP(R,'IND',C);
-  OTH(RC(R,C))  $= DEM_SMAP(R,'OTH',C);
+  OTHD(RC(R,C)) $= DEM_SMAP(R,'OTH',C);
   NE(RC(R,C))   $= DEM_SMAP(R,'NE',C);
   NRGELC(NRG(R,C)) $= NRG_TMAP(R,'ELC',C);
   NRGHET(NRG(R,C)) $= NRG_TMAP(R,'LTHEAT',C);

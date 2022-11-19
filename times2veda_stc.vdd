@@ -136,7 +136,7 @@ reg_act    r c
   TRN  TRN    r c
   AGR  AGR    r c
   IND  IND    r c
-  OTH  OTH    r c
+  OTH  OTHD   r c
   ELC+ NRGELC r c
   HET+ NRGHET r c
   FOS+ NRGFOS r c

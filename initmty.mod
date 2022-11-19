@@ -275,6 +275,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
 * Process units
   PARAMETER PRC_ACTFLO(REG,ALLYEAR,PRC,CG)          'Convert from process activity to particular commodity flow' //;
   PARAMETER PRC_CAPACT(REG,PRC)                     'Factor for going from capacity to activity' //;
+  PARAMETER PRC_GMAP(REG,PRC,ITEM)                  'User-defined groupings of processes' //;
 
 * globals
   PARAMETER G_CHNGMONY(REG,ALLYEAR,CUR)             'Exchange rate for currency'  //;
@@ -366,7 +367,7 @@ $ SETGLOBAL DFLBL '0'
   YEARVAL('%DFLBL%') = 0;
   SET LASTLL(LL) /%DFLBL%/; Z=SUM(LASTLL(LL),ORD(LL)); ABORT$(Z NE CARD(LL)) 'FATAL';
 * Interpolation defaults
-  SET INT_DEFAULT(*) //;
+  SET INT_DEFAULT(*) //, UNCD1(*);
   PARAMETER IE_DEFAULT(*) //;
 
 * ---------------------------------------------------------------------------------------------

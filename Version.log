@@ -2594,3 +2594,25 @@ solve.msa     : (3)
 prep_ext.mlf  : (3)
 calibase.mlf  : (3)
 eqpk_ect.ier  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.7
+-----------------------------------------------------------------------------------------
+Date: 19-Nov-2022 [AL]: Minor release
+1) Completed S_COM_TAX preprocessing that had been unfinalized
+2) Changed forced retrofits for residual capacity to obey RESID trajectory
+3) Cosmetic fixes, e.g. set TOLPROJ tolerance, restore MCA compatibility
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.7
+initmty.mod   : (1)
+setglobs.gms  : (1)
+ppmain.mod    : (1)
+curex.gms     : (1)
+gdxfilter.gms : (3)
+solve.mod     : (3)
+initmty.vda   : (1)
+prep_ext.stc  : (1)
+prepret.dsc   : (2)
+solsetv.v3    : (1)
+times2veda.vdd: (1)
