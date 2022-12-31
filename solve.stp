@@ -25,35 +25,36 @@ $IF NOT SET TIMESTEP $SET TIMESTEP '999' SET STEPPED NO
   PARAMETER STP_DIV(J,R,T,P) //;
   PARAMETER UC_BND(J,ALL_R,UCN,LL,S,L);
   PARAMETER PAR_CUMFLOM(R,P,C,LL,LL), PAR_UCR(UC_N,ALL_R);
+*-----------------------------------------------------------------------------
+$ IF NOT SET FIXBOH $GOTO MCOPIED
 * Copy previous marginals to preseve freezed results
-$IF NOT SET FIXBOH $GOTO MCOPIED
-$IF %STAGES%==YES  %EQ%G_COMBAL.M(R,T,C,S%SWT%) $= EQG_COMBAL.M(R,T,C,S);
-$IF %STAGES%==YES  %EQ%E_COMBAL.M(R,T,C,S%SWT%) $= EQE_COMBAL.M(R,T,C,S);
-$IF %STAGES%==YES  %EQ%_PEAK.M(R,T,C,S%SWT%) $= EQ_PEAK.M(R,T,C,S);
-$LABEL MCOPIED
-$IFI %SPINES%==YES $BATINCLUDE clearsol.stc DEF
+$ IF NOT %STAGES%==YES $GOTO MCOPIED
+  %EQ%G_COMBAL.M(RTC,S%SWT%) $= EQG_COMBAL.M(RTC,S);
+  %EQ%E_COMBAL.M(RTC,S%SWT%) $= EQE_COMBAL.M(RTC,S);
+  %EQ%_PEAK.M(RTC,S%SWT%)    $= EQ_PEAK.M(RTC,S);
+$ LABEL MCOPIED
+$ SETLOCAL SW1 '' SETLOCAL SW2
+$ IFI %STAGES%==YES $SETLOCAL SW2 ",'1',SOW" SETLOCAL SW1 S_
+$ IFI %SPINES%==YES $BATINCLUDE clearsol.stc DEF
+*-----------------------------------------------------------------------------
 * Establish partitioning of T into fixed, current, and pending
 * BACKWARD(T) = fixed T
 * SUBT(T) = current T
 * FORWARD(T) = pending T
-*-----------------------------------------------------------------------------
-$SETLOCAL SW1 '' SETLOCAL SW2 ""
-$IFI %STAGES%==YES $SETLOCAL SW1 'S_' SETLOCAL SW2 ",'1',SOW"
-*-----------------------------------------------------------------------------
   YR_V1 = 0; YR_VL = %TIMESTEP%; MY_FYEAR = 0; REG_FIXT(R)$NO = 0;
   IF(G_OVERLAP, G_OVERLAP = MAX(EPS,G_OVERLAP); ELSE G_OVERLAP = FLOOR(YR_VL/2));
-$IF SET FIXBOH YR_V1 = ABS(%FIXBOH%); REG_FIXT(R)$(NOT REG_FIXT(R)) = YR_V1;
-$IF '%RTPX%'==X MY_FYEAR = 1;
+$ IF SET FIXBOH YR_V1 = ABS(%FIXBOH%); REG_FIXT(R)$(NOT REG_FIXT(R)) = YR_V1;
+$ IF '%RTPX%'==X MY_FYEAR = 1;
   F = SUM(MIYR_1(T),M(T));
-  REG_FIXT(R)$(REG_FIXT(R) LT F) = 0;
-  YR_V1 = SMIN((R,T)$(M(T) GT REG_FIXT(R)),M(T));
+  REG_FIXT(R)$(REG_FIXT(R) < F) = 0;
+  YR_V1 = SMIN((R,T)$(M(T) > REG_FIXT(R)),M(T));
   Z = YR_V1 + YR_VL;
-  SUBT(T)$(M(T) LT YR_V1) = NO;
-  SUBT(T)$(M(T) GE Z)     = NO;
+  SUBT(T)$(M(T) < YR_V1) = NO;
+  SUBT(T)$(M(T) GE Z)    = NO;
   OPTION CLEAR=BACKWARD, CLEAR=FORWARD, RTC_NET<RHS_COMBAL, RTC_PRD<RHS_COMPRD;
-  BACKWARD(T)$(M(T) LT YR_V1) = YES;
+  BACKWARD(T)$(M(T) < YR_V1) = YES;
   FORWARD(T) = TT(T)-BACKWARD(T)-SUBT(T);
-  RT_PP(R,T) = (M(T) GT REG_FIXT(R));
+  RT_PP(R,T) = (M(T) > REG_FIXT(R));
   NO_RT(R,T) = NOT RT_PP(R,T);
 *-----------------------------------------------------------------------------
 * Clear previous solution for projection years & ensure VAR_ACT loadpoint
@@ -76,17 +77,18 @@ $ INCLUDE clearsol.stp
    PRC_DYNUC(UC_N,SIDE,R,LL,P,UC_GRPTYPE,BD)$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,'FX') = PRC_DYNUC(UC_N,SIDE,R,LL,P,UC_GRPTYPE,'FX')$BDNEQ(BD);
 * Find UC equations with negative coefficients
   LOOP((UC_N,SIDE,R,T,P)$((NOT UC_RN(UC_N,R))$UC_CAP(UC_N,SIDE,R,T,P)),
-    IF(UC_CAP(UC_N,SIDE,R,T,P)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+    IF(UC_CAP(UC_N,SIDE,R,T,P)*UC_SIGN(SIDE) < 0, UC_RN(UC_N,R) = YES));
   LOOP((UC_N,SIDE,R,T,P)$((NOT UC_RN(UC_N,R))$UC_NCAP(UC_N,SIDE,R,T,P)),
-    IF(UC_NCAP(UC_N,SIDE,R,T,P)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+    IF(UC_NCAP(UC_N,SIDE,R,T,P)*UC_SIGN(SIDE) < 0, UC_RN(UC_N,R) = YES));
   LOOP((UC_N,SIDE,R,T,P,S)$((NOT UC_RN(UC_N,R))$UC_ACT(UC_N,SIDE,R,T,P,S)),
-    IF(UC_ACT(UC_N,SIDE,R,T,P,S)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+    IF(UC_ACT(UC_N,SIDE,R,T,P,S)*UC_SIGN(SIDE) < 0, UC_RN(UC_N,R) = YES));
   LOOP((UC_N,SIDE,R,T,P,C,S)$((NOT UC_RN(UC_N,R))$UC_FLO(UC_N,SIDE,R,T,P,C,S)),
-    IF(UC_FLO(UC_N,SIDE,R,T,P,C,S)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+    IF(UC_FLO(UC_N,SIDE,R,T,P,C,S)*UC_SIGN(SIDE) < 0, UC_RN(UC_N,R) = YES));
   LOOP((UC_N,SIDE,R,T,P,C,S,IE)$((NOT UC_RN(UC_N,R))$UC_IRE(UC_N,SIDE,R,T,P,C,S,IE)),
-    IF(UC_IRE(UC_N,SIDE,R,T,P,C,S,IE)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+    IF(UC_IRE(UC_N,SIDE,R,T,P,C,S,IE)*UC_SIGN(SIDE) < 0, UC_RN(UC_N,R) = YES));
   LOOP((UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)$((NOT UC_RN(UC_N,R))$UC_COM(UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)),
-    IF(UC_COM(UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)*UC_SIGN(SIDE) LT 0, UC_RN(UC_N,R) = YES));
+    IF(UC_COM(UC_N,COM_VAR,SIDE,R,T,C,S,UC_GRPTYPE)*UC_SIGN(SIDE) < 0, UC_RN(UC_N,R) = YES));
+  LOOP(UC_MAP_IRE(UC_N,R,P,C,'IMP')$COM_UNIT(R,C,'UCU'),UC_RN(UC_N,R)=YES);
 $IF DEFINED UC_CLI LOOP((UC_N,SIDE,R,T,CM_VAR)$UC_CLI(UC_N,SIDE,R,T,CM_VAR),IF(UC_CLI(UC_N,SIDE,R,T,CM_VAR)*UC_SIGN(SIDE)<0,UC_RN(UC_N,R)=YES));
   UC_RN(UC_N,'IMPEXP') $= SUM(UC_RN(UC_N,R),1);
 * Collect all capacity-related UCs
@@ -107,7 +109,7 @@ $IF DEFINED UC_CLI LOOP((UC_N,SIDE,R,T,CM_VAR)$UC_CLI(UC_N,SIDE,R,T,CM_VAR),IF(U
 *-----------------------------------------------------------------------------
 $IF %STEPPED%==YES  WHILE(CARD(SUBT),
 *-----------------------------------------------------------------------------
-  BACKWARD(T) = (M(T) LT YR_V1);
+  BACKWARD(T) = (M(T) < YR_V1);
   FORWARD(SUBT) = NO;
   NO_RT(R,T(BACKWARD)) = 1;
   RT_PP(R,T) = SUBT(T)$(NOT NO_RT(R,T));
@@ -227,7 +229,7 @@ $IF DEFINED %VAR%_DAM VAR_DAM.L(R,T,C,BD,J)$NO=0; %VAR%_DAM.FX(R,T(BACKWARD),C,B
    %VAR%_SCAP.FX(RTP_CPTYR(R,V,BACKWARD(T),P)%SOW%)$PRC_RCAP(R,P) = VAR_SCAP.L(R,V,T,P);
 * Cumulative variables
    Z = (SMAX(T,M(T)) > MIYR_VL);
-   FIL(LL) = Z*(MIYR_VL LT YEARVAL(LL));
+   FIL(LL) = Z*(MIYR_VL < YEARVAL(LL));
 * Get new modifiers for flexible model horizon
 $IFI NOT %SENSIS%==YES $BATINCLUDE bnd_cum.mod COM_VAR
 * Remove LO bounds if years only partially in current horizon and no adjustment for shorter horizon
@@ -237,7 +239,7 @@ $LABEL DONECUM
 * Blending
    VAR_BLND.L(RT_PP,BLE,OPR)=0;
    %VAR%_BLND.FX(R,BACKWARD(T),BLE,OPR%SOW%)$BLE_OPR(R,BLE,OPR) = VAR_BLND.L(R,T,BLE,OPR);
-$IF '%RTPX%'==X ); BACKWARD(T) = M(T) LT YR_V1; SUBT(T) = TT(T)-BACKWARD(T)-FORWARD(T);
+$IF '%RTPX%'==X ); BACKWARD(T) = M(T) < YR_V1; SUBT(T) = TT(T)-BACKWARD(T)-FORWARD(T);
 *-----------------------------------------------------------------------------
   IF(MY_FYEAR,
 * Find all regions REG linked to IRE equations in region R
@@ -310,8 +312,8 @@ $IF NOT %STEPPED%==YES  $GOTO ENDSTEP
   Z = SMIN(FORWARD(T),B(T));
   YR_V1 = SMIN(SUBT(T)$(M(T) GE Z-G_OVERLAP),M(T));
   Z = YR_V1 + YR_VL;
-  SUBT(T)$(M(T) LT Z) = YES;
-  SUBT(T)$(M(T) LT YR_V1) = NO;
+  SUBT(T)$(M(T) < Z) = YES;
+  SUBT(T)$(M(T) < YR_V1) = NO;
 *-----------------------------------------------------------------------------
 * Restore some original data
   V(T) = YES;

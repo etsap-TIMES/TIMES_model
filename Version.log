@@ -2616,3 +2616,21 @@ prep_ext.stc  : (1)
 prepret.dsc   : (2)
 solsetv.v3    : (1)
 times2veda.vdd: (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.8
+-----------------------------------------------------------------------------------------
+Date: 30-Dec-2022 [AL]: Minor release
+1) Added exception support for capacities bounded by REG_BDNCAP
+2) Finished off forced retrofits for residual capacity to obey RESID trajectory
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.8
+units.def     : (3)
+spoint.mod    : (1)
+init_ext.vda  : (1)
+solve.stp     : (3)
+rptlite.rpt   : (3)
+cost_ann.rpt  : (3)
+prepret.dsc   : (2)

@@ -19,7 +19,7 @@ $IFI '%RETIRE%'==YES $SHIFT
   PRC_REFIT(RP,P)$0=0;
 $IF NOT DEFINED %2 $EXIT
 * Declarations
-  SETS VNRET(YEAR,LL), RP_RTF(R,P);
+  SET VNRET(YEAR,LL); PARAMETER RP_RTF(R,P);
 * Interpolate RCAP_BND
 $IF %TST%==%1 OPTION %TST% < %2;
 $ BATINCLUDE fillparm RCAP_BLK R 'P' ",'','','','',''" V 'RTP(R,V,P)' 'GE 0'
@@ -41,14 +41,14 @@ $LABEL DECL
 $IF %MIP% INTEGER
   VARIABLE %VAR%_DRCAP(R,ALLYEAR,LL,P%SWD%,J);
   EQUATION %EQ%_DSCRET(R,ALLYEAR,ALLYEAR,P%SWTD%);
-* Map for refit vintages
+* Maps for refit vintages & types
   LOOP(PRC_RCAP(R,PRC), F=0; CNT=EPS;
    LOOP(P$PRC_REFIT(R,PRC,P),Z=PRC_REFIT(R,PRC,P);
     IF(ABS(Z)>1, F=F+1); CNT$CNT=CNT+1;
     IF(Z<0,RTP_TT(R,T,TT,PRC)$COEF_CPT(R,T,TT,P)=YES;
     ELSE RTP_TT(R,T,T,PRC)$RTP(R,T,P)=YES; CNT=0;));
-   IF(F,RCAP_BND(RTP(R,T,PRC),'UP')$(NOT SUM(P$PRC_REFIT(R,PRC,P),RTP(R,T,P)$(ABS(PRC_REFIT(R,PRC,P))>1)))=EPS;
-    IF(F=CNT,RP_RTF(R,PRC)=YES)));
+   RP_RTF(R,PRC)$CNT = -1+2$(F=CNT);
+   IF(F,RCAP_BND(RTP(R,T,PRC),'UP')$(NOT SUM(P$PRC_REFIT(R,PRC,P),RTP(R,T,P)$(ABS(PRC_REFIT(R,PRC,P))>1)))=EPS));
 $EXIT
 *-----------------------------------------------------------------------------
 $LABEL EQOBJ
@@ -86,7 +86,7 @@ $SETGLOBAL RCAPSBM -SUM(VNRET(MODLYEAR,T),%VART%_SCAP(R,MODLYEAR,T,P%SWS%))$PRC_
    SUM((V(TT),P)$((VNT(T,V) OR PRC_REFIT(R,PRC,P)<0)$PRC_REFIT(R,PRC,P)),COEF_CPT(R,V,T,P)*(%VARV%_NCAP(R,V,P%SWS%)%RCAPSUB%))+%VAR%_RCAP(R,T,TT,PRC%SOW%)
    =E=
    SUM(RTP_CPTYR(R,VNRET(V,TT),PRC),COEF_CPT(R,V,T,PRC) * (%VARTT%_SCAP(R,V,TT,PRC%SWS%)-SUM(MODLYEAR(K(TT-1))$VNRET(V,K),%VARM%_SCAP(R,V,K,PRC%SWS%)+MIN(INF$RP_RTF(R,PRC),RTFORC(R,V,TT,PRC)-RTFORC(R,V,K,PRC)))))+
-   SUM(K(TT-1)$RTP_TT(R,K,T,PRC),%VAR%_RCAP(R,T,K,PRC%SOW%))$RP_RTF(R,PRC);
+   SUM(K(TT-1)$RTP_TT(R,K,T,PRC),%VAR%_RCAP(R,T,K,PRC%SOW%))$(RP_RTF(R,PRC)>0);
 *-----------------------------------------------------------------------------
 $IF %STAGES%==YES $%SW_TAGS%
 * Set bounds for continuous retirements

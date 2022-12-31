@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -66,7 +66,7 @@ $IF NOT %LOAD%==2 $CLEAR REG_BDNCAP
 $IF NOT %LOAD%==2 $EXIT
 * Fix new capacities to previous solution if requested
   SET RT_NO(R,T), RTCS(R,ALLYEAR,C,S);
-  REG_BDNCAP(R,BDNEQ)$REG_BDNCAP(R,'FX')=MAX(REG_BDNCAP(R,BDNEQ),REG_BDNCAP(R,'FX'))$(SMAX(BD,REG_BDNCAP(R,BD))>REG_BDNCAP(R,'FX'));
+  REG_BDNCAP(R,BDNEQ)$REG_BDNCAP(R,'FX')=MAX(REG_BDNCAP(R,BDNEQ),REG_BDNCAP(R,'FX'))$SUM(BD,REG_BDNCAP(R,BD)$BDSIG(BD));
   REG_BDNCAP(R,'FX')$SUM(BDNEQ$REG_BDNCAP(R,BDNEQ),1)=0;
   LOOP((R,BD)$REG_BDNCAP(R,BD),Z=REG_BDNCAP(R,BD); RT_NO(R,T)$(M(T)<=Z)=YES);
 * Determine which milestones available
@@ -75,11 +75,13 @@ $IF NOT %LOAD%==2 $EXIT
   OPTION FIL < RTCS;
   PASTSUM(RTP(RT_NO(R,T(FIL)),P))$PRC_CAP(R,P)=EPS;
   PASTSUM(RTP(RT_NO,P)) $= VAR_NCAP.L(RTP);
-  NCAP_BND(RTP(RT_NO(R,T),P),BD)$((M(T)<=REG_BDNCAP(R,BD))$PASTSUM(RTP)) = MAX(EPS,PASTSUM(RTP),NCAP_BND(RTP,BD)$BDLOX(BD));
+  RTPS_BD(RTP(RT_NO(R,T),P),ANNUAL,BD)$((M(T)<=REG_BDNCAP(R,BD))$PASTSUM(RTP)) = YES;
+  RTPS_BD(RTP(RT_NO(R,T),P),ANNUAL(S),BDNEQ)$(RTPS_BD(RTP,S,'LO')$RTPS_BD(RTP,S,'UP')) = BDSIG(BDNEQ)-NCAP_BND(R,'0',P,'N');
+  NCAP_BND(RTP(RT_NO(R,T),P),BD)$RTPS_BD(RTP,'ANNUAL',BD) = MAX(EPS,PASTSUM(RTP),NCAP_BND(RTP,BD)$BDLOX(BD));
   NCAP_BND(RTP(RT_NO,P),'UP')$(NCAP_BND(RTP,'LO')$NCAP_BND(RTP,'UP')) = SMAX(BDNEQ,NCAP_BND(RTP,BDNEQ));
 $ IF %STAGES%==YES $SETLOCAL SWT '$SW_T(T%SOW%)'
   %VAR%_NCAP.LO(RTP(RT_NO(R,T),P)%SOW%)%SWT%  $= NCAP_BND(RTP,'LO');
   %VAR%_NCAP.UP(RTP(RT_NO(R,T),P)%SOW%)%SWT%  $= NCAP_BND(RTP,'UP');
   %VAR%_NCAP.FX(RTP(RT_NO(R,T),P)%SOW%)%SWT%  $= NCAP_BND(RTP,'FX');
   VAR_NCAP.L(RTP(RT_NO,P)) $= PASTSUM(RTP);
-  OPTION CLEAR=PASTSUM,CLEAR=RTCS,CLEAR=FIL,CLEAR=RT_NO;
+  OPTION CLEAR=PASTSUM,CLEAR=RTCS,CLEAR=FIL,CLEAR=RTPS_BD,CLEAR=RT_NO;

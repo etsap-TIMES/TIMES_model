@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -110,26 +110,25 @@ $IFI %SHELL%==ANSWER KEEP_FLOP(R,P,C)$PRC_ACTFLO(R,'%DFLBL%',P,C) = YES;
   TOP(PRC_ACT(R,P),C,IO)$RPC_IREIO(R,P,C,'EXP',IO) = YES;
   OPTION CLEAR=PRC_ACT,CLEAR=RPC_IREIO;
 *-----------------------------------------------------------------------------
-* Handle Updatable OFF-ranges
+* Handle Updatable OFF-ranges & REG_BDNCAP bounds
   NCAP_START(R,P)$(NCAP_START(R,P)<=MIYR_BOH)=0;
   RVP(R,LL,P) $= NCAP_BND(R,LL,P,'N');
   IF(CARD(RVP),
     NCAP_BND(RVP,'N')$(NCAP_BND(RVP,'N')>%EOTIME%) = %EOTIME%;
-    NCAP_START(R,P)$RVP(R,'0',P) = NCAP_BND(R,'0',P,'N')+1;
+    NCAP_START(R,P)$((ABS(NCAP_BND(R,'0',P,'N'))>999)$RVP(R,'0',P)) = ABS(NCAP_BND(R,'0',P,'N'))+1;
     PRC_NOFF(R,P,LL,EOHYEAR)$RVP(R,LL,P) = NO;
     PRC_NOFF(R,P,BOHYEAR(LL),LL+(NCAP_BND(R,LL,P,'N')-YEARVAL(LL)))$RVP(R,LL,P) = YES);
-  NCAP_BND(RVP(R,LL,P),'N') = (YEARVAL(LL)-1)$(ROUND(MOD(NCAP_BND(RVP,'N')-YEARVAL(LL),MAX(1,YEARVAL(LL))))=-1);
+  NCAP_BND(RVP(R,LL,P),L('N')) = MOD(MIN(2,ROUND(MAX(NCAP_BND(RVP,L),-1))),2)$LASTLL(LL)+(YEARVAL(LL)-1)$(ROUND(MOD(NCAP_BND(RVP,L)-YEARVAL(LL),MAX(1,YEARVAL(LL))))=-1);
   OPTION CLEAR=RVP;
 *-----------------------------------------------------------------------------
 * Prepare UC_CLI, UC_DYNBND and UC_ACTBET
 $ BATINCLUDE equcrtp.vda INIT_EXT
-$IF %CLI%==YES
-  LOOP((UC_N,SIDE,R,LL,CM_VAR)$UC_CLI(UC_N,SIDE,R,LL,CM_VAR),UC_ATTR(R,UC_N,'RHS','CLI','YES')=YES);
+$ IF %CLI%==YES LOOP((UC_N,SIDE,R,LL,CM_VAR)$UC_CLI(UC_N,SIDE,R,LL,CM_VAR),UC_ATTR(R,UC_N,'RHS','CLI','YES')=YES);
   LOOP(UC_ATTR(R,UC_N,SIDE,UC_GRPTYPE,UC_NAME(TSL)),UC_TSL(R,UC_N,SIDE,TSL)=YES);
-$IF DEFINED UC_ACTBET UC_FLOBET(UC_N,ALL_REG,ALLYEAR,PRC,%PGPRIM%) $= UC_ACTBET(UC_N,ALL_REG,ALLYEAR,PRC);
-$IF DEFINED UC_ACTBET LOOP((UC_N,R,YEAR,P)$UC_ACTBET(UC_N,R,YEAR,P),UC_GMAP_P(R,UC_N,'ACT',P)=YES);
-$IFI %POWERFLO%==YES LOOP(SAMEAS('REACTANCE',UC_N),PRC_REACT(R,T,P) $= UC_CAP(UC_N,'RHS',R,T,P));
-$IF DEFINED PRC_REACT $SETGLOBAL POWERFLO YES
+$ IF DEFINED UC_ACTBET
+  UC_FLOBET(UC_N,ALL_R,YEAR,P,%PGPRIM%) $= UC_ACTBET(UC_N,ALL_R,YEAR,P); LOOP((UC_N,R,YEAR,P)$UC_ACTBET(UC_N,R,YEAR,P),UC_GMAP_P(R,UC_N,'ACT',P)=YES);
+$ IFI %POWERFLO%==YES LOOP(SAMEAS('REACTANCE',UC_N),PRC_REACT(R,T,P) $= UC_CAP(UC_N,'RHS',R,T,P));
+$ IF DEFINED PRC_REACT $SETGLOBAL POWERFLO YES
 *-----------------------------------------------------------------------------
 * Load bounds/prices for exogenous trade from previous run if requested
 SET PREMILE(ALLYEAR);
