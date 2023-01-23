@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -16,7 +16,7 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
 * Prepare FLO_SUMs for emissions
   FS_EMCB(RP_IRE(R,P),COM,C) = NO;
   OPTION FSCK <= FLO_SUM;
-  FLO_SUM(RTP(R,V,P),COM,C,COM,S)$((NOT FLO_SUM(R,V,P,COM,C,COM,S))$PRC_TS(R,P,S)$FS_EMCB(R,P,COM,C)) = VDA_EMCB(R,V,C,COM);
+  FLO_SUM(RTP(R,V,P),COM,C,COM,S)$((NOT FLO_SUM(RTP,COM,C,COM,S))$RPCS_VAR(R,P,C,S)$FS_EMCB(R,P,COM,C)) = VDA_EMCB(R,V,C,COM);
   VDA_EMCB(R,ALLYEAR,C,COM) = 0;
 *-----------------------------------------------------------------------------
 * Auxiliary flow variable can be replaced by term (source flow x coefficient)
@@ -28,7 +28,7 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
   FS_EMIS(CG_GRP(TRACKPG(R,P,COM),C),COM) = YES;
 * Prevent reduction of source commodity if target reduced
   OPTION TRACKPC < FS_EMIS; TRACKPG(TRACKPC) = NO;
-  OPTION CLEAR=CG_GRP, CLEAR=TRACKPC, CLEAR=FSCK;
+  OPTION CLEAR=CG_GRP, CLEAR=TRACKPC, CLEAR=FS_EMCB, CLEAR=FSCK;
 *-----------------------------------------------------------------------------
 * ACT_EFF preparation, inheritance and aggregation
   TRACKPC(RPC_ACE(RPC)) = YES;
@@ -44,7 +44,6 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
   LOOP(RPG_ACE(R,P,CG,IO),TRACKPC(R,P,C)$COM_GMAP(R,CG,C) = NO);
   RXX(PRC_SPG(R,P,CG))$(TRACKP(R,P)+SUM(TRACKPC(RPC_SPG(R,P,C)),YES)) = YES;
   RPG_PACE(RXX(TRACKP,CG)) = YES;
-  RPG_PACE(RXX(RPC_SPG(R,P,C))) = NOT RP_PGACT(R,P);
   TRACKPC(RPC_SPG) = NO;
 * Convert any ACT_EFF for 'ACT' to SPG if ACT_EFF not provided for SPG
   ACT_EFF(RTP(R,V,P),CG,S)$RXX(R,P,CG) $= ACT_EFF(RTP,%PGPRIM%,S);
@@ -60,10 +59,9 @@ $ BATINCLUDE PP_ACTEF.%1 LVL
 *-----------------------------------------------------------------------------
 * Catch shape indexes for shadow group
   IF(CARD(FLO_FUNCX),
-  FLO_FUNCX(R,V,P,CG,%PGPRIM%)$PRC_SPG(R,P,CG) $= FLO_FUNCX(R,V,P,%PGPRIM%,%PGPRIM%);
-  FLO_FUNCX(R,LL,P,%PGPRIM%,%PGPRIM%) = 0;
+  FLO_FUNCX(R,V,P,CG1,ACTCG(CG))$PRC_SPG(R,P,CG1) $= FLO_FUNCX(R,V,P,CG,CG);
   FLO_FUNCX(R,V,P,CG,COM)$(RPC_PG(R,P,COM)$RP_GRP(R,P,CG)) $= FLO_FUNCX(R,V,P,CG,%PGPRIM%);
-  FLO_FUNCX(R,V,P,CG,%PGPRIM%)$RP_GRP(R,P,CG) = 0;
+  FLO_FUNCX(R,V,P,CG,ACTCG)$(ACTCG(CG)+RP_GRP(R,P,CG)) = 0;
   FLO_FUNCX(R,V,P,CG,CG2)$RP_PG(R,P,CG) $= FLO_FUNCX(R,V,P,%PGPRIM%,CG2));
 * Ensure that ACT_EFF modeled flows are not reduced:
   LOOP(RPG_ACE(R,P,CG,IO), TRACKP(R,P) = YES);
@@ -74,21 +72,28 @@ $ BATINCLUDE PP_ACTEF.%1 LVL
   TRACKP(RP_PGFLO) = NO;
   PRC_ACT(NO_ACT(TRACKP)) = YES;
   NO_ACT(TRACKP) = NO;
-  TRACKPG(RPC_ACE) = NO;
   OPTION CLEAR=TRACKP;
 $IF NOT DEFINED RP_FFSGG $GOTO DONEFUNC
 * Prepare map for uncertain efficiencies
-  TRACKP(R,P) $= SUM(RP_GRP(PRC_SPG(R,P,CG)),1);
-  RP_FFSGG(PRC_SPG(R,P,CG),%PGPRIM%)$RP_FFSGG(R,P,%PGPRIM%,%PGPRIM%) = 0;
-  RP_FFSGGM(RP_GRP(PRC_SPG(R,P,CG1)),COM,CG(%PGPRIM%),CG)$RPC_PG(R,P,COM) $= RP_FFSGG(R,P,CG,CG);
-  RP_FFSGGM(RP_GRP(R,P,CG),COM,CG,%PGPRIM%)$RPC_PG(R,P,COM) $= RP_FFSGG(R,P,CG,%PGPRIM%);
-  RP_GRP(TRACKP,%PGPRIM%) = YES; RP_FFSGG(RP_GRP(R,P,CG),%PGPRIM%) = 0;
-  RP_FFSGGM(PRC_SPG(R,P,CG1),CG(%PGPRIM%),CG,CG)$RP_FFSGG(R,P,CG,CG)=YES;
+  RP_FFSGG(PRC_SPG(R,P,CG1),ACTCG(CG))$RP_FFSGG(R,P,CG,CG) = 0;
+  RP_FFSGGM(RP_GRP(PRC_SPG(R,P,CG1)),C,ACTCG(CG),CG)$RPC_PG(R,P,C) $= RP_FFSGG(R,P,CG,CG);
+  RP_FFSGGM(RP_GRP(R,P,CG),COM,CG,ACTCG)$RPC_PG(R,P,COM) $= RP_FFSGG(R,P,CG,ACTCG);
+  RP_GRP(R,P,ACTCG) $= SUM(RP_GRP(PRC_SPG(R,P,CG)),1); RP_FFSGG(RP_GRP,ACTCG) = 0;
+  RP_FFSGGM(PRC_SPG(R,P,CG1),ACTCG(CG),CG,CG)$RP_FFSGG(R,P,CG,CG)=YES;
 $LABEL DONEFUNC
-* Complete reduced flow indicators
-  RPC_EMIS(TRACKPG)=YES;
-  RPCC_FFUNC(TRACKPG(R,P,C),C) = YES;
-  OPTION CLEAR=TRACKP,CLEAR=RP_GRP,CLEAR=TRACKPG;
+*-----------------------------------------------------------------------------
+* Add singleton ACT_EFFs to RPC_FFUNC
+  OPTION TRACKPC < RPG_1ACE; RPC_NOFLO(TRACKPC) = NO;
+  TRACKPC(KEEP_FLOF) = NO; PUTGRP=0;
+  LOOP(RPC_FFUNC(TRACKPC),
+$   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 09 'Inconsistent/spurious process transformation parameters'
+    PUT ' SEVERE ERROR  - Same process flow definitions in conflict: R.P.C= ',TRACKPC.TE(TRACKPC));
+* Complete reduced emission flow & FFUNC indicators
+  TRACKPG(RPC_ACE) = NO; TRACKPG(TRACKPC) = NO;
+  RPC_EMIS(TRACKPG)=YES; RPCC_FFUNC(TRACKPG(RP,C),C) = YES;
+$IF NOT %REDUCE%==YES OPTION CLEAR=TRACKPC;
+  OPTION KEEP_FLOF < RPC_FFUNC; TRACKPC(RP_SGS,C) = NO; RPC_FFUNC(TRACKPC) = YES;
+  OPTION CLEAR=RP_GRP,CLEAR=TRACKPC,CLEAR=TRACKPG;
 *-----------------------------------------------------------------------------
 * Prepare commodity-specific availability factors
   SET RPG_AFCX(R,P,C,IE); OPTION RP_GRP<NCAP_AFC;
@@ -129,7 +134,7 @@ $LABEL DONEFUNC
   OPTION CLEAR=TRACKP,CLEAR=RP_GRP,CLEAR=TRACKPG,CLEAR=RTPS_BD,CLEAR=RVPS_LIM;
 *-----------------------------------------------------------------------------
 * Automatic generation of NCAP_AFC for ECT CHP
-  RVP(RTP(R,V,P))$((NOT RPS_CAFLAC(R,P,'ANNUAL','UP'))$(NCAP_CHPR(RTP,'UP')*NCAP_AFA(RTP,'UP')>0)$PRC_MAP(R,'CHP',P))=YES;
+  RVP(RTP(R,V,P))$((NOT RPS_CAFLAC(R,P,'ANNUAL','UP'))$(NCAP_CHPR(RTP,'UP')*NCAP_AFA(RTP,'UP')>0)$CHP(R,P))=YES;
   RVP(RTP)$(NCAP_CEH(RTP)<1.5) = NO;
 * The maximum of the technical AF for ELC, corrected with ACTFLO:
   VDA_CEH(RVP(R,V,P)) = MAX(0,SMAX((PRC_TS(R,P,S),CHP_ELC(R,P,C)),NCAP_AF(RVP,S,'UP')*PRC_ACTFLO(RVP,C)));

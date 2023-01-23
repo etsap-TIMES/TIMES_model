@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -84,7 +84,6 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Commodity in CG of process P b
          PUT QLOG ' SEVERE WARNING  -   R=',%RL%,' P=',%PL%,' C=',%CL%,' CG=',CG.TL ;
       )
     );
-
   PUTGRP = 0;
 *-----------------------------------------------------------------------------
 * Commodity description
@@ -138,14 +137,12 @@ $          BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Demand: COM_PROJ specified f
   LOOP(TRACKPC(RPC),
 $   BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 33 'Phantom entries found in topology (process/commodity not in SET PRC/COM)'
     PUT QLOG ' FATAL ERROR   -     Phantom topology entry:   R.P.C= ',TRACKPC.TE(RPC));
-  OPTION CLEAR=TRACKPC;
+  OPTION CLEAR=TRACKPC,CLEAR=PRC_CG;
   IF(ERRLEV=33,SOLVESTAT(J)$=QASTAT(J));
   PUTGRP = 0;
-  PARAMETER CGP(CG); CGP(CG)=3;
-  PRC_YMAX(RP)=SUM(RP_PG(RP,CG),CGP(CG)+2)-5;
+  PRC_YMAX(RP)=SUM(RP_PG(RP,CG),1)-1;
   LOOP(RP(R,P)$PRC_YMAX(R,P),
-* Check that PCG specified
-* [AL] PRC_CG check removed, because the PCG check below ensures PRC_CGs
+* Check that unambiguous PCG specified
 $     BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Process with missing or mismatched CG/PRC_ACTUNIT'
       IF(PRC_YMAX(RP)<0,
          PUT QLOG ' FATAL ERROR   -  No way to identify PCG:   R=',%RL%,' P=',P.TL ;
@@ -153,7 +150,8 @@ $     BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Process with missing or mismatche
          PUT QLOG ' FATAL ERROR   -  Several PCG groups:       R=',%RL%,' P=',P.TL ;
       );
   );
-  OPTION CLEAR=CGP;
+* Add PTRANS control for ACT_FLO
+  PRC_CG(RP_PG(R,P,CG))$=SUM(RPC_AFLO(R,P,C)$(NOT RPC_FFUNC(R,P,C)),1);
   PUTGRP = 0;
 * Make a QA Complaint about invalid FS_EMIS substitution
   LOOP(FS_EMIS(R,P,CG,C,COM)$RPC_EMIS(R,P,C),
@@ -228,7 +226,7 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'IRE Process with invalid Paramet
 * ACT_EFF quality tests
   IF(CARD(ACT_EFF),
   OPTION RP_GRP < ACT_EFF;
-  RP_GRP(RPC_ACE)=NO; RP_GRP(KEEP_FLOP)=NO; RP_GRP(RPC_PG)=NO;
+  RP_GRP(RPC_ACE)=NO; RP_GRP(RPC_PG)=NO;
   RP_GRP(R,P,CG)$SUM(RPG_ACE(R,P,CG,IO),1)=NO;
   RP_GRP(R,P,CG)$SUM(RPG_1ACE(R,P,CG,C),1)=NO;
   RP_GRP(R,P,C)$SUM(RPG_1ACE(R,P,CG,C),1)=NO;
@@ -274,13 +272,14 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'PTRANS between CG1 and CG2 in 
   CG_GRP(R,P,C,COM)$((NOT ENV(R,C))$ENV(R,COM)) = NO;
   TRACKPC(R,P,C) $= SUM(CG_GRP(R,P,C,CG2),1);
   RP_GRP(TRACKPC(R,P,C))$(NOT RPC(R,P,C)) = YES;
-  TRACKPC(RP_GRP(RPC(R,P,C))) = YES; RP_GRP(RPC(R,P,C)) = NO;
+  TRACKPC(RP_GRP(RPC(R,P,C))) = YES; RP_GRP(RPC) = NO;
   LOOP(RP_GRP(R,P,CG),TRACKPC(RPC(R,P,C))$COM_GMAP(R,CG,C) = YES);
 $IF DEFINED RPG_ACE LOOP(RPG_ACE(R,P,CG,IO),TRACKPC(RPC_ACE(R,P,C)) = YES);
-  TRACKPC(RPC_PG(R,P,C)) = YES;
+  TRACKPC(RPC_PG) = YES;
   TRACKPC(RPC(R,P,C))$RP_IRE(R,P) = YES;
-  TRACKPC(RPC_SPG(RPC_STG(R,P,C))) = YES;
-  TRACKPC(RPC_NOFLO(R,P,C)) = YES;
+  TRACKPC(RPC_SPG(RPC_STG)) = YES;
+  TRACKPC(RPC_NOFLO) = YES;
+  TRACKPC(RPC_FFUNC) = YES;
   LOOP(T, TRACKP(RP_STD(R,P))$RTP_VARA(R,T,P) = YES);
   LOOP(TOP(TRACKP(R,P),C,IO)$(NOT TRACKPC(R,P,C)),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'RPC in TOP not found in any ACTFLO/FLO_SHAR/FLO_FUNC/FLO_SUM'

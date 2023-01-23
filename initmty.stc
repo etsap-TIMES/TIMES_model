@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2021 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *-----------------------------------------------------------------------------
@@ -39,8 +39,8 @@ $SETGLOBAL STAGES YES
   PARAMETER SW_TPROB(T,ALLSOW) //;
 
 * Stochastic input parameters
-  PARAMETER S_COM_PROJ(REG,ALLYEAR,COM,J,ALLSOW)  'Demand scenario projection'  //;
-  PARAMETER S_CAP_BND(REG,ALLYEAR,PRC,BD,J,ALLSOW) 'Bound on total installed capacity'  //;
+  PARAMETER S_COM_PROJ(REG,ALLYEAR,COM,J,ALLSOW)  'Demand scenario projection' //;
+  PARAMETER S_CAP_BND(REG,ALLYEAR,PRC,BD,J,ALLSOW) 'Bound on total installed capacity' //;
   PARAMETER S_COM_CUMPRD(R,BOHYEAR,EOHYEAR,C,BD,J,ALLSOW) 'Cumulative limit on COMPRD' //;
   PARAMETER S_COM_CUMNET(R,BOHYEAR,EOHYEAR,C,BD,J,ALLSOW) 'Cumulative limit on COMNET' //;
   PARAMETER S_COM_TAX(R,ALLYEAR,C,S,COM_VAR,CUR,J,ALLSOW) 'Tax on commodity NET/PRD' //;
@@ -48,7 +48,7 @@ $SETGLOBAL STAGES YES
   PARAMETER S_FLO_FUNC(R,ALLYEAR,P,CG,CG,J,ALLSOW) 'Uncertain multiplier of process transformation';
   PARAMETER S_NCAP_COST(R,ALLYEAR,P,J,ALLSOW) 'Uncertain multiplier of investment cost' //;
   PARAMETER S_DAM_COST(R,ALLYEAR,C,CUR,J,ALLSOW) 'Damage costs';
-  PARAMETER S_UC_RHS(UC_N,LIM,J,ALLSOW) 'RHS of user constraint'  //;
+  PARAMETER S_UC_RHS(UC_N,LIM,J,ALLSOW) 'RHS of user constraint' //;
   PARAMETER S_UC_RHSR(ALL_REG,UC_N,LIM,J,ALLSOW) 'RHS of user constraint' //;
   PARAMETER S_UC_RHST(UC_N,ALLYEAR,LIM,J,ALLSOW) 'RHS of user constraint' //;
   PARAMETER S_UC_RHSRT(ALL_REG,UC_N,ALLYEAR,LIM,J,ALLSOW) 'RHS of user constraint' //;
@@ -56,21 +56,27 @@ $SETGLOBAL STAGES YES
   PARAMETER S_UC_RHSRTS(ALL_REG,UC_N,ALLYEAR,TS,LIM,J,ALLSOW) 'RHS of user constraint' //;
   PARAMETER S_CM_MAXCO2C(ALLYEAR,J,ALLSOW) 'Maximum allowable atmospheric CO2 concentration' //;
   PARAMETER S_CM_MAXC(ALLYEAR,ITEM,J,ALLSOW) 'Maximum allowable climatic quantity' //;
-  PARAMETER S_CM_CONST(ITEM,J,ALLSOW) //;
+  PARAMETER S_CM_CONST(ITEM,J,ALLSOW) 'Climate constants' //;
   PARAMETER S_UCOBJ(UC_N,ALLSOW) 'Weight of UC objective component in tradeoff analysis' //;
-  PARAMETER S_NCAP_AFS(R,ALLYEAR,P,S,J,ALLSOW);
-  PARAMETER S_COM_FR(R,ALLYEAR,C,S,J,ALLSOW);
+  PARAMETER S_NCAP_AFS(R,ALLYEAR,P,S,J,ALLSOW) 'Seasonal availability factors';
+  PARAMETER S_COM_FR(R,ALLYEAR,C,S,J,ALLSOW) 'Commodity fraction multipliers';
 
 * Internal work sets and parameters
   PARAMETER S_COM_CUM(R,COM_VAR,ALLYEAR,ALLYEAR,C,BD,J,ALLSOW) 'Cumulative limit on COMPRD' //;
+  SET T0(LL) 'Augmented periods';
+  SET SW_T2W(WW,T,WW,LL) 'Augmented map for SOWs by period';
+  SET RTCSW(R,T,C,S,WW) 'Indicator for uncertain timeslice fractions';
   SET RTPW(R,ALLYEAR,P,ALLSOW) 'Uncertain SOW by vintage';
   SET RP_FFSGG(R,P,CG,CG) 'Uncertain transformation groups';
   SET RP_FFSGGM(R,P,CG,CG,COM_GRP,COM_GRP) 'Map of transformation groups';
   PARAMETER OBJ_SIC(R,T,P,ALLSOW) 'Uncertainty in investments';
   PARAMETER SUC_L(ALL_R,UC_N) 'Dynamic type LHS' //;
+  PARAMETER RTP_SAFS(R,T,P,S,WW) 'Uncertain availability factors';
+  PARAMETER RTCS_SFR(R,LL,C,S,WW,TS) 'Uncertain COM_FR multipliers';
+  PARAMETER RCS_SSFR(R,C,S,TS,WW,LL) 'Uncertain COM_FR multipliers';
 
 * Reporting
-  PARAMETER SPAR_UCSL(WW,UC_N,*,*,*)  //;
+  PARAMETER SPAR_UCSL(WW,UC_N,*,*,*) //;
   PARAMETER CM_SRESULT(ALLSOW,ITEM,ALLYEAR) 'Climate Module basic results' //;
   PARAMETER CM_SMAXC_M(ALLSOW,ITEM,ALLYEAR) 'Marginals for max constraints' //;
 *-----------------------------------------------------------------------------

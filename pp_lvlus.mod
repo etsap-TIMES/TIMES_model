@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -35,5 +35,5 @@
       %1(UC_N%6,SIDE,R,T,%2,S%5)$%3(R,%7%10,S) $= TS_ARRAY(S)));
     ELSE F=1));
 *-----------------------------------------------------------------------------
-  LOOP(ANNUAL(TS),%1(UC_N%6,SIDE,R,T,%2,S%5)$(%3(R,%7%10,S)$(NOT %1(UC_N%6,SIDE,R,T,%2,S%5))$%1(UC_N%6,SIDE,R,T,%2,TS%5)) = %1(UC_N%6,SIDE,R,T,%2,TS%5));
+  %1(UC_N%6,SIDE,R,T,%2,S%5)$(%3(R,%7%10,S)$(NOT %1(UC_N%6,SIDE,R,T,%2,S%5))) $= %1(UC_N%6,SIDE,R,T,%2,'ANNUAL'%5);
   OPTION CLEAR=UNCD7;

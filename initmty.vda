@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -12,7 +12,6 @@ $ SETGLOBAL VDA YES
 * Process transformation parameters:
   PARAMETERS
   VDA_FLOP(REG,ALLYEAR,PRC,CG,S)     'General process transformation parameter'
-  ACT_FLO(REG,ALLYEAR,PRC,CG,S)      'General process transformation parameter'//
   VDA_EMCB(REG,ALLYEAR,COM,COM)      'Combustion emission parameter (aka EMI_comb)' //
   VDA_CEH(REG,ALLYEAR,PRC)           'The slope of pass-out turbine (alias NCAP_CEH)' //
   FLO_EMIS(REG,ALLYEAR,PRC,CG,COM,S) 'General process emission parameter' //

@@ -2634,3 +2634,41 @@ solve.stp     : (3)
 rptlite.rpt   : (3)
 cost_ann.rpt  : (3)
 prepret.dsc   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.6.9
+-----------------------------------------------------------------------------------------
+Date: 23-Jan-2023 [AL]: Minor release
+1) Improved effective levelization of various process transformation parameters
+2) Streamlined performance of reduced model generation
+3) Added support for emissions set directly on CHP activity
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.6.9
+initmty.mod   : (4)
+setglobs.gms  : (1)
+ppmain.mod    : (1),(3)
+pp_lvlfs.mod  : (1)
+pp_lvlus.mod  : (4)
+pp_chp.mod    : (3)
+pp_reduce.red : (1)
+coef_ptr.mod  : (1),(2)
+coef_shp.mod  : (2)
+eqobjinv.mod  : (4)
+eqptrans.mod  : (1)
+pp_qack.mod   : (1)
+cal_red.red   : (2)
+sol_flo.red   : (2)
+rptmisc.rpt   : (4)
+initmty.vda   : (2)
+init_ext.vda  : (2)
+prep_ext.vda  : (1)
+pp_prelv.vda  : (1),(2),(3)
+ppm_ext.vda   : (2)
+pp_actef.vda  : (1)
+coef_ext.vda  : (2)
+initmty.stc   : (4)
+stages.stc    : (2)
+sensis.stc    : (2)
+solputta.ans  : (4)

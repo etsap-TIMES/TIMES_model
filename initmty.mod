@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -156,6 +156,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   PARAMETER ACT_CSTUP(R,ALLYEAR,P,TSLVL,CUR)    'Variable costs associated with startup of a process' //;
   PARAMETER ACT_CSTSD(R,ALLYEAR,P,UPT,BD,CUR)   'Start-up (BD=UP) and shutdown costs (BD=LO) per unit of started-up capacity, by start-up type'//;
   PARAMETER ACT_CSTRMP(R,ALLYEAR,P,L,CUR)       'Ramp-up (L=UP) or ramp-down (L=LO) cost per unit of load change' //;
+  PARAMETER ACT_FLO(REG,ALLYEAR,PRC,CG,S)       'General process transformation parameter'//
   PARAMETER ACT_TIME(R,ALLYEAR,P,L)             'Minimum online/offline hours' //;
   PARAMETER ACT_CUM(REG,PRC,ITEM,ITEM,LIM)      'Bound on cumulative activity' //;
 
@@ -212,7 +213,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   PARAMETER NCAP_VALU(REG,ALLYEAR,PRC,COM,CUR)  'Value of material released during decomissioning' //;
 
 * capacity installed
-  PARAMETER NCAP_START(REG,PRC)                 'Start year for new investments'  //;
+  PARAMETER NCAP_START(REG,PRC)                 'Start year for new investments' //;
   PARAMETER NCAP_SEMI(R,ALLYEAR,P)              'Semi-continuous capacity, lower bound';
   PARAMETER CAP_BND(REG,ALLYEAR,PRC,BD)         'Bound on total installed capacity in a period' //;
 
@@ -374,36 +375,36 @@ $ SETGLOBAL DFLBL '0'
 *GG* V07_2 Initializations for BLENDing
 * ---------------------------------------------------------------------------------------------
 * user provided Sets & Scalars
-         SET BLE(COM)       //;
-         SET OPR(COM)       //;
-         SET SPE(*)         //;
-         SET REF(R,PRC)     //;
-         PARAMETER REFUNIT(R) //;
+     SET BLE(COM)         //;
+     SET OPR(COM)         //;
+     SET SPE(*)           //;
+     SET REF(R,PRC)       //;
+     PARAMETER REFUNIT(R) //;
 
 * internal Sets
-         SET CVT  / DENS, WCV, VCV, SLF /;
+     SET CVT  / DENS, WCV, VCV, SLF /;
 
 * user provided Parameters
-         PARAMETER CONVERT(OPR,CVT)              //;
-         PARAMETER BL_START(R,COM,SPE)           //;
-         PARAMETER BL_UNIT(R,COM,SPE)            //;
-         PARAMETER BL_TYPE(R,COM,SPE)            //;
-         PARAMETER BL_SPEC(R,COM,SPE)            //;
-*         PARAMETER TBL_SPEC(COM,SPE,YEAR)       //;
-         PARAMETER BL_COM(R,COM,OPR,SPE)         //;
-*         PARAMETER TBL_COM(COM,SPE,OPR,YEAR)    //;
-         PARAMETER BL_INP(R,COM,COM)             //;
-*         PARAMETER TBL_INP(COM,SPE,COM,YEAR)    //;
-         PARAMETER BL_VAROMC(R,COM,CUR)          //;
-*         PARAMETER TBL_VAROM(COM,SPE,YEAR)      //;
-         PARAMETER BL_DELIVC(R,COM,COM,CUR)      //;
-*         PARAMETER TBL_DELIV(COM,SPE,COM,YEAR)  //;
-         PARAMETER ENV_BL(R,COM,COM,OPR,YEAR)    //;
-         PARAMETER PEAKDA_BL(R,COM,YEAR)         //;
+     PARAMETER CONVERT(OPR,CVT)              //;
+     PARAMETER BL_START(R,COM,SPE)           //;
+     PARAMETER BL_UNIT(R,COM,SPE)            //;
+     PARAMETER BL_TYPE(R,COM,SPE)            //;
+     PARAMETER BL_SPEC(R,COM,SPE)            //;
+*     PARAMETER TBL_SPEC(COM,SPE,YEAR)       //;
+     PARAMETER BL_COM(R,COM,OPR,SPE)         //;
+*     PARAMETER TBL_COM(COM,SPE,OPR,YEAR)    //;
+     PARAMETER BL_INP(R,COM,COM)             //;
+*     PARAMETER TBL_INP(COM,SPE,COM,YEAR)    //;
+     PARAMETER BL_VAROMC(R,COM,CUR)          //;
+*     PARAMETER TBL_VAROM(COM,SPE,YEAR)      //;
+     PARAMETER BL_DELIVC(R,COM,COM,CUR)      //;
+*     PARAMETER TBL_DELIV(COM,SPE,COM,YEAR)  //;
+     PARAMETER ENV_BL(R,COM,COM,OPR,YEAR)    //;
+     PARAMETER PEAKDA_BL(R,COM,YEAR)         //;
 
 * internal Parameters
-         PARAMETER RU_CVT(R,BLE,SPE,OPR)         //;
-         PARAMETER RU_FEQ(R,COM,YEAR)            //;
+     PARAMETER RU_CVT(R,BLE,SPE,OPR)         //;
+     PARAMETER RU_FEQ(R,COM,YEAR)            //;
 
   PARAMETER OBJ_BLNDV(R,YEAR,C,C,CUR) 'annual variable costs for blending' //;
 

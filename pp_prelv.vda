@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -13,13 +13,16 @@
   RPC_PG(R,P,C)$((NOT RP_PG(R,P,C))$(ROUND(PRC_ACTFLO(R,'0',P,C) LT 0))) = NO;
 *=============================================================================
 * For filtering VDA_FLOP, check ACT_EFF groups
-  TRACKPC(RPC_SPG(R,P,C))$RPC_ACE(R,P,%PGPRIM%) = YES;
-  TRACKPC(RPC_SPG(R,P,C))$RPG_1ACE(R,P,C,C) = NO;
+  TRACKPC(RPC_SPG(R,P,C))$((NOT RPG_1ACE(R,P,C,C))$RPC_ACE(R,P,%PGPRIM%)) = YES;
   Z = CARD(VDA_FLOP);
-  VDA_FLOP(R,LL,P,C,S)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)) = 0;
-$IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)) = 0;
+  VDA_FLOP(R,LL,P,C,S)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)) = 0;
+$IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)) = 0;
   Z = Z-CARD(VDA_FLOP); IF(Z, DISPLAY 'DELETED FLOPS FOR SPG:',Z);
-  OPTION CLEAR=TRACKPC,CLEAR=KEEP_FLOP;
+* Residual values
+  ACT_FLO(R,LL,P,C,S)$(RPC_PG(R,P,C)+RPS_PRCTS(R,P,S)) = 0;
+  OPTION RPC_AFLO < ACT_FLO, CLEAR=ACT_FLO,CLEAR=TRACKPC,CLEAR=KEEP_FLOF;
+  ACT_FLO(R,V,P,C,S)$RPC_AFLO(R,P,C) $= VDA_FLOP(R,V,P,C,S);
+  VDA_FLOP(RTP,C,S)$ACT_FLO(RTP,C,S) = 1;
 *-----------------------------------------------------------------------------
 * Preprocessing of VDA_FLOP after establishing PRC_SPG
   OPTION RP_GRP < VDA_FLOP;
@@ -27,7 +30,6 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)
 * RP_GRP contains only CGs that are not in topology, but include some C in RPC
   RP_GRP(TRACKPC) = NO;
   RP_GRP(R,P,CG)$(NOT SUM(RPC(R,P,C)$COM_GMAP(R,CG,C),1)) = NO;
-*-----------------------------------------------------------------------------
 * Set PRC_CG now automatically
   PRC_CG(RP_GRP) = YES;
 *-----------------------------------------------------------------------------
@@ -41,13 +43,14 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)
 * Partition the groups into direct/PG based ones
   CG_GRP(RP_PG(R,P,CG2),CG)$RP_GRP(R,P,CG) = YES;
   RPCC_FFUNC(CG_GRP(TRACKP(R,P),CG2,CG))$SUM(RPC_SPG(R,P,C)$COM_GMAP(R,CG,C),1) = YES;
-  CG_GRP(RPCC_FFUNC) = NO; OPTION CLEAR=RXX,CLEAR=RP_GRP;
+  CG_GRP(RPCC_FFUNC) = NO; OPTION CLEAR=RP_GRP;
 *-----------------------------------------------------------------------------
 * Remove from TRACKP those processes for which CG has been defined:
   LOOP(RPCC_FFUNC(R,P,CG2,CG),TRACKP(R,P) = NO);
 * Add into FFUNC single SPG commodities for remaining TRACKP:
-  LOOP(TRACKP(R,P)$(SUM(RPC_SPG(R,P,C),1) EQ 1),RXX(RPC_SPG(R,P,C)) = YES);
-  RPCC_FFUNC(RP_PG(R,P,CG),C)$RXX(R,P,C) = YES; TRACKPC(RXX(R,P,C)) = NO;
+  TRACKP(RP)$(SUM(RPC_SPG(TRACKPC(RP,C)),1)<>1) = NO;
+  RPCC_FFUNC(RP_PG(TRACKP(RP),CG),C) $= SUM(RPC_SPG(TRACKPC(RP,C)),1);
+  TRACKPC(RPC_SPG(TRACKP,C)) = NO;
 *-----------------------------------------------------------------------------
 * VDA_FLOP is in the direction from the PG to the CG:
   FLO_FUNC(RTP(R,V,P),CG2,CG,S)$RPCC_FFUNC(R,P,CG2,CG) = VDA_FLOP(RTP,CG,S);
@@ -58,14 +61,14 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)
   FLO_SUM(RTP(R,V,P),CG2,C,CG,S)$(RPC_PG(R,P,C)$CG_GRP(R,P,CG2,CG)) = VDA_FLOP(RTP,CG,S)*(1/PRC_ACTFLO(RTP,C));
 * Finally, handle single commodities without a group (and not in PG either)
   FLO_SUM(RTP(R,V,P),CG,C,COM,S)$(RP_PG(R,P,CG)*RPC_PG(R,P,C)*TRACKPC(R,P,COM)) $= VDA_FLOP(RTP,COM,S)*(1/PRC_ACTFLO(RTP,C));
-  OPTION CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=VDA_FLOP,CLEAR=CG_GRP,CLEAR=RXX,CLEAR=RPCC_FFUNC;
+  OPTION CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=VDA_FLOP,CLEAR=CG_GRP,CLEAR=RPCC_FFUNC;
 *-----------------------------------------------------------------------------
 * Distribute IRE_FLOSUM for ACT; Ignore possible overwriting for now
   PRC_ACTFLO(R,V,P,C) $= FLO_EMIS(R,V,P,%PGPRIM%,C,'ANNUAL')$PRC_MAP(R,'STG',P);
   IRE_FLOSUM(R,V,P,C(ACTCG),S,IE,COM,'OUT') $= FLO_EMIS(R,V,P,C,COM,S)$RP_AIRE(R,P,IE);
 * Preprocessing of FLO_EMIS
   OPTION RP_CGC <= FLO_EMIS;
-  FLO_EMIS(RTP(R,V,P),C,C,S)$(RP_CGC(R,P,C,C)$RPC_PG(R,P,C)) = 1+(FLO_EMIS(R,V,P,C,C,S)-1)/PRC_ACTFLO(R,V,P,C);
+  FLO_EMIS(RTP(R,V,P),C,C,S)$(RP_CGC(R,P,C,C)$RPC_PG(R,P,C)) = 1+(FLO_EMIS(RTP,C,C,S)-1)/PRC_ACTFLO(RTP,C);
   RP_CGC(RP_IRE(R,P),CG,C)=NO; RP_CGC(RPC_STG,C)=NO;
   RPCC_FFUNC(RP_CGC(RPC,COM)) = YES;
   RP_CGC(RPCC_FFUNC(RPC,COM)) = NO;
@@ -74,7 +77,7 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOP(R,P,C))$TRACKPC(R,P,C)
   FSCK(RP_CGC(R,P,CG,COM),C)$(COM_GMAP(R,CG,C)$RPC(R,P,C)) = YES;
   LOOP(FSCK(R,P,CG,COM,C), FLO_SUM(R,V,P,COM,C,COM,S) $= FLO_EMIS(R,V,P,CG,COM,S); RPC_EMIS(R,P,COM) = NO);
 * Add activity sources
-  FLO_SUM(RTP(R,V,P),COM,C,COM,S)$(RPC_PG(R,P,C)$RP_CGC(R,P,%PGPRIM%,COM)) = FLO_EMIS(R,V,P,%PGPRIM%,COM,S)/PRC_ACTFLO(R,V,P,C);
+  FLO_SUM(RTP(R,V,P),COM,C,COM,S)$(RPC_PG(R,P,C)$RP_CGC(R,P,%PGPRIM%,COM)) = FLO_EMIS(RTP,%PGPRIM%,COM,S)/PRC_ACTFLO(RTP,C);
   RP_CGC(R,P,%PGPRIM%,C) = NO; PUTGRP=0;
   LOOP(RP_CGC(R,P,CG,COM)$RPC_EMIS(R,P,COM),
 $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'FLO_EMIS with no members of source group in process - ignored'
@@ -82,9 +85,9 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'FLO_EMIS with no members of source
   );
   FLO_SUM(RTP(R,V,P),COM,C,COM,ANNUAL)$RPC_PG(R,P,C) $= SUM(RP_CGC(R,P,CG,COM)$RPC_EMIS(R,P,COM),EPS);
 * Add single source commodities
-  OPTION CLEAR=RP_CGC,CLEAR=FSCK,CLEAR=RPC_EMIS;
-  OPTION CG_GRP < RPCC_FFUNC;
-  FLO_SUM(R,V,P,COM,C,COM,S)$CG_GRP(R,P,COM,C) = FLO_EMIS(R,V,P,C,COM,S);
+  OPTION CLEAR=RP_CGC, CLEAR=FSCK, CLEAR=RPC_EMIS, CG_GRP < RPCC_FFUNC;
+  FLO_SUM(RTP(R,V,P),C,COM,C,S)$CG_GRP(R,P,C,COM) = FLO_EMIS(RTP,COM,C,S);
+  FLO_EFF(RTP(R,V,P),C,COM,S)$((NOT CG_GRP(R,P,C,COM))$RPC_PG(R,P,COM)$CHP(R,P)) $= FLO_EMIS(RTP,%PGPRIM%,C,S);
   OPTION CLEAR=CG_GRP,CLEAR=RPCC_FFUNC,CLEAR=FLO_EMIS;
 *=============================================================================
 * Other preprocessing stuff for the VEDA interface

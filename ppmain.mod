@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -28,10 +28,6 @@
   SET UC_DT(ALL_R,UC_N) //;
   SET RCS(REG,COM,TS);
   SET RC_RC(ALL_REG,COM,ALL_REG,COM);
-  PARAMETER LEAD(ALLYEAR) //;
-  PARAMETER LAGT(ALLYEAR) //;
-  PARAMETER FPD(ALLYEAR)  //;
-  PARAMETER IPD(ALLYEAR)  //;
 
 *-----------------------------------------------------------------------------
 * Log Warnings
@@ -595,6 +591,7 @@ $IF DEFINED PRC_SIMV LOOP(T,NO_RVP(R,TT-1,P)$(RTP_CPTYR(R,TT,T,P)$PRC_SIMV(R,P))
    RP_STD(RP_FLO(RP))$(NOT RP_STG(RP)) = YES;
    OPTION RPC_ACT <= PRC_ACTFLO;
    RPC_ACT(R,P,C)$(RPC_PG(R,P,C)+(NOT RPC(R,P,C))+RP_STG(R,P)) = NO;
+   CHP(RP(R,P)) $= PRC_MAP(R,'CHP',P);
 *-----------------------------------------------------------------------------
 * establishment PRC_CAPACT/ACTFLO from PRC_CAPUNT/ACTUNT/COM_UNIT & determine INOUT(r,p)
 *-----------------------------------------------------------------------------
@@ -648,8 +645,8 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 *        commodity time = lead if not provided
     NCAP_CLED(RTP(R,T,P),C)$((NOT NCAP_CLED(RTP,C))$NCAP_ICOM(RTP,C)) = COEF_ILED(RTP);
 * CHP plants
-    NCAP_BPME(RTP(R,V,P))$((NOT NCAP_BPME(RTP))$NCAP_CDME(RTP)$PRC_MAP(R,'CHP',P)) = 1;
-    NCAP_CHPR(RTP(R,V,P),'UP')$((NOT SUM(L$NCAP_CHPR(RTP,L),1))$PRC_MAP(R,'CHP',P)) = 1;
+    NCAP_BPME(RTP(R,V,P))$((NOT NCAP_BPME(RTP))$NCAP_CDME(RTP)$CHP(R,P)) = 1;
+    NCAP_CHPR(RTP(R,V,P),'UP')$((NOT SUM(LIM$NCAP_CHPR(RTP,LIM),1))$CHP(R,P)) = 1;
 *V0.9c init storage efficiency if not provided
     LOOP(RP_STG(R,P)$(NOT SUM(RTP(R,T,P)$STG_EFF(RTP),1)), STG_EFF(RTP(R,V,P)) = 1);
 
@@ -797,14 +794,14 @@ $ BATINCLUDE pp_lvlpk.mod 1.0
 *-----------------------------------------------------------------------------
 * flow related attributes
 *-----------------------------------------------------------------------------
-* costs, fraction, subsidy and taxes
+* costs, subsidy, taxes, & flow rates
 
 $   BATINCLUDE pp_lvlfc.mod FLO_COST  'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_DELIV 'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_SUB   'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_TAX   'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_PKCOI 'P,C' RPCS_VAR '' ",'0','0','0'" ALL_TS T RTP(R,T,P)
-
+$   BATINCLUDE pp_lvlfc.mod ACT_FLO   'P'   RPS_S1   '' ",'0','0','0'" ALL_TS V RTP(R,V,P) 0 ',C' N
 
 *GG*PKCOI defaults to 1
     LOOP((RPC(R,P,C),COM_GMAP(COM_PEAK(R,CG),C))$(TOP(RPC,'IN')+RPC_IRE(RPC,'EXP')),

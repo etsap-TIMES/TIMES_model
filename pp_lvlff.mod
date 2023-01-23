@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -7,10 +7,10 @@
 *   %1 - mod or v# for the source code to be used
 *=============================================================================*
 *GaG Questions/Comments:
-* - [AL] assumption is that values can be given at any levels
+* - Assumption is that values can be given at any levels
 *-----------------------------------------------------------------------------
 *$ONLISTING
-  SET FFCKS(REG,PRC,CG,CG,S)  / EMPTY.EMPTY.EMPTY.EMPTY.EMPTY /;
+  SET FFCKS(REG,PRC,CG,CG,S)  //;
 
 * check all commodities in the groups of a process at other than PRC_TS level
   LOOP(V,FFCKS(R,P,CG,COM_GRP,S)$((NOT PRC_TS(R,P,S))$FLO_FUNC(R,V,P,CG,COM_GRP,S)) = YES);
@@ -36,7 +36,6 @@
 *
 *  FLO_FUNC(R,T,P,CG,COM_GRP,S)$(FFCKS(R,P,CG,COM_GRP,S)*(NOT PRC_TS(R,P,S))) = 0;
 
-  OPTION CLEAR = FFCKS;
-  OPTION CLEAR = CG_GRP;
+  OPTION CLEAR = FFCKS, CLEAR = CG_GRP;
 *$OFFLISTING
 

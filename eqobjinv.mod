@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -259,7 +259,7 @@ $IF NOT '%CTST%'=='' $BATINCLUDE coef_alt.lin INV
 
 *------------------------------------------------------------------------------
 * The equation divisors for investments:
-$IF NOT '%CTST%'=='' $GOTO EQUA
+$IF NOT '%CTST%'=='' $GOTO CLRS
   OBJ_DIVI(OBJ_YES(OBJ_1A(R,V,P))) = 1+(IPD(V)-1)$MILESTONYR(V);
   OBJ_DIVI(OBJ_YES(OBJ_1B(R,T,P))) = NCAP_TLIFE(R,T,P);
   IF(ALTOBJ,OBJ_DIVI(OBJ_YES(OBJ_1B(R,T,P)))$((ROUND(NCAP_TLIFE(R,T,P))-IPD(T)%CTST%) GT 0) = IPD(T)*MIN(1,NCAP_TLIFE(R,T,P)));
@@ -269,9 +269,9 @@ $IF '%VALIDATE%'== YES  OBJ_DIVI(OBJ_YES(R,T,P))$(NOT OBJ_I2(R,T,P)) = 1;
   OBJ_DIVIII(OBJ_SUMS3(OBJ_I2(R,V,P))) = ROUND(NCAP_DLIFE(R,V,P));
 $IF '%VALIDATE%' == YES  OPTION CLEAR=OBJ_PASTI;
 *------------------------------------------------------------------------------
-  OPTION CLEAR = OBJ_YES, CLEAR = OBJ_SUMS3;
-  OPTION CLEAR = OBJ_I2,  CLEAR = OBJ_SPRED;
-  OPTION CLEAR = YKAGE,   CLEAR = INVSTEP;
+$LABEL CLRS
+  OPTION CLEAR = OBJ_YES, CLEAR = OBJ_SUMS3, CLEAR = YKAGE;
+  OPTION CLEAR = INVSTEP, CLEAR = OBJ_SPRED, CLEAR = OBJ_I2;
 
 $LABEL EQUA %2
 *===============================================================================

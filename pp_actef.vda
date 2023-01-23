@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *==============================================================================*
@@ -8,30 +8,30 @@
 *==============================================================================*
 $IF NOT '%1' == LVL $GOTO EQUA
 *-----------------------------------------------------------------------------
-SCALAR MICRO / 1E-6 /;
-*-----------------------------------------------------------------------------
-OPTION CLEAR=UNCD7, CLEAR=RXX;
+ SCALAR MICRO / 1E-6 /;
+ OPTION CLEAR=UNCD7;
 *-----------------------------------------------------------------------------
 * Save commodity ACT_EFF partitions
  CG_GRP(RPC_ACE(RPC(R,P,C)),C) = YES;
- OPTION KEEP_FLOP<RPG_1ACE, CLEAR=RPG_1ACE;
+ OPTION KEEP_FLOF<RPG_1ACE, CLEAR=RPG_1ACE;
 * Catch singleton groups
  LOOP(RPG_ACE(RP_PGACT(R,P),CG,IO)$(SUM(TOP(R,P,C,IO)$COM_GMAP(R,CG,C),1) LE 1),
   IF(NOT RPG_PACE(R,P,CG)+RP_PL(R,P,'FX'),RP_GRP(R,P,CG)=YES; RPG_1ACE(RP_GRP(R,P,CG),C)$(TOP(R,P,C,IO)$COM_GMAP(R,CG,C)) = YES));
- RPG_ACE(RP_GRP,IO) = NO;
 * Accept EPS for shadow group flows only
- ACT_EFF(RTP(R,V,P),C,S)$((RPC_PG(R,P,C)+KEEP_FLOP(R,P,C))$(ACT_EFF(RTP,C,S)=0)$ACT_EFF(RTP,C,S)) = 0;
+ ACT_EFF(RTP(R,V,P),C,S)$((RPC_PG(R,P,C)+KEEP_FLOF(R,P,C))$(ACT_EFF(RTP,C,S)=0)$ACT_EFF(RTP,C,S)) = 0;
+ LOOP(RPG_ACE(PRC_SPG(R,P,C),IO),ACT_EFF(RTP(R,T,P),C,S)$ACT_EFF(RTP,C,S)=SQRT(ABS(ACT_EFF(RTP,C,S))));
 * Store all flow level commodities in CG_GRP
  CG_GRP(RPG_1ACE) = YES;
+ RPG_ACE(RP_GRP,IO) = NO;
 *-----------------------------------------------------------------------------
 * Inherit values to target timeslices when possible
  VDA_FLOP(R,LL--ORD(LL),P,CG,S--ORD(S))$STOAL(R,S)$=ACT_EFF(R,LL,P,CG,S); OPTION RPC_ACE<VDA_FLOP, CLEAR=VDA_FLOP;
  UNCD7('1',CG_GRP(RPC_ACE(R,P,CG),C),TSL,S+STOA(S))$TS_GROUP(R,TSL,S)$=RPCS_VAR(R,P,C,S);
- UNCD7('2',RPG_ACE(RPC_ACE(RP,CG),IO),TSL,TSL)$=PRC_TSL(RP,TSL); CG_GRP(RPC_ACE,C)=NO;
+ UNCD7('2',RPG_ACE(RPC_ACE(R,P,CG),IO),TSL,S+STOA(S))$TS_GROUP(R,TSL,S)$=RPS_S1(R,P,S); CG_GRP(RPC_ACE,C)=NO;
  IF(CARD(NORTS),LOOP((MIYR_1(T),UNCD7(J,R,P,CG,ITEM,TS,TS)),ACT_EFF(RTP(R,V,P),CG,S)$(NORTS(R,V,S)+NORTS(R,T,S)$PASTMILE(V))=0));
  OPTION CLEAR=RPC_ACE;
  LOOP(RPG_ACE(R,P,CG,IO),RPC_ACE(R,P,C)$(TOP(R,P,C,IO)$COM_GMAP(R,CG,C)) = YES);
- RPC_ACE(KEEP_FLOP) = NO;
+ RPC_ACE(KEEP_FLOF) = NO;
 *-----------------------------------------------------------------------------
 * Aggregate values to target timeslices when inheritance could not be done
 LOOP(UNCD7(J,R,P,CG,ITEM,TSL,STL), MY_TS(S) = TS_GROUP(R,TSL,S);
@@ -42,8 +42,8 @@ LOOP(UNCD7(J,R,P,CG,ITEM,TSL,STL), MY_TS(S) = TS_GROUP(R,TSL,S);
                TS_ARRAY(ALL_TS))))/G_YRFR(R,MY_TS)));
 *-----------------------------------------------------------------------------
 FSCKS(CG_GRP(R,P,CG,C),CG,S)$RPCS_VAR(R,P,C,S) = YES; OPTION FFCKS <= FSCKS;
-ACT_EFF(RTP(R,V,P),CG,TS)$(NOT ACT_EFF(R,V,P,CG,TS)) $= SUM(FFCKS(R,P,CG,CG,TS),ACT_EFF(R,V,P,CG,'ANNUAL'));
-ACT_EFF(RTP(R,V,P),CG,TS)$(NOT ACT_EFF(R,V,P,CG,TS)) $= SUM(RPG_ACE(R,P,CG,IO),ACT_EFF(R,V,P,CG,'ANNUAL'))$PRC_TS(R,P,TS);
+ACT_EFF(RTP(R,V,P),CG,S)$(NOT ACT_EFF(RTP,CG,S)) $= SUM(FFCKS(R,P,CG,CG,S),ACT_EFF(RTP,CG,'ANNUAL'));
+ACT_EFF(RTP(R,V,P),CG,S+STOA(S))$(SUM(RPG_ACE(R,P,CG,IO),1)$STOA(S)$ACT_EFF(RTP,CG,S)) = 0;
 *-----------------------------------------------------------------------------
 OPTION CLEAR=FFCKS,CLEAR=FSCKS,CLEAR=CG_GRP;
 $EXIT
@@ -59,7 +59,7 @@ $SET SHP1 "*(%SHFF%X(R,V,T%SHG%)$PRC_VINT(R,P))%SHP1%"
   SUM(RPC_ACE(R,P,C)$COM_GMAP(R,CG,C),
    SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,S,TS),
     (1+(ACT_EFF(R,V,P,C,TS)-1)$ACT_EFF(R,V,P,C,TS)) * %VAR%_FLO(R,V,T,P,C,TS %SOW%) *
-    (1 + (RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))-1)$RS_BELOW(R,TS,S))))
+    (1+(RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))-1)$RS_BELOW(R,TS,S))))
 
    =E=
 
@@ -68,16 +68,15 @@ $SET SHP1 "*(%SHFF%X(R,V,T%SHG%)$PRC_VINT(R,P))%SHP1%"
     (%VAR%_ACT(R,V,T,P,TS %SOW%)$(NOT RP_PGFLO(R,P)) +
      SUM(RPC_PG(R,P,C),(%VAR%_ACT(R,V,T,P,TS %SOW%)$RP_PGACT(R,P)+(%VAR%_FLO(R,V,T,P,C,TS %SOW%)/PRC_ACTFLO(R,V,P,C))$(NOT RP_PGACT(R,P))) *
        (1+RTCS_FR(R,T,C,S,TS)))$RP_PGFLO(R,P)) /
-    MAX(MICRO,ACT_EFF(R,V,P,CG,TS) %SHP1%))$(NOT RPG_PACE(R,P,CG)) +
+    MAX(MICRO,SUM(TS_ANN(S,SL),ACT_EFF(R,V,P,CG,SL))%SHP1%))$(NOT RPG_PACE(R,P,CG)) +
 
 * Handle the special cases where ACT_EFF has been specified for PG commodities
   SUM(PRC_TS(R,P,TS)$RS_FR(R,S,TS), RS_FR(R,S,TS) *
     SUM(RPC_PG(R,P,C), (%VAR%_ACT(R,V,T,P,TS %SOW%)$RP_PGACT(R,P) +
          (%VAR%_FLO(R,V,T,P,C,TS %SOW%)/PRC_ACTFLO(R,V,P,C))$(NOT RP_PGACT(R,P))) /
         (1+(ACT_EFF(R,V,P,C,TS)-1)$ACT_EFF(R,V,P,C,TS)) * (1+RTCS_FR(R,T,C,S,TS))) /
-    (POWER(ACT_EFF(R,V,P,CG,TS),1-SUM(RC(R,C(CG)),1)) %SHP1%))$RPG_PACE(R,P,CG) +
+    MAX(MICRO,SUM(TS_ANN(S,SL),ACT_EFF(R,V,P,CG,SL))%SHP1%))$RPG_PACE(R,P,CG) +
 
 * Partial loads
   SUM(RP_PL(R,P,L('FX')),ACT_LOSPL(R,V,P,L) *
-    SUM(PRC_TS(R,P,TS)$RS_FR(R,S,TS),%VAR%_UPS(R,V,T,P,TS,L%SOW%)*RS_FR(R,S,TS)/MAX(MICRO,ACT_EFF(R,V,P,CG,TS)%SHP1%)))
-;
+    SUM(PRC_TS(R,P,TS)$RS_FR(R,S,TS),%VAR%_UPS(R,V,T,P,TS,L%SOW%)*RS_FR(R,S,TS)/MAX(MICRO,SUM(TS_ANN(S,SL),ACT_EFF(R,V,P,CG,SL))%SHP1%)));

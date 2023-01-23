@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *-----------------------------------------------------------------------------
@@ -53,7 +53,6 @@ $IF '%ETL%'==YES PRC_CAP(R,P)$SEG(R,P) = YES;
   OPTION FSCK <= FLO_SUM;
   FS_EMIS(FSCK(R,P,CG,C,COM))$((COM_GMAP(R,CG,C)$TOP(R,P,C,'IN'))$TRACKPC(R,P,COM)) = YES;
   LOOP(FS_EMIS(R,P,CG,C,COM), RPC_EMIS(R,P,COM) = YES);
-  OPTION CLEAR=TRACKPC;
 *------------------------------------------------------------------------------------------
 $IF NOT %REDUCE% == YES $GOTO REDDONE
 $SETGLOBAL CAL_RED 'cal_red.red'
@@ -74,16 +73,15 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 * does not need activity variable
 *--------------------------------------------------------------------------------------------
   NO_ACT(PRC_ACT(R,P))$(NOT PRC_CAP(R,P)) = YES;
-  LOOP((RTP(R,T,P),S,BDUPX)$ACT_BND(R,T,P,S,BDUPX), NO_ACT(R,P) = NO);
-  LOOP((RTP(R,T,P),S)$((ACT_BND(R,T,P,S,'LO')>0)$ACT_BND(R,T,P,S,'LO')), NO_ACT(R,P) = NO);
+  LOOP((RTP(R,T,P),S,BD)$((ACT_BND(RTP,S,BD)>-INF$BDUPX(BD))$ACT_BND(RTP,S,BD)), NO_ACT(R,P) = NO);
   LOOP((R,DM_YEAR,P,CUR)$ACT_COST(R,DM_YEAR,P,CUR), NO_ACT(R,P) = NO);
   LOOP((R,UC_N,P)$UC_GMAP_P(R,UC_N,'ACT',P), NO_ACT(R,P) = NO);
   NO_ACT(R,P)$SUM(RPC_CUMFLO(R,P,%PGPRIM%,YEAR,LL),1) = NO;
 
 * Remove activity equation from processes that didn't have activity attributes
   PRC_ACT(NO_ACT) = NO;
-* We can keep RTP_VARA even when no VAR_ACT is needed
-* RTP_VARA(R,T,P)$NO_ACT(R,P) = NO;
+* Keep RTP_VARA even when no VAR_ACT is needed
+**RTP_VARA(R,T,P)$NO_ACT(R,P) = NO;
 
 *--------------------------------------------------------------------------------------------
 * If FLO_FUNC between two flow variables and one flow variable defines the activity,
@@ -99,21 +97,24 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 * Ensure that possible reverse ordering due to FLO_SUM is taken into account
   LOOP(FSCK(R,P,CG1,C,CG2)$CG_GRP(R,P,CG2,CG1),RPCG_PTRAN(R,P,C,COM,CG1,CG2)$COM_GMAP(R,CG2,COM) = YES);
   RPCG_PTRAN(R,P,C,COM,CG1,CG2)$(NOT (RPC_ACT(R,P,C)+RPC_ACT(R,P,COM))) = NO;
+  OPTION TRACKPC < RPCG_PTRAN;
 
 * Check all processes for commodity-to-commodity FLO_SUM:
   OPTION RP_CGG < FSCK;
-  RPCG_PTRAN(RP_CGG(RPC(R,P,C),COM,C),COM)$((RPC_ACT(R,P,C)+RPC_ACT(R,P,COM))$RPC(R,P,COM)) = YES;
+  RPCG_PTRAN(RP_CGG(RPC_ACT(R,P,COM),C,CG),C)$(RP_PG(R,P,CG)+RPC_ACT(R,P,CG)) = YES;
+  RPCG_PTRAN(RP_CGG(RPC(R,P,COM),C,COM),C)$RPC_ACT(R,P,C) = YES;
 * If shadow group has special level, don't substitute
-  RPCG_PTRAN(RP_SGS(R,P),C,COM,CG1,CG2) = NO;
-  LOOP(RPCG_PTRAN(RP_FLO(R,P),C,COM,CG1,CG2),
+  RPCG_PTRAN(RP_SGS,C,COM,CG,CG2) = NO;
+  LOOP(RPCG_PTRAN(RP_FLO(R,P),C,COM,CG,CG2),
       IF(RPC_ACT(R,P,C), RPC_FFUNC(R,P,COM) = YES; ELSE RPC_FFUNC(R,P,C) = YES);
   );
 * Remove activity flows and emission flows from RPC_FFUNC
   RPC_FFUNC(RPC)$(RPC_ACT(RPC)+RPC_EMIS(RPC)) = NO;
+  RPC_FFUNC(RPC_AFLO(TRACKPC)) = NO;
 
 * Add to RPCC_FFUNC all the CG1-CG2 PTRANS equations that are to be eliminated:
-  RPCG_PTRAN(R,P,C,COM,CG1,CG2)$(NOT (RPC_FFUNC(R,P,C)+RPC_FFUNC(R,P,COM))) = NO;
-  LOOP(RPCG_PTRAN(R,P,C,COM,CG1,CG2), RPCC_FFUNC(R,P,CG1,CG2) = YES);
+  RPCG_PTRAN(R,P,C,COM,CG,CG2)$(NOT (RPC_FFUNC(R,P,C)+RPC_FFUNC(R,P,COM))) = NO;
+  LOOP(RPCG_PTRAN(R,P,C,COM,CG,CG2), RPCC_FFUNC(R,P,CG,CG2) = YES);
 
   OPTION CLEAR=CG_GRP,CLEAR=RP_CGG;
 *--------------------------------------------------------------------------------------------
@@ -174,7 +175,7 @@ $LABEL REDDONE
 *--------------------------------------------------------------------------------------------
 * Mark emissions to be handled by substitution
   LOOP(FS_EMIS(R,P,CG,C,COM), RPCC_FFUNC(R,P,CG,COM) = YES);
-  OPTION CLEAR=FSCK;
+  OPTION CLEAR=TRACKPC,CLEAR=FSCK;
   PRC_TS2(PRC_TS(RP_PGACT(RP_STD),S)) = YES;
   RPC_PKF(RPC_PKC(PRC_CAP,C)) = 0;
 

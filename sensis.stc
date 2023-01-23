@@ -1,11 +1,11 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
 * sensis.stc Wrapper for sensitivity analysis parameters
 *=============================================================================*
-$IFI %MCA%==YES $BATINCLUDE main_ext.mod coef_ext MCA 
+$IFI %MCA%==YES $BATINCLUDE main_ext.mod coef_ext MCA
 *------------------------------------------------------------------------------
 * Clear deterministic parameter if to be set from uncertain
 $IF %CLI%==YES OPTION CLEAR=CM_MAXC;
@@ -26,11 +26,18 @@ $   BATINCLUDE bnd_set.mod %VAR%_CAP 'R,T,P' CAP_BND RTP(RT_PP(R,T),P) '' I
     VAR_CUMCOM.LO(R,C,COM_VAR,YEAR,LL)$S_COM_CUM(R,COM_VAR,YEAR,LL,C,'LO','1',SOW) = S_COM_CUM(R,COM_VAR,YEAR,LL,C,'LO','1',SOW)*(1/%CUCSCAL%)*(COM_CUM(R,COM_VAR,YEAR,LL,C,'N')+1);
     VAR_CUMCOM.UP(R,C,COM_VAR,YEAR,LL)$S_COM_CUM(R,COM_VAR,YEAR,LL,C,'UP','1',SOW) = S_COM_CUM(R,COM_VAR,YEAR,LL,C,'UP','1',SOW)*(1/%CUCSCAL%)*(COM_CUM(R,COM_VAR,YEAR,LL,C,'N')+1);
 
-$IF DEFINED RTP_FFCS RTP_FFCS(R,T,P,CG,COM_GRP)$RP_FFSGG(R,P,CG,COM_GRP) =
-$IF DEFINED RTP_FFCS   SUM((RP_FFSGGM(R,P,CG,COM_GRP,CG1,CG2),SW_TSW(SOW,T,W)),PROD(SW_MAP(T,W,J,WW)$S_FLO_FUNC(R,T,P,CG1,CG2,J,WW),S_FLO_FUNC(R,T,P,CG1,CG2,J,WW))-1);
-$IF %CLI%==YES CM_MAXC(ALLYEAR,ITEM) $= S_CM_MAXC(ALLYEAR,ITEM,'1',SOW);
+$ IF NOT DEFINED RTP_FFCS $GOTO DIDFUNC
+  RTP_FFCS(RTP(R,T,P),CG,COM_GRP)$RP_FFSGG(R,P,CG,COM_GRP) =
+    SUM((RP_FFSGGM(R,P,CG,COM_GRP,CG1,CG2),SW_TSW(SOW,T,W)),PROD(SW_MAP(T,W,J,WW)$S_FLO_FUNC(RTP,CG1,CG2,J,WW),S_FLO_FUNC(RTP,CG1,CG2,J,WW))-1);
+* Remap reduced FUNC flows
+  LOOP(RPCG_PTRAN(RP,C,COM,CG,CG2)$RP_FFSGG(RP,CG,CG2),IF(RPC_FFUNC(RP,C),RP_DCGG(RP,C,CG,CG2,'UP')=YES; ELSE RP_DCGG(RP,COM,CG,CG2,'LO')=YES));
+  RP_DCGG(RPC_FFUNC(RP,COM),CG,C,'UP')$(RPG_1ACE(RP,CG,COM)$RPC_ACT(RP,C)) $= RP_FFSGG(RP,CG,C);
+  RTP_FFCS(RTP(R,T,P),ACTCG,C)$RPC_FFUNC(R,P,C) $= SUM(RP_DCGG(R,P,C,CG,CG2,L),(POWER(RTP_FFCS(RTP,CG,CG2)+1,BDSIG(L))-1)$(RTP_FFCS(RTP,CG,CG2)+1));
+  OPTION CLEAR=RP_DCGG;
+$ LABEL DIDFUNC
+$ IF %CLI%==YES CM_MAXC(ALLYEAR,ITEM) $= S_CM_MAXC(ALLYEAR,ITEM,'1',SOW);
   );
 *------------------------------------------------------------------------------
- IF(SW_PHASE=2,SPAR_UCSL(SOW,UC_N,U2,U3,U4)=0);
- IF(CARD(REG_FIXT)=0,EQ_OBJ.M$(%MODEL_NAME%.SOLVEOPT<>1)=0; OPTION SOLVEOPT=REPLACE);
+  IF(SW_PHASE=2,SPAR_UCSL(SOW,UC_N,U2,U3,U4)=0);
+  IF(CARD(REG_FIXT)=0,EQ_OBJ.M$(%MODEL_NAME%.SOLVEOPT<>1)=0; OPTION SOLVEOPT=REPLACE);
 $ BATINCLUDE clearsol.stp $EQ_OBJ.M

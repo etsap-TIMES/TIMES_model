@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -7,7 +7,7 @@
 *=============================================================================*
 * Shaping of COEF_PTRANS
 *------------------------------------------------------------------------------
-  PARAMETER RTP_FFCX(R,ALLYEAR,ALLYEAR,P,CG,CG) //;
+  PARAMETER RTP_FFCX(REG,ALLYEAR,ALLYEAR,PRC,CG,CG) //;
   SET AGEJ(J,AGE) / 1.1 /;
   Z=SMAX(T,MAX(IPD(T),D(T))); OPYEAR(LIFE,AGE)$((ORD(AGE)<=ORD(LIFE))$(ORD(LIFE)<=Z)) = YES;
   RTP_CGC(RTP(R,V,P),CG,CG2)$((FLO_FUNCX(RTP,CG,CG2)<=0)$FLO_FUNCX(RTP,CG,CG2))=PRC_VINT(R,P);
@@ -43,7 +43,7 @@
   RTP_FFCX(RTP_CAPYR,'CAPFLO',CG) = 0;
 * Option for non-vintaged FLO_FUNC multipliers
   RTP_FFCX(RTP_VINTYR(R,V,T,P),CG,CG2)$((FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')>0)$RTP_CGC(R,V,P,CG,CG2))=FLO_FUNC(R,T,P,CG,CG2,'ANNUAL')/FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')-1;
-  OPTION CLEAR=RTP_CGC,CLEAR=TRACKP,CLEAR=RVPRL,CLEAR=RTP_CAPYR,CLEAR=RP_GRP;
+  OPTION CLEAR=RTP_CGC,CLEAR=TRACKP,CLEAR=RVPRL,CLEAR=RP_GRP;
 *------------------------------------------------------------------------------
 * Shaping of COEF_CPT
 *------------------------------------------------------------------------------

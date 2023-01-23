@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=========================================================================
@@ -100,6 +100,10 @@ $ LABEL SYSD
   SET FSCKS(REG,PRC,CG,C,CG,S)  'Multi-purpose work set'                //;
   SET RPC_IREIO(R,P,C,IE,IO)    'Types of trade flows'                  //;
   SET RPC_LS(R,P,C)             'Load sifting control'                  //;
+* process types
+  SETS ELE(R,P)                 'Electric Power Plants'
+       CHP(R,P)                 'Coupled Heat+Power Plants'
+       HPL(R,P)                 'Heat and Steam Plants';
 
 * region
   SET MREG(ALL_R)           'Set of active regions' //;
@@ -151,9 +155,13 @@ $ LABEL SYSD
 * ---------------------------------------------------------------------------------------------
 * PARAMETERS SECTION
 * ---------------------------------------------------------------------------------------------
-* Split of timeslice based upon level
-  PARAMETER RS_FR(R,S,S) //;
-  PARAMETER JS_CCL(R,J,S)//;
+* Years and splits of timeslices based upon level
+  PARAMETER LEAD(ALLYEAR) //;
+  PARAMETER LAGT(ALLYEAR) //;
+  PARAMETER FPD(ALLYEAR)  //;
+  PARAMETER IPD(ALLYEAR)  //;
+  PARAMETER RS_FR(R,S,S)  //;
+  PARAMETER JS_CCL(R,J,S) //;
 
 * integrated parameters (created in PREPPM.mod)
   PARAMETER UC_COM(UC_N,COM_VAR,SIDE,REG,ALLYEAR,COM,S,UC_GRPTYPE) 'Multiplier of VAR_COM variables' //;
@@ -173,7 +181,7 @@ $ LABEL SYSD
   PARAMETER COEF_RTP(R,ALLYEAR,P)              'Generic re-usable work parameter';
   PARAMETER COEF_RVPT(R,ALLYEAR,PRC,T)         'Generic re-usable work parameter';
   PARAMETER RTP_CPX(R,ALLYEAR,P,LL)            'Shape multipliers for capacity transfer'//;
-  PARAMETER NCAP_AFBX(R,ALLYEAR,P,BD) //;
+  PARAMETER NCAP_AFBX(R,ALLYEAR,P,BD)          'Shape multipliers for NCAP_AF factors'  //;
   PARAMETER NCAP_AFSM(R,ALLYEAR,P) //;
   PARAMETER RVPRL(R,YEAR,P) //;
 
@@ -198,9 +206,9 @@ $IF %OBMAC%==YES $GOTO RESTOBJ
   PARAMETER OBJ_FTAX(R,ALLYEAR,P,C,S,CUR)  'FLO_TAX for each year'    //;
 $LABEL RESTOBJ
   PARAMETER OBJ_FSUB(R,ALLYEAR,P,C,S,CUR)  'FLO_SUB for each year'    //;
-  PARAMETER OBJ_COMNT(R,ALLYEAR,C,S,COSTYPE,CUR) 'COM_CNET for each year' //;
-  PARAMETER OBJ_COMPD(R,ALLYEAR,C,S,COSTYPE,CUR) 'COM_CPRD for each year' //;
-  PARAMETER OBJ_IPRIC(R,ALLYEAR,P,C,S,IE,CUR) 'IRE_PRICE for each year' //;
+  PARAMETER OBJ_COMNT(R,ALLYEAR,C,S,COSTYPE,CUR) 'CSTNET for each year'//;
+  PARAMETER OBJ_COMPD(R,ALLYEAR,C,S,COSTYPE,CUR) 'CSTPRD for each year'//;
+  PARAMETER OBJ_IPRIC(R,ALLYEAR,P,C,S,IE,CUR) 'IRE_PRICE for each year'//;
 
 * Miscellanea
   PARAMETERS
@@ -262,6 +270,7 @@ $LABEL RESTOBJ
   SET  RP_PGACT(R,P)                  'Process with PCG consisting of 1 commodity'          //;
   SET  RP_PGFLO(R,P)                  'Process with PCG having COM_FR'                      //;
   SET  RPC_ACT(REG,PRC,CG)            'PG commodity of Process with PCG consisting of 1'    //;
+  SET  RPC_AFLO(REG,PRC,CG)           'ACT_FLO residual groups to be handled specially'     //;
   SET  RPC_AIRE(ALL_REG,PRC,COM)      'Exchange process with only one commodity exchanged'  //;
   SET  RPC_EMIS(R,P,COM_GRP)          'Process with emission COM_GRP'                       //;
   SET  FS_EMIS(R,P,COM_GRP,C,COM)     'Indicator for emission related FLO_SUM'              //;
@@ -269,12 +278,13 @@ $LABEL RESTOBJ
   SET  RTCS_SING(R,T,C,S,IO)          'Commodity not being consumed'                        //;
   SET  RTPS_OFF(R,T,P,S)              'Process being turned off'                            //;
   SET  RTPCS_OUT(R,ALLYEAR,P,C,S)     'Process flows being turned off'                      //;
-  SET  RPC_FFUNC(REG,PRC,COM)         'RPC_ACT Commodity in FFUNC'                          //;
+  SET  RPC_FFUNC(R,P,C)               'RPC_ACT Commodity in FFUNC'                          //;
   SET  RPCC_FFUNC(REG,PRC,CG,CG)      'Pair of FFUNC commodities with RPC_ACT commodity'    //;
   SET  PRC_CAP(REG,PRC)               'Process requiring capacity variable'                 //;
   SET  PRC_ACT(REG,PRC)               'Process requiring activity equation'                 //;
   SET  PRC_TS2(REG,PRC,TS)            'Alias for PRC_TS of processes with RPC_ACT'          //;
-  SET  RPCG_PTRAN(R,P,COM,COM,CG,CG)  'Set for FLO_FUNC/FLO_SUM based substitution'         //;
+  SET  RPCG_PTRAN(R,P,COM,C,CG,CG)    'Set for FLO_FUNC/FLO_SUM based substitution'         //;
+  SET  KEEP_FLOF(R,P,C)               'Set for FFUNC-defined flows retained';
   ALIAS(CG3,CG4,COM_GRP);
 
 *------------------------------------------------------------------------------
@@ -285,20 +295,20 @@ $SETGLOBAL RL 'R.TL:MAX(12,R.LEN)' SETGLOBAL PL 'P.TL:MAX(12,P.LEN)' SETGLOBAL C
 $IFI NOT %G2X6%==YES $SETGLOBAL RL 'R.TL:MAX(12,CARD(R.TL))' SETGLOBAL PL 'P.TL:MAX(12,CARD(P.TL))' SETGLOBAL CL C.TL:MAX(12,CARD(C.TL))
 
   PARAMETERS
-   PAR_FLO(R,ALLYEAR,ALLYEAR,P,C,S)            'Flow parameter'                                    //
-   PAR_FLOM(R,ALLYEAR,ALLYEAR,P,C,S)           'Reduced cost of flow variable'                     //
-   PAR_IRE(R,ALLYEAR,ALLYEAR,P,C,S,IMPEXP)     'Parameter for im/export flow'                      //
-   PAR_IREM(R,ALLYEAR,ALLYEAR,P,C,S,IMPEXP)    'Reduced cost of import/export flow'                //
-   PAR_OBJINV(R,ALLYEAR,ALLYEAR,P,CUR)         'Annual discounted investment costs'                //
-   PAR_OBJDEC(R,ALLYEAR,ALLYEAR,P,CUR)         'Annual discounted decommissioning costs'           //
-   PAR_OBJFIX(R,ALLYEAR,ALLYEAR,P,CUR)         'Annual discounted FOM cost'                        //
-   PAR_OBJSAL(R,ALLYEAR,P,CUR)                 'Annual discounted salvage value'                   //
-   PAR_OBJLAT(R,ALLYEAR,P,CUR)                 'Annual discounted late costs'                      //
-   PAR_OBJACT(R,ALLYEAR,ALLYEAR,P,TS,CUR)      'Annual discounted variable costs'                  //
-   PAR_OBJFLO(R,ALLYEAR,ALLYEAR,P,COM,TS,CUR)  'Annual discounted flow costs (incl import/export)' //
-   PAR_OBJCOM(R,ALLYEAR,COM,TS,CUR)            'Annual discounted commodity costs '                //
-   PAR_OBJBLE(R,ALLYEAR,COM,CUR)               'Annual discounted blending costs'                  //
-   PAR_OBJELS(R,ALLYEAR,COM,CUR)               'Annual discounted elastic demand cost term'        //;
+   PAR_FLO(R,ALLYEAR,ALLYEAR,P,C,S)          'Flow parameter'                                    //
+   PAR_FLOM(R,ALLYEAR,ALLYEAR,P,C,S)         'Reduced cost of flow variable'                     //
+   PAR_IRE(R,ALLYEAR,ALLYEAR,P,C,S,IMPEXP)   'Parameter for im/export flow'                      //
+   PAR_IREM(R,ALLYEAR,ALLYEAR,P,C,S,IMPEXP)  'Reduced cost of import/export flow'                //
+   PAR_OBJINV(R,ALLYEAR,ALLYEAR,P,CUR)       'Annual discounted investment costs'                //
+   PAR_OBJDEC(R,ALLYEAR,ALLYEAR,P,CUR)       'Annual discounted decommissioning costs'           //
+   PAR_OBJFIX(R,ALLYEAR,ALLYEAR,P,CUR)       'Annual discounted FOM cost'                        //
+   PAR_OBJSAL(R,ALLYEAR,P,CUR)               'Annual discounted salvage value'                   //
+   PAR_OBJLAT(R,ALLYEAR,P,CUR)               'Annual discounted late costs'                      //
+   PAR_OBJACT(R,ALLYEAR,ALLYEAR,P,TS,CUR)    'Annual discounted variable costs'                  //
+   PAR_OBJFLO(R,ALLYEAR,ALLYEAR,P,C,TS,CUR)  'Annual discounted flow costs (incl import/export)' //
+   PAR_OBJCOM(R,ALLYEAR,COM,TS,CUR)          'Annual discounted commodity costs '                //
+   PAR_OBJBLE(R,ALLYEAR,COM,CUR)             'Annual discounted blending costs'                  //
+   PAR_OBJELS(R,ALLYEAR,COM,CUR)             'Annual discounted elastic demand cost term'        //;
 
 
 *----------------------------------------------------------------------------------------------

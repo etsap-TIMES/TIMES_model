@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -66,7 +66,7 @@ $IF %1==S %1PAR_COMBALGM(%2RTC,S) $= EQG_COMBAL.L(RTC,S);
 *-----------------------------------------------------------------------------
 * Process flows
 *-----------------------------------------------------------------------------
-  OPTION CLEAR=UNCD1,CLEAR=F_INOUT;
+  OPTION CLEAR=UNCD1,CLEAR=RTP_CAPYR,CLEAR=F_INOUT;
   F_INOUT(R,V,T,P,C,'IN')$COEF_ICOM(R,V,T,P,C) = COEF_ICOM(R,V,T,P,C) * RTP_CAPVL(R,V,P);
   F_INOUT(R,V,T,P,C,'OUT')$COEF_OCOM(R,V,T,P,C) = COEF_OCOM(R,V,T,P,C) * RTP_CAPVL(R,V,P);
   F_INOUT(RTP_CPTYR(R,V,T,P),C,IO)$NCAP_COM(R,V,P,C,IO) = F_INOUT(R,V,T,P,C,IO) +
@@ -191,7 +191,7 @@ $IF %SOLANS%==YES RPT_OPT('FLO','5')=1;
   TRACKP(R,P)$SUM(TOP(RPC_SPG(R,P,C),'IN')$NRGELC(R,C),1) = YES;
   TRACKPC(RPC(RP_FLO(R,P),C))$(TOP(RPC,'OUT')$NRGELC(R,C)) = YES;
   TRACKPC(TRACKP,C) = NO; OPTION TRACKP < TRACKPC;
-  OPTION CLEAR=F_VIO,CLEAR=KEEP_FLOP;
+  OPTION CLEAR=F_VIO,CLEAR=KEEP_FLOF;
   TRACKPG(TRACKP(R,P),C)$((NOT NRGELC(R,C))$NRG(R,C)$TOP(R,P,C,'IN'))=YES;
   F_VIO(RTP_VINTYR(R,V,T,P),IO)$TRACKP(R,P) =
     SUM((TRACKPC(R,P,C),S)$(NOT IPS(IO)),%1F_OUT(%2R,V,T,P,C,S))+SUM((TRACKPG(R,P,C),IPS(IO),S),%1F_IN(%2R,V,T,P,C,S))+1-1;
@@ -199,11 +199,11 @@ $IF %SOLANS%==YES RPT_OPT('FLO','5')=1;
     F_VIO(R,V,T,P,'OUT') / F_VIO(R,V,T,P,'IN') * SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S));
   OPTION CLEAR=UNCD7;UNCD7(TOP_IRE(ALL_R,C,ALL_REG,COM,P),'','')$(NRGELC(ALL_R,C)+NRGELC(ALL_REG,COM))=YES;
   UNCD7(R,COM,R,C,P,'','')=NO;
-  LOOP(UNCD7(ALL_R,C,ALL_REG,COM,P,'',''),KEEP_FLOP(R(ALL_R),P,C)=YES;KEEP_FLOP(R(ALL_REG),P,COM)=YES);
-  %1PAR_EOUT(%2RTP_VINTYR(R,V,T,P),C)$(KEEP_FLOP(R,P,C)$RP_IRE(R,P)) =
+  LOOP(UNCD7(ALL_R,C,ALL_REG,COM,P,'',''),KEEP_FLOF(R(ALL_R),P,C)=YES;KEEP_FLOF(R(ALL_REG),P,COM)=YES);
+  %1PAR_EOUT(%2RTP_VINTYR(R,V,T,P),C)$(KEEP_FLOF(R,P,C)$RP_IRE(R,P)) =
    SUM(S$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'IMP') -
    SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'EXP');
-  KEEP_FLOP(RPC_SPG(TRACKP,C))=YES;
+  KEEP_FLOF(RPC_SPG(TRACKP,C))=YES;
   OPTION CLEAR=F_VIO,CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=TRACKPG);
 
 *-----------------------------------------------------------------------------

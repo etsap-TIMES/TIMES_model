@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -9,10 +9,10 @@
 *	%3 - VAR_FLO suffix (.L or .M)
 *=============================================================================*
 $SET SHP1 "" SET SHP2 "" SET SHP3 "" SET TST '$PRC_VINT(R,P)' SET%4 V VAR
-$SET SHG1 ',P,CG4,CG3' SET SHG2 ',P,CG3,CG4' SET SHG ',P,CG1,C'
+$SET SHG1 ",P,%PGPRIM%,C" SET SHG ',P,CG1,C'
 $IF DEFINED RTP_FFCS
-$SET SHP1 "*(%SHFF%S(R,V%SHG1%%SOW%))" SET SHP2 "*(%SHFF%S(R,V%SHG2%%SOW%))" SET SHP3 "*(%SHFF%S(R,V%SHG%%SOW%))"
-$SET SHP1 "*(%SHFF%X(R,V,T%SHG1%)%TST%)%SHP1%" SET SHP2 "*(%SHFF%X(R,V,T%SHG2%)%TST%)%SHP2%" SET SHP3 "*(%SHFF%X(R,V,T%SHG%)%TST%)%SHP3%"
+$SET SHP1 "*(%SHFF%S(R,V%SHG1%%SOW%))" SET SHP3 "*(%SHFF%S(R,V%SHG%%SOW%))"
+$SET SHP1 "*(%SHFF%X(R,V,T%SHG1%)%TST%)%SHP1%" SET SHP3 "*(%SHFF%X(R,V,T%SHG%)%TST%)%SHP3%"
 
 * Non-substituted flows
 $IF '%2'==''   %1(R,V,T,P,C,S%5) $= %V%_FLO%3(R,V,T,P,C,S%5);
@@ -34,10 +34,7 @@ $IF '%3'=='.M' $EXIT
 %1%2(RTP_VINTYR(R,V,T,P),C,S%5)$(RTPCS_VARF(R,T,P,C,S)%6$RPC_FFUNC(R,P,C)) =
   SUM((RPC_ACT(R,P,COM),RS_TREE(R,S,TS))$%1%2(R,V,T,P,COM,TS%5),
     %1%2(R,V,T,P,COM,TS%5) * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,COM,S,TS)) *
-    (
-     SUM(RPCG_PTRAN(R,P,COM,C,CG4,CG3), COEF_PTRAN(R,V,P,CG4,COM,CG3,TS)%SHP1%) +
-     SUM(RPCG_PTRAN(R,P,C,COM,CG3,CG4),(1/(COEF_PTRAN(R,V,P,CG3,C,CG4,S)%SHP2%))$COEF_PTRAN(R,V,P,CG3,C,CG4,S))
-    ));
+    ( ACT_FLO(R,V,P,C,S)/PRC_ACTFLO(R,V,P,COM)%SHP1% ));
 
 * Emission flows
 %1%2(RTP_VINTYR(R,V,T,P),C,S%5)$(RTPCS_VARF(R,T,P,C,S)%6$RPC_EMIS(R,P,C)) =

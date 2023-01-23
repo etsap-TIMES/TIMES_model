@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -18,6 +18,7 @@
   LOOP(UNCD7(R,LL,P,CG,S,'',''),RPC_ACE(R,P,CG) = YES);
   RPG_1ACE(RP_GRP(RPC(R,P,C)),C)$(NOT RPC_ACE(RPC)) = YES;
   OPTION CLEAR=RP_GRP;
+  ACT_FLO(R,LL--ORD(LL),P,C,S)$STOA(S) $= VDA_FLOP(R,LL,P,C,S);
 *------------------------------------------------------------------------------
 * Interpolate VDA-specific parameters
 $BATINCLUDE fillparm VDA_EMCB R 'C,COM' ",'0','0','0','0'" V 1 'GE 0'

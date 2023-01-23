@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2022 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
 *---------------------------------------------------------------------
 * SOLPUTTA.ANS
 *
@@ -141,7 +141,7 @@ $ BATINCLUDE solsubta.ans PUTI6 "(RPC_IRE(R,P,C,'IMP')*RPCS_VAR(R,P,C,S))" EQIRE
 
 * ELC supply by source
   OPTION CLEAR=NV_FLOL; OPTION PUTI7 < %1PAR_EOUT; NV_FLOL(%3R,T,P,C,ANNUAL)$PUTI7(%3R,T,P,C)=SUM(YK(T,V)$%1PAR_EOUT(%3R,V,T,P,C),%1PAR_EOUT(%3R,V,T,P,C));
-$ BATINCLUDE solsubta.ans PUTI6 KEEP_FLOP(R,P,C) ELC- 'R.TL' 'P.TL' C.TL  "''"  "''"  'BY-SRC'  NV_FLOL(%3R,T,P,C,'ANNUAL') (%3R,TT,P,C,ANNUAL) (%3R,TT(T--ORD(T)),P,C,ANNUAL)
+$ BATINCLUDE solsubta.ans PUTI6 KEEP_FLOF(R,P,C) ELC- 'R.TL' 'P.TL' C.TL  "''"  "''"  'BY-SRC'  NV_FLOL(%3R,T,P,C,'ANNUAL') (%3R,TT,P,C,ANNUAL) (%3R,TT(T--ORD(T)),P,C,ANNUAL)
 
 *---------------------------------------------------------------------
 * Output of VAR_CAP, units of capacity

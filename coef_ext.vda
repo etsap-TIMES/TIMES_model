@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2022 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file LICENSE.txt).
 *=============================================================================*
@@ -34,7 +34,7 @@ $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
 * Get AF-UPs for processes having storage level constrained
   COEF_AFUPS(RTP(R,V,P),S)$(NOT RPS_CAFLAC(R,P,S,'UP')) $= NCAP_AF(RTP,S,'UP')$RPS_STG(R,P,S);
   COEF_AFUPS(RTP(R,V,P),S(STL))$RPS_STG(R,P,S) $= NCAP_AFC(RTP,%PGPRIM%,STL);
-  COEF_AFUPS(R,V,P,S)$(NOT PRC_CAP(R,P))=NO;
+  COEF_AFUPS(R,V,P,S)$(NOT PRC_CAP(R,P)) = NO;
 * Cycling cost annuity
   ACT_CSTUP(RTP(R,V,P),TSL(S),CUR)$(RDCUR(R,CUR)$STG_MAXCYC(RTP))=ACT_CSTUP(RTP,TSL,CUR)*G_DRATE(R,V,CUR)/(1-(1+G_DRATE(R,V,CUR))**(-NCAP_TLIFE(RTP)));
 *-----------------------------------------------------------------------------
@@ -47,20 +47,28 @@ $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
   RCS_COMBAL(RTCS_VARC(R,T,C,S),L)$(NOT TRACKC(R,C)) = NO;
   OPTION CLEAR=TRACKC,CLEAR=TRACKP,CLEAR=RCS;
 *-----------------------------------------------------------------------------
-* Add singleton ACT_EFFs to COEF_PTRANS
-  OPTION TRACKPC < RPG_1ACE; OPTION TRACKPG <= RPG_1ACE;
-  COEF_PTRAN(RTP(R,V,P),CG,C,COM,S)$(RPCS_VAR(R,P,C,S)$RPC_PG(R,P,COM)$RPG_1ACE(R,P,CG,C)) =
-    ACT_EFF(RTP,CG,S)*PRC_ACTFLO(RTP,COM)*(1+(ACT_EFF(RTP,C,S)-1)$ACT_EFF(RTP,C,S)$(NOT SAMEAS(C,CG)));
-  RPC_NOFLO(TRACKPC) = NO; TRACKPC(RP_SGS,C) = NO;
-$IF %REDUCE%==YES     RPCG_PTRAN(TRACKPC(R,P,C),COM,CG,COM)$(RPG_1ACE(R,P,CG,C)$RPC_ACT(R,P,COM)) = YES; RPC_FFUNC(TRACKPC(R,P,C)) = YES;
-$IF NOT %REDUCE%==YES RPCC_FFUNC(TRACKPG(R,P,CG),COM)$RPC_PG(R,P,COM) = YES;
-  RPCC_FFUNC(TRACKPG(RP_SGS(R,P),CG),COM)$RPC_PG(R,P,COM) = YES;
-  ACT_EFF(R,LL,P,CG,S)$TRACKPG(R,P,CG) = 0;
-  OPTION CLEAR=TRACKPC,CLEAR=TRACKPG;
+* Add singleton ACT_EFFs to COEF_PTRANS or ACT_FLO
+  RP_CGC(RPG_1ACE) = YES; OPTION TRACKPC < RPG_1ACE, RP_GRP < RP_CGC;
+* Convert ACT_EFF factors for reduced flows
+  TRACKPC(TRACKPC) = RPC_FFUNC(TRACKPC);
+  ACT_FLO(RTP(R,V,P),C,S)$(RPCS_VAR(R,P,C,S)$TRACKPC(R,P,C)) = 1/SUM(RP_CGC(R,P,CG,C),MAX(MICRO,ACT_EFF(RTP,CG,S)*(1+(ACT_EFF(RTP,C,S)-1)$ACT_EFF(RTP,C,S))));
+* Convert FLO_FUNCX factors for reduced flows
+  OPTION CG_GRP <= RTP_FFCX;
+  LOOP(RPCG_PTRAN(RP,C,COM,CG,CG2)$CG_GRP(RP,CG,CG2),IF(RPC_FFUNC(RP,C),RP_DCGG(RP,C,CG,CG2,'UP')=YES; ELSE RP_DCGG(RP,COM,CG,CG2,'LO')=YES));
+  RP_DCGG(TRACKPC(RP,COM),CG,C,'UP')$(RP_CGC(RP,CG,COM)$RPC_ACT(RP,C)) $= CG_GRP(RP,CG,C);
+  RTP_FFCX(RTP_CAPYR(R,V,T,P),ACTCG,C)$RPC_FFUNC(R,P,C) $= SUM(RP_DCGG(R,P,C,CG,CG2,L),(POWER(RTP_FFCX(R,V,T,P,CG,CG2)+1,BDSIG(L))-1)$(RTP_FFCX(R,V,T,P,CG,CG2)+1));
+  LOOP(RP_DCGG(R,P,C,CG,CG2,L),RTP_FFCX(R,V,T,P,CG,CG2)=0);
+* Default to COEF_PTRAN
+  RP_CGC(R,P,CG,C)$TRACKPC(R,P,C) = NO;
+  COEF_PTRAN(RTP(R,V,P),CG,C,COM,S)$(RPCS_VAR(R,P,C,S)$RPC_PG(R,P,COM)$RP_CGC(R,P,CG,C)) = ACT_EFF(RTP,CG,S)*PRC_ACTFLO(RTP,COM)*(1+(ACT_EFF(RTP,C,S)-1)$ACT_EFF(RTP,C,S));
+  ACT_EFF(R,LL,P,CG,S)$RP_GRP(R,P,CG) = 0;
+  OPTION RP_GRP < RP_CGC; RPCC_FFUNC(RP_GRP(R,P,CG),COM)$RPC_PG(R,P,COM) = YES;
+$ IFI NOT %SENSIS%==YES OPTION CLEAR=RPCG_PTRAN;
+  OPTION CLEAR=TRACKPC,CLEAR=RP_GRP,CLEAR=CG_GRP,CLEAR=RP_DCGG,CLEAR=RTP_CAPYR,CLEAR=RP_CGC;
 *-----------------------------------------------------------------------------
 $ BATINCLUDE eqlducs.vda
 $ BATINCLUDE eqashar.vda
-$IF DEFINED COM_CSTBAL $BATINCLUDE powerflo.vda CSTBAL
+$ IF DEFINED COM_CSTBAL $BATINCLUDE powerflo.vda CSTBAL
   COEF_PVT(R,T)$(NOT COEF_PVT(R,T)) = FPD(T);
   VDA_DISC(R,T) $= COEF_PVT(R,T);
   COEF_ILED(RTP(R,T,P))$NCAP_BND(RTP,'N') = MOD(COEF_ILED(RTP),1000)+EPS$NCAP_ILED(RTP);
