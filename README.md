@@ -1,3 +1,5 @@
+<p align=center><a rel="license" href="https://www.gnu.org/licenses/gpl-3.0.html"><img alt="GNU General Public License" style="height:30px;border-width:0" src="https://www.gnu.org/graphics/gplv3-127x51.png" /></a>This work is licensed under a <a rel="license" href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License</a>.</p>
+
 # TIMES_model
 
 ## The Integrated MARKAL-EFOM System (TIMES) – a bottom-up optimization model for energy-environment systems.
