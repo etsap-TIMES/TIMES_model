@@ -1,0 +1,19 @@
+{
+  "creators": [
+    {
+      "name": "IEA-ETSAP"
+    }
+  ],
+
+  "license": "GPL-3.0",
+
+  "title": "TIMES Model Generator",
+
+  "keywords": [
+    "TIMES",
+    "optimisation",
+    "energy system model",
+    "bottom-up model",
+    "open source"
+  ]
+}
