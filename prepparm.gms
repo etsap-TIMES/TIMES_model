@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2021 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *******************************************************************************
 * PREPPAR : Prepare parameters for preprocessing
 * Description: Non-default interpolation/extrapolation according to user option
