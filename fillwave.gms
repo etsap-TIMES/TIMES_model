@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2020 IEA-ETSAP.  Licensed under GPLv3 (see file LICENSE.txt).
+* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *******************************************************************
 * FILLWAVE : Fill parameters via weighted centered averaging
 * %1 - table name

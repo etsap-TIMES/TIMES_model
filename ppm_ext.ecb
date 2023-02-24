@@ -1,0 +1,46 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
+*=============================================================================*
+* ppm_ext.ecb - coefficients for market sharing (economic choice behavior)
+*-----------------------------------------------------------------------------
+  SET COM_GRP  / '_MSVIOL_' /;
+  SET COM      / '_MSVIOL_' /;
+*-----------------------------------------------------------------------------
+$ IFI %STAGES%==YES $EXIT
+$ IF  %MACRO%==YES  $EXIT
+$ IFI %MACRO%==CSA  $EXIT
+$ IFI %MACRO%==MSA  $EXIT
+$ IF  %STEPPED%==+  $EXIT
+$ SETGLOBAL ECB YES
+*-----------------------------------------------------------------------------
+  SET COM_TMAP / (SET.REG).FIN.'_MSVIOL_'/;
+  SET COM_LIM  / (SET.REG).'_MSVIOL_'.N  /;
+  SET RTC_MS(R,YEAR,C)              'Commodities with market sharing' // ;
+  PARAMETER COEF_LMS(R,ALLYEAR,C,P) 'Logit Market Share coefficients' // ;
+
+$ SET RESET 0
+$ BATINCLUDE fillparm COM_MSHGV R C ",'','','','',''"   T 'RTC(R,T,C)' 'GE 0'
+$ BATINCLUDE fillparm NCAP_MSPRF R 'C,P,L' ",'','',''"  T 'RTP(R,T,P)' 'GE 0'
+
+* Initialize probing shares
+  RTC_MS(RTC(R,T,C))$(SUM(TOP(RPC_PG(R,P,C),'OUT')$(NOT RTP_OFF(R,T,P)),ORD(T)>1)$COM_MSHGV(R,T,C)) = YES;
+  LOOP(RTC_MS(R,T,C),PRC_YMAX(RP_FLO(PRC_CAP(R,P)))$TOP(R,P,C,'OUT') = RPC_PG(R,P,C)$(NOT RTP_OFF(R,T,P));
+    Z=SUM(P$PRC_YMAX(R,P),1); IF(Z, COEF_LMS(R,T,C,P)$PRC_YMAX(R,P) = -0.05 / Z));
+
+* Complete flow controls for dummy
+  OPTION TRACKPC < COEF_LMS, RVP < COEF_LMS, TRACKP < TRACKPC;
+  TOP(TRACKP(R,P),'_MSVIOL_','IN') = YES;
+  RPCS_VAR(TRACKP(R,P),'_MSVIOL_',ANNUAL) = YES;
+  RTPCS_VARF(RTP_VARA(R,T,P),'_MSVIOL_',ANNUAL) = YES;
+
+* Default values
+  NCAP_MSPRF(R,T,C,P,L('N'))$((NOT NCAP_MSPRF(R,T,C,P,L))$COEF_LMS(R,T,C,P)) = 1;
+  NCAP_MSPRF(R,T,C(ACTCG),P,L('UP'))$((NOT NCAP_MSPRF(R,T,C,P,L))$RVP(R,T,P)) = MAX(0,SMAX(TRACKPC(R,P,COM),NCAP_MSPRF(R,T,COM,P,L)));
+  NCAP_MSPRF(R,T,C(ACTCG),P,L('UP'))$((NOT NCAP_MSPRF(R,T,C,P,L))$RVP(R,T,P)) = 2;
+
+* Initialize ceiling costs
+  FLO_COST(R,DATAYEAR,P,C('_MSVIOL_'),ANNUAL,CUR)$TRACKP(R,P) $= NCAP_COST(R,DATAYEAR,P,CUR);
+  FLO_DELIV(R,DATAYEAR,P,C('_MSVIOL_'),ANNUAL,CUR)$TRACKP(R,P) $= NCAP_FOM(R,DATAYEAR,P,CUR);
+  OPTION CLEAR=TRACKP, CLEAR=TRACKPC, CLEAR=PRC_YMAX, CLEAR=RVP;

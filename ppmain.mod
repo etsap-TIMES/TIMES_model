@@ -1,7 +1,7 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 * Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
-* under the GNU General Public License v3.0 (see file LICENSE.txt).
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
 * PPMAIN.MOD oversees all the preprocessor activities
 *   %1 - mod or v# for the source code to be used
@@ -586,31 +586,32 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Flow OFF TS level below VARiab
 * Add leading milestones into RTP if/when simulated vintages
 $IF DEFINED PRC_SIMV LOOP(T,NO_RVP(R,TT-1,P)$(RTP_CPTYR(R,TT,T,P)$PRC_SIMV(R,P))=YES); NO_RVP(RTP(R,T,P))=NO; RTP(NO_RVP)=YES;
 *-----------------------------------------------------------------------------
+* Remove commodity from PG if PRC_ACTFLO flagged non-interpolated, as bad
+   RPC_PG(R,P,C)$((NOT RP_PG(R,P,C))$(ROUND(PRC_ACTFLO(R,'0',P,C)<0))) = NO;
 * Save original non-PG PRC_ACTFLO groups
    RPC_PG(RPC_STG) = YES;
    RP_STD(RP_FLO(RP))$(NOT RP_STG(RP)) = YES;
    OPTION RPC_ACT <= PRC_ACTFLO;
    RPC_ACT(R,P,C)$(RPC_PG(R,P,C)+(NOT RPC(R,P,C))+RP_STG(R,P)) = NO;
    CHP(RP(R,P)) $= PRC_MAP(R,'CHP',P);
+
 *-----------------------------------------------------------------------------
 * establishment PRC_CAPACT/ACTFLO from PRC_CAPUNT/ACTUNT/COM_UNIT & determine INOUT(r,p)
 *-----------------------------------------------------------------------------
    PRC_CAPACT(RP(R,P))$(NOT PRC_CAPACT(R,P)) = 1;
 * Copy PRC_ACTFLO from PG to individual commodities in PG, allowing reserved word %PGPRIM%
-   PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(R,V,P,C))$RPC_PG(R,P,C)) $= SUM(RP_PG(R,P,CG),PRC_ACTFLO(R,V,P,CG));
-   PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(R,V,P,C))$RPC_PG(R,P,C)) $= PRC_ACTFLO(R,V,P,%PGPRIM%);
-   PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(R,V,P,C))$RPC_PG(R,P,C)) = 1;
-
-*-----------------------------------------------------------------------------
-* Extensions after establishing RPCS_VAR and PRC_CAPACT but before levelising
-$ BATINCLUDE main_ext.mod pp_prelv %EXTEND%
-*-----------------------------------------------------------------------------
-* Make some QA checks for FLO_SHAR
-$ BATINCLUDE pp_qafs.mod mod
-*-----------------------------------------------------------------------------
+   PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(RTP,C))$RPC_PG(R,P,C)) $= SUM(RP_PG(R,P,CG),PRC_ACTFLO(R,V,P,CG));
+   PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(RTP,C))$RPC_PG(R,P,C)) $= PRC_ACTFLO(RTP,%PGPRIM%);
+   PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(RTP,C))$RPC_PG(R,P,C)) = 1;
 * RP_PGACT signifies that activity can be substituted for the primary flow
    RP_PGACT(RP_FLO(R,P))$(SUM(RPC_PG(R,P,C),1) EQ 1) = YES;
    RP_PGACT(RP_IRE(R,P))$(SUM(RPC_IRE(RPC_PG(R,P,C),IE),1) EQ 1) = YES;
+
+*-----------------------------------------------------------------------------
+* Extensions after establishing RPCS_VAR and PRC_CAPACT but before levelising
+$  BATINCLUDE main_ext.mod pp_prelv %EXTEND%
+* Make various QA checks for FLO_SHAR
+$  BATINCLUDE pp_qafs.mod mod
 
 *-----------------------------------------------------------------------------
 * setup and apply (some) SHAPE/MULTI
@@ -641,13 +642,12 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 * commodity release always in next year if no time provided but release
     NCAP_DLIFE(RTP(R,T,P))$((NOT NCAP_DLIFE(RTP))$SUM(RPC(R,P,C)$NCAP_OCOM(RTP,C),1)) = 1;
     NCAP_DELIF(RTP(R,T,P))$(NOT NCAP_DELIF(RTP))$= NCAP_DLIFE(RTP);
-*V0.5a - if investment requires commodity and has a leadtime, set
-*        commodity time = lead if not provided
+* if investment requires commodity and has a leadtime, set commodity time = lead, if not provided
     NCAP_CLED(RTP(R,T,P),C)$((NOT NCAP_CLED(RTP,C))$NCAP_ICOM(RTP,C)) = COEF_ILED(RTP);
-* CHP plants
+* defaults for CHP plants
     NCAP_BPME(RTP(R,V,P))$((NOT NCAP_BPME(RTP))$NCAP_CDME(RTP)$CHP(R,P)) = 1;
     NCAP_CHPR(RTP(R,V,P),'UP')$((NOT SUM(LIM$NCAP_CHPR(RTP,LIM),1))$CHP(R,P)) = 1;
-*V0.9c init storage efficiency if not provided
+* set default storage efficiency if not provided
     LOOP(RP_STG(R,P)$(NOT SUM(RTP(R,T,P)$STG_EFF(RTP),1)), STG_EFF(RTP(R,V,P)) = 1);
 
 *-----------------------------------------------------------------------------
@@ -801,7 +801,7 @@ $   BATINCLUDE pp_lvlfc.mod FLO_DELIV 'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DA
 $   BATINCLUDE pp_lvlfc.mod FLO_SUB   'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_TAX   'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_PKCOI 'P,C' RPCS_VAR '' ",'0','0','0'" ALL_TS T RTP(R,T,P)
-$   BATINCLUDE pp_lvlfc.mod ACT_FLO   'P'   RPS_S1   '' ",'0','0','0'" ALL_TS V RTP(R,V,P) 0 ',C' N
+$   BATINCLUDE pp_lvlfc.mod ACT_FLO   'P'   RPS_S1   '' ",'0','0','0'" ALL_TS V RTP(R,V,P) 0 ',C' 0 $STOA(S)
 
 *GG*PKCOI defaults to 1
     LOOP((RPC(R,P,C),COM_GMAP(COM_PEAK(R,CG),C))$(TOP(RPC,'IN')+RPC_IRE(RPC,'EXP')),

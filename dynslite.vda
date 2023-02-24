@@ -1,7 +1,7 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2020 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
-* under the GNU General Public License v3.0 (see file LICENSE.txt).
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
 * dynslite.vda - experimental lite implementation for dynamic timeslice trees
 *=============================================================================*
@@ -27,16 +27,28 @@ $ IFI %DUC%==YES Abort "TS_OFF cannot be used with DUC";
 $ LABEL CLEAR
 * Vintage-based cleared selectively
 $ SETLOCAL RTS $(NORTS(R,V,S)+NORTS(R,T,S)$PASTMILE(V))
-    RVP(RTP(R,V,P))$(PRC_TSL(R,P,'ANNUAL') OR NOT PRC_VINT(R,P))=YES;
+    RVP(RTP(R,T,P))$(NOT PRC_VINT(R,P))=YES;
+    ACT_FLO(RVP(R,T,P),CG,S)%TMP%=0;
+    FLO_FUNC(RVP(R,T,P),CG,CG2,S)%TMP%=0;
+    FLO_SUM(RVP(R,T,P),CG,C,CG2,S)%TMP%=0;
+    NCAP_AF(RVP(R,T,P),S,BD)%TMP%=0;
+    FLO_SHAR(RVP(R,T,P),C,CG,S,BD)%TMP%=0;
+    FLO_ASHAR(RVP(R,T,P),C,CG,S,BD)%TMP%=0;
+    STG_LOSS(RVP(R,T,P),S)%TMP%=0;
+    IRE_FLO(RVP(R,T,P),C,ALL_R,COM,S)%TMP%=0;
+    ACT_EFF(RVP(R,T,P),CG,S)%TMP%=0;
+    OPTION CLEAR=RVP;
+* Vintaged ANNUAL
+    RVP(RTP(R,V,P))$PRC_VINT(R,P)$=PRC_TSL(R,P,'ANNUAL');
     LOOP(MIYR_1(T),
+    ACT_FLO(RVP(R,V,P),CG,S)$(RPS_S1(R,P,'ANNUAL')%RTS%)=0;
     FLO_FUNC(RVP(R,V,P),CG,CG2,S)%RTS%=0;
-    FLO_SUM(RVP(R,V,P),CG,C,CG2,S)%RTS%=0;
+    FLO_SUM(RVP(R,V,P),CG,C,CG2,S)$(RPCS_VAR(R,P,C,'ANNUAL')%RTS%)=0;
     NCAP_AF(RVP(R,V,P),S,BD)%RTS%=0;
     FLO_SHAR(RVP(R,V,P),C,CG,S,BD)$(RPCS_VAR(R,P,C,'ANNUAL')%RTS%)=0;
     FLO_ASHAR(RVP(R,V,P),C,CG,S,BD)$(RPS_S2(R,P,'ANNUAL')%RTS%)=0;
     STG_LOSS(RVP(R,V,P),S)%RTS%=0;
     IRE_FLO(RVP(R,V,P),C,ALL_R,COM,S)%RTS%=0);
-    ACT_EFF(RVP(R,T,P),CG,S)$((NOT PRC_VINT(R,P))%TMP%)=0;
     OPTION CLEAR=RVP;
 * Milestonyr-based all cleared
     COM_IE(R,T,C,S)%TMP%=0;
@@ -70,11 +82,14 @@ $ SET RESET 0
     RVP(RTP(R,V,P))$PRC_VINT(R,P)$=PRC_TSL(R,P,'ANNUAL');
     OPTION FIL<DATAYEAR; DATAYEAR(LL)=LASTLL(LL);
     FLO_FUNC(R,LL--ORD(LL),P,CG,CG2,ANNUAL)$(FLO_FUNC(R,LL,P,CG,CG2,ANNUAL)$RVP(R,LL,P))=3;
-    FLO_SUM(R,LL--ORD(LL),P,CG,C,CG2,ANNUAL)$(FLO_SUM(R,LL,P,CG,C,CG2,ANNUAL)$RVP(R,LL,P))=3;
-    ACT_EFF(R,LL--ORD(LL),P,CG,ANNUAL)$(ACT_EFF(R,LL,P,CG,ANNUAL)$RVP(R,LL,P))=3;
 $   BATINCLUDE fillparm FLO_FUNC R 'P,CG,CG2,ANNUAL' ",'',''" V 'RVP(R,V,P)' '>0' X_RPGGS X_RPGGS
-$   BATINCLUDE fillparm FLO_SUM R 'P,CG1,C,CG2,ANNUAL' ",''" V 'RVP(R,V,P)' '>0' X_RPGCGS X_RPGCGS
+    RVP(R,V,P)$(NOT RPS_S1(R,P,'ANNUAL')) = NO;
+    ACT_EFF(R,LL--ORD(LL),P,CG,ANNUAL)$(ACT_EFF(R,LL,P,CG,ANNUAL)$RVP(R,LL,P))=3;
+    ACT_FLO(R,LL--ORD(LL),P,CG,ANNUAL)$(ACT_FLO(R,LL,P,CG,ANNUAL)$RVP(R,LL,P))=3;
+    FLO_SUM(R,LL--ORD(LL),P,CG,C,CG2,ANNUAL)$(FLO_SUM(R,LL,P,CG,C,CG2,ANNUAL)$RVP(R,LL,P))=3;
 $   BATINCLUDE fillparm ACT_EFF R 'P,CG,ANNUAL' ",'','',''"  V 'RVP(R,V,P)' '>0' X_RPGS X_RPGS
+$   BATINCLUDE fillparm ACT_FLO R 'P,CG,ANNUAL' ",'','',''"  V 'RVP(R,V,P)' '>0' X_RPGS X_RPGS
+$   BATINCLUDE fillparm FLO_SUM R 'P,CG1,C,CG2,ANNUAL' ",''" V 'RVP(R,V,P)' '>0' X_RPGCGS X_RPGCGS
     OPTION DATAYEAR<FIL;
 $ GOTO CLEAR
 *------------------------------

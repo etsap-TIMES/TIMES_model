@@ -1,7 +1,7 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 * Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
-* under the GNU General Public License v3.0 (see file LICENSE.txt).
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
 * PPM_EXT.xtd oversees extended preprocessor activities
 *   %1 - mod or v# for the source code to be used
@@ -53,7 +53,6 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
   RPG_ACE(RXX(R,P,CG),IO--1)$RP_INOUT(R,P,IO) = YES;
 * Set default ACT_EFF for group to 1 if none specified
   LOOP(IO,ACT_EFF(RTP(R,V,P),CG,ANNUAL)$((ACT_EFF(RTP,CG,ANNUAL)=0)$RPG_ACE(R,P,CG,IO)) = 1);
-  OPTION CLEAR=TRACKP,CLEAR=TRACKPC;
 *---------------------------
 $ BATINCLUDE PP_ACTEF.%1 LVL
 *-----------------------------------------------------------------------------
@@ -64,9 +63,9 @@ $ BATINCLUDE PP_ACTEF.%1 LVL
   FLO_FUNCX(R,V,P,CG,ACTCG)$(ACTCG(CG)+RP_GRP(R,P,CG)) = 0;
   FLO_FUNCX(R,V,P,CG,CG2)$RP_PG(R,P,CG) $= FLO_FUNCX(R,V,P,%PGPRIM%,CG2));
 * Ensure that ACT_EFF modeled flows are not reduced:
-  LOOP(RPG_ACE(R,P,CG,IO), TRACKP(R,P) = YES);
-  LOOP(RPCG_PTRAN(TRACKP(R,P),COM1,COM2,CG1,CG2)$(RPC_ACE(R,P,COM1)+RPC_ACE(R,P,COM2)),RPCC_FFUNC(R,P,CG1,CG2) = NO);
-  RPCG_PTRAN(TRACKP(R,P),COM1,COM2,CG1,CG2)$(NOT RPCC_FFUNC(R,P,CG1,CG2)) = NO;
+  OPTION TRACKP < RPG_ACE;
+  LOOP(RPCG_PTRAN(TRACKP(R,P),C,COM,CG,CG2)$(RPC_ACE(R,P,C)+RPC_ACE(R,P,COM)),RPCC_FFUNC(R,P,CG,CG2) = NO);
+  RPCG_PTRAN(TRACKP,C,COM,CG,CG2)$(NOT RPCC_FFUNC(TRACKP,CG,CG2)) = NO;
   RPC_FFUNC(RPC_ACE(R,P,C)) = NO;
   RPC_NOFLO(RPC_ACE(R,P,C)) = NO;
   TRACKP(RP_PGFLO) = NO;
@@ -92,7 +91,8 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 09 'Inconsistent/spurious process tran
   TRACKPG(RPC_ACE) = NO; TRACKPG(TRACKPC) = NO;
   RPC_EMIS(TRACKPG)=YES; RPCC_FFUNC(TRACKPG(RP,C),C) = YES;
 $IF NOT %REDUCE%==YES OPTION CLEAR=TRACKPC;
-  OPTION KEEP_FLOF < RPC_FFUNC; TRACKPC(RP_SGS,C) = NO; RPC_FFUNC(TRACKPC) = YES;
+  OPTION KEEP_FLOF < RPC_FFUNC; TRACKPC(RP_SGS,C) = NO;
+  RPC_FFUNC(TRACKPC)$(NOT RPC_ACE(TRACKPC)) = YES;
   OPTION CLEAR=RP_GRP,CLEAR=TRACKPC,CLEAR=TRACKPG;
 *-----------------------------------------------------------------------------
 * Prepare commodity-specific availability factors

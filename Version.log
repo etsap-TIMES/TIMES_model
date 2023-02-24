@@ -2672,3 +2672,31 @@ initmty.stc   : (4)
 stages.stc    : (2)
 sensis.stc    : (2)
 solputta.ans  : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.0
+-----------------------------------------------------------------------------------------
+Date: 25-Feb-2023 [AL]: Major release
+1) Fixed bug related to auxiliary STS storage flows introduced in v4.6.9
+2) Fixed backwards compatibility workaround using COM_TYPEs as commodities not in topology
+3) Added experimental extension implementing logit market share mechanism
+4) Fixed loose ends in the levelization enhancement in v4.6.9
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.0
+initmty.mod   : (3)
+ppmain.mod    : (4)
+pp_lvlfc.mod  : (4)
+coef_ptr.mod  : (1)
+sol_flo.red   : (4)
+initmty.vda   : (3)
+dynslite.vda  : (4)
+pp_actef.vda  : (2)
+pp_prelv.vda  : (4)
+mod_ext.vda   : (3)
+mod_vars.tm   : (3)
+
+Added files...: (3)
+ppm_ext.ecb
+equ_ext.ecb
+rpt_ext.ecb
