@@ -1,7 +1,7 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 * Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
-* under the GNU General Public License v3.0 (see file LICENSE.txt).
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
 * INITMTY.MOD has all the EMPTY declarations for system & user data           *
 *  %1..%6 - File extensions of code extensions to be included                 *
@@ -458,6 +458,7 @@ $IFI %DSC%==YES    $KILL RCAP_BLK
 $SETGLOBAL EXTEND
 
 * Add recognized extensions if defined
+$IFI '%ECB%'==YES   $SETGLOBAL EXTEND '%EXTEND% ECB'
 $IFI '%MACRO%'==CSA $SETGLOBAL EXTEND '%EXTEND% MSA'
 $IFI '%MACRO%'==MSA $SETGLOBAL EXTEND '%EXTEND% MSA'
 $IFI '%MACRO%'==MLF $SETGLOBAL EXTEND '%EXTEND% MLF'

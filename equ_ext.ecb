@@ -1,0 +1,48 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
+*=============================================================================*
+* equ_ext.ecb - defines equations for the Market Share Mechanism
+*   %1 - mod
+*=============================================================================*
+$IF NOT DEFINED RTC_MS $EXIT
+*-----------------------------------------------------------------------------
+  OPTION RVP < COEF_LMS;
+* Calculate ceiling cost coefficients for dummy flow, according to NCAP_MSPRF(UP)
+  PASTSUM(RVP(R,T,P)) = NCAP_MSPRF(R,T,%PGPRIM%,P,'UP')/PRC_CAPACT(R,P);
+  FLO_COST(RVP(R,T,P),C('_MSVIOL_'),ANNUAL(S),CUR)$OBJ_FCOST(R,T,P,C,S,CUR) =
+    SUM(OBJ_SUMII(RVP,LIFE,K_EOH,JOT), %CAPJD% COR_SALVI(RVP,CUR) / OBJ_DIVI(RVP) *
+      SUM(INVSPRED(K_EOH,JOT,Y,K), (1-SALV_INV(RVP,Y)$OBJ_SUMS(RVP)) * OBJ_DISC(R,K,CUR) * OBJ_ICOST(R,K,P,CUR)));
+  FLO_DELIV(RVP(R,T,P),C('_MSVIOL_'),ANNUAL(S),CUR)$OBJ_FDELV(R,T,P,C,S,CUR) =
+    SUM(OBJ_SUMIV(K_EOH,RVP,JOT,LIFE),
+       SUM(INVSPRED(K_EOH,JOT,LL,K), OBJ_LIFE(LL,R,JOT,LIFE,CUR) * %CAPWD% OBJ_FOM(R,K,P,CUR)) / OBJ_DIVIV(RVP));
+  OBJ_FCOST(R,Y_EOH,P,C('_MSVIOL_'),ANNUAL(S),CUR)$OBJ_FCOST(R,Y_EOH,P,C,S,CUR) = SUM(PERIODYR(T,Y_EOH),FLO_COST(R,T,P,C,S,CUR)*PASTSUM(R,T,P)/OBJ_PVT(R,T,CUR));
+  OBJ_FDELV(R,Y_EOH,P,C('_MSVIOL_'),ANNUAL(S),CUR)$OBJ_FDELV(R,Y_EOH,P,C,S,CUR) = SUM(PERIODYR(T,Y_EOH),FLO_DELIV(R,T,P,C,S,CUR)*PASTSUM(R,T,P)/OBJ_PVT(R,T,CUR));
+  OPTION CLEAR=PASTSUM,CLEAR=RVP;
+*-----------------------------------------------------------------------------
+  EQUATIONS
+  %EQ%_MSNCAP(R,YEAR,C%SWD%) //
+  %EQ%_MSNCAPB(R,YEAR,C,P%SWD%) //
+  ;
+  POSITIVE VARIABLES %VAR%_XCAP(R,YEAR,ITEM%SWD%) //;
+*-----------------------------------------------------------------------------
+* Aggregate new capacity market by period
+  %EQ%_MSNCAP(RTC_MS(%R_T%,C) %SWT%)..
+* Calculate size of market for new capacity
+   SUM(TOP(PRC_CAP(R,P),C,'OUT')$(COEF_LMS(R,T,C,P)$RTP_VARA(R,T,P)),
+     PRC_CAPACT(R,P) *
+     (%VAR%_NCAP(R,T,P %SOW%)$(NOT RTP_OFF(R,T,P)+RVPT(R,T,P,T)) +
+      SUM(RVPT(R,V,P,T),%VARV%_NCAP(R,V,P%SWS%)*SQRT(COEF_CPT(R,V,T,P)))))
+   =E= %VAR%_XCAP(R,T,C%SOW%);
+
+* Maximum share in new capacity market by technology
+  %EQ%_MSNCAPB(RTC_MS(%R_T%,C),P %SWT%)$(RTP_VARA(R,T,P)$PRC_CAP(R,P)$COEF_LMS(R,T,C,P))..
+   PRC_CAPACT(R,P) *
+   (%VAR%_NCAP(R,T,P %SOW%)$(NOT RTP_OFF(R,T,P)+RVPT(R,T,P,T)) +
+    SUM(RVPT(R,V,P,T),%VARV%_NCAP(R,V,P%SWS%)*SQRT(COEF_CPT(R,V,T,P))))*SIGN(COEF_LMS(R,T,C,P))
+   =L=
+*  New capacity market multiplied by logit market share
+   %VAR%_XCAP(R,T,C%SOW%) * COEF_LMS(R,T,C,P) + SUM(ANNUAL(S),%VAR%_FLO(R,T,T,P,'_MSVIOL_',S%SOW%));
+
+*-----------------------------------------------------------------------------

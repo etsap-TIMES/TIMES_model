@@ -1,4 +1,4 @@
-$TITLE  TIMES -- VERSION 4.6.9
+$TITLE  TIMES -- VERSION 4.7.0
 *==========================================================================================*
 * INITSYS.MOD has all the fixed system declarations for ETSAP TIMES                        *
 *==========================================================================================*
@@ -6,8 +6,8 @@ $ onlisting ontext
 *===========================================================================================
 *  Copyright (C) 2000-2023 IEA Energy Technology Systems Analysis Programme (IEA-ETSAP).
 *  This software (ETSAP TIMES) is open source: you can redistribute it and/or modify it
-*  under the terms of the GNU General Public License v3.0 (see file LICENSE.txt).
-*  For further information, visit: <http://www.gnu.org/licenses/gpl-3.0.html>.
+*  under the terms of the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
+*  For further information, visit: <https://www.gnu.org/licenses/gpl-3.0.html>.
 *
 *  This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -164,7 +164,7 @@ $ SETGLOBAL MAXSOW 96
 * user should provide name in *.RUN
 $ SET MODEL_NAME    TIMES
 $ SET RUN_NAME      TEST
-* control of whether all 0 lines are dumped in *.PUT files; user provides 0 to NOT print lines containing all 0s (or empty)
+* control of whether all 0 lines are dumped in *.PUT files; user provides 0 to NOT print lines with all 0s (or empty)
   SCALAR DUMP0 /1/, OPTFILEID /1/;
 * user set to 'YES' to activate
 $ SET DEBUG          NO

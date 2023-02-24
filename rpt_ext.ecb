@@ -1,0 +1,65 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
+*-----------------------------------------------------------------------------
+* RPT_EXT.ecb - Extension for the Market Sharing Mechanism (economic choices)
+*-----------------------------------------------------------------------------
+$ IF NOT DEFINED RTC_MS $EXIT
+*-----------------------------------------------------------------------------
+  OPTION RVP < COEF_LMS, CLEAR=OBJ_SUMSI;
+  OBJ_SUMSI(RTP(R,T,P),V)$RVPT(R,V,P,T) = YES;
+  OBJ_SUMSI(RTP(R,T,P),T)$(COEF_CPT(R,T,T,P)>0) = YES;
+* Existence flags
+  PAR_TOP(RVP(R,T,P),C,'OUT')$COEF_LMS(R,T,C,P) = SUM((OBJ_SUMSI(RVP,V),PRC_TS(R,P,S)),PAR_FLO(R,V,T,P,C,S)>0);
+  PAR_TOP(RVP(R,T,P),C,IO)$PAR_TOP(RVP,C,IO) = SUM(OBJ_SUMSI(RVP,V),VAR_NCAP.L(R,V,P)*PRC_CAPACT(R,P)*POWER(COEF_CPT(R,V,T,P),0.5$(DIAG(V,T)-1)))/VAR_XCAP.L(R,T,C)+EPS;
+* Implied utilization factors
+  PASTSUM(RVP(R,T,P))$PAR_CAPL(RVP) = (PAR_CAPL(RVP)+SUM(PASTCV,PAR_PASTI(R,T,P,PASTCV)))*PRC_CAPACT(R,P)+1-1;
+  PASTSUM(NCAP_YES(RVP(R,V,P))) =
+    (SUM(RTP_CPTYR(R,V,T,P),COEF_PVT(R,T)*SUM(RPCS_VAR(RPC_PG(R,P,C),S),PAR_FLO(R,V,T,P,C,S))) / SUM(RTP_CPTYR(R,V,T,P),COEF_PVT(R,T)*VAR_NCAP.L(RVP)*COEF_CPT(R,V,T,P)*PRC_CAPACT(R,P)))$PRC_VINT(R,P) +
+    (SUM(RTP_CPTYR(R,V,T,P)$PASTSUM(R,T,P),COEF_PVT(R,T)*COEF_CPT(R,V,T,P)/PASTSUM(R,T,P)*SUM(RPCS_VAR(RPC_PG(R,P,C),S),PAR_FLO(R,T,T,P,C,S))) / SUM(RTP_CPTYR(R,V,T,P),COEF_PVT(R,T)*COEF_CPT(R,V,T,P)))$(NOT PRC_VINT(R,P));
+* Calculate INV unit cost annuity and intangibles
+  COEF_RTP(RVP(R,T,P)) =
+    SUM(OBJ_ICUR(RVP,CUR),SUM(OBJ_SUMII(RVP,LIFE,K_EOH,JOT),%CAPJD% OBJ_CRF(RVP,CUR) / OBJ_DIVI(RVP) * SUM(INVSPRED(K_EOH,JOT,Y,K),OBJ_ICOST(R,K,P,CUR))));
+  NCAP_MSPRF(R,T,C,P,'FX')$COEF_LMS(R,T,C,P) = NCAP_MSPRF(R,T,C,P,'LO')*SUM(OBJ_SUMSI(R,T,P,V)$PASTSUM(R,V,P),COEF_RTP(R,V,P)/PRC_CAPACT(R,P)/PASTSUM(R,V,P));
+* Map LEC(v) and IUF(v) to t
+  PAR_NCAPR(RVP(R,T,P),'LEVCOST') = SUM(OBJ_SUMSI(RVP,V),PAR_NCAPR(R,V,P,'LEVCOST'));
+  PASTSUM(RVP(R,T,P)) = SUM(OBJ_SUMSI(RVP,V),PASTSUM(R,V,P));
+  OPTION CLEAR=RVP,CLEAR=COEF_RTP;
+*-----------------------------------------------------------------------------
+* Calculate logit market shares
+  LOOP(RTC_MS(RTC(R,T,C)), Z = -ABS(COM_MSHGV(RTC)); OPTION CLEAR=PRC_YMIN;
+* Get weights for shares and their sum
+    PRC_YMIN(R,P)$PAR_TOP(R,T,P,C,'OUT') = (NCAP_MSPRF(RTC,P,'N')/PASTSUM(R,T,P))*((PAR_NCAPR(R,T,P,'LEVCOST')+NCAP_MSPRF(RTC,P,'FX'))**Z)$(PAR_NCAPR(R,T,P,'LEVCOST')>1E-3);
+    F = SUM(P$PRC_YMIN(R,P),PRC_YMIN(R,P));
+    IF(F>0,
+* Get initial shares and their Max
+      PRC_YMIN(R,P)$PRC_YMIN(R,P)=(PRC_YMIN(R,P)/F);
+      F = SMAX(P$PRC_YMIN(R,P),PRC_YMIN(R,P));
+      MY_F=SMAX(P$PRC_YMIN(R,P),PAR_TOP(R,T,P,C,'OUT'));
+* Adjust shares, normalize, and get sum over cutoff
+      PRC_YMIN(R,P)$((PRC_YMIN(R,P)>.05)$PRC_YMIN(R,P)) = MAX(PRC_YMIN(R,P),PAR_TOP(R,T,P,C,'OUT')/MY_F*F);
+      F = SUM(P$PRC_YMIN(R,P),PRC_YMIN(R,P));
+      PRC_YMIN(R,P)$PRC_YMIN(R,P)=(PRC_YMIN(R,P)/F)$(PRC_YMIN(R,P)/F>.01);
+      F = SUM(P$PRC_YMIN(R,P),PRC_YMIN(R,P))*.9999;
+* Get MY_F = Max share, and Z = sum of differences from max
+      MY_F = SMAX(P$PRC_YMIN(R,P),PRC_YMIN(R,P)); Z = SUM(P$PRC_YMIN(R,P),MY_F-PRC_YMIN(R,P));
+      IF(Z, CNT=1; ELSE CNT=F);
+* Final normalized share values: V0i+(MAX0-V0i)*(1-SUM0)/DIFSUM
+      COEF_LMS(RTC,P)$COEF_LMS(RTC,P) = PRC_YMIN(R,P)/CNT+((MY_F-PRC_YMIN(R,P))*(1-F)/Z)$PRC_YMIN(R,P)$Z;
+    ELSE COEF_LMS(RTC,P)$COEF_LMS(RTC,P)=0));
+  OPTION CLEAR=PRC_YMIN,CLEAR=OBJ_SUMSI,CLEAR=PASTSUM,CLEAR=PAR_TOP;
+*-----------------------------------------------------------------------------
+* Reports clear
+  OPTION CLEAR=REG_WOBJ, CLEAR=REG_IREC, CLEAR=REG_ACOST, CLEAR=CAP_NEW, CLEAR=PAR_EOUT, CLEAR=F_IN, CLEAR=F_OUT, CLEAR=P_OUT, CLEAR=AGG_OUT;
+  OPTION CLEAR=PAR_ACTL, CLEAR=PAR_ACTM, CLEAR=PAR_PASTI, CLEAR=PAR_CAPL, CLEAR=PAR_CAPM, CLEAR=PAR_CAPLO, CLEAR=PAR_CAPUP, CLEAR=PAR_NCAPL, CLEAR=PAR_NCAPM, CLEAR=PAR_NCAPR, CLEAR=PAR_OBJSAL;
+  OPTION CLEAR=PAR_COMPRDL, CLEAR=PAR_COMPRDM, CLEAR=PAR_COMNETL, CLEAR=PAR_COMNETM, CLEAR=PAR_COMBALEM, CLEAR=PAR_COMBALGM, CLEAR=PAR_IPRIC, CLEAR=PAR_PEAKM;
+  OPTION CLEAR=PAR_UCSL, CLEAR=PAR_UCSM, CLEAR=PAR_CUMFLOL, CLEAR=PAR_CUMFLOM, CLEAR=PAR_CUMCST, CLEAR=PAR_UCMRK, CLEAR=PAR_UCRTP, CLEAR=PAR_UCMAX;
+  OPTION CLEAR=CST_INVC, CLEAR=CST_INVX, CLEAR=CST_DECC, CLEAR=CST_FIXC, CLEAR=CST_FIXX, CLEAR=CST_ACTC, CLEAR=CST_FLOC, CLEAR=CST_FLOX, CLEAR=CST_IREC, CLEAR=CST_COMC, CLEAR=CST_COMX, CLEAR=CST_COME, CLEAR=CST_SALV, CLEAR=CST_TIME;
+*-----------------------------------------------------------------------------
+$ IFI %MACRO%==MLF $EXIT
+* Resolve model
+  OPTION SOLVEOPT=MERGE;
+$ BATINCLUDE solve.mod
+$ SET SOLVEDA 1
+$ BATINCLUDE rptlite.rpt '' '' '' NO
