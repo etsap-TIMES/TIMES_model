@@ -243,8 +243,8 @@ $LABEL RESTOBJ
   PARAMETER  YKVAL(ALLYEAR,ALLYEAR);
 
 * flags used in extrapolation
-  SET BACKWARD(ALLYEAR) //;
-  SET FORWARD(ALLYEAR)  //;
+  SET BACKWARD(YEAR) //;
+  SET FORWARD(YEAR)  //;
 * DM_YEAR is the union of the sets MODLYEAR and DATAYEAR
   SET DM_YEAR(ALLYEAR)  //;
 

@@ -133,7 +133,7 @@ $LABEL MACROBJ BATINCLUDE eqdeclr.tm
 
 * Retirements
     %EQ%_CUMRET(R,ALLYEAR,ALLYEAR,P%SWTD%) 		'Cumulative retirements'
-    %EQ%L_REFIT(R,ALLYEAR,ALLYEAR,P%SWTD%) 		'Retrofit/life-extension (=L=)'
+    %EQ%L_REFIT(R,ALLYEAR,ALLYEAR,P,L%SWTD%)	 	'Retrofit/life-extension (=L=)'
     %EQ%L_SCAP(R,ALLYEAR,P,IPS%SWD%)    		'Salvage capacity (=L=)'
 
 * Cost bounds

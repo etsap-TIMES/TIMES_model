@@ -89,7 +89,12 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Commodity in CG of process P b
 * Commodity description
 *-----------------------------------------------------------------------------
 $IF NOT %TIMESED%==YES $SETLOCAL TIMESED NO
-  IF(%TIMESED%,
+  IF(%TIMESED%, FORWARD(T)=YES;
+$IF DEFINED SOL_BPRICE OPTION FORWARD < SOL_BPRICE;
+    LOOP(T$(NOT FORWARD(T)),
+$        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 09 'Elastic Demand but missing BPRICE for some MILESTONYR - using tail extrapolation'
+         PUT QLOG ' WARNING       -  Missing BPRICE, MILESTONYR=',T.TL);
+    PUTGRP = 0;
     LOOP(DEM(R,C)$SUM(BD$COM_STEP(R,C,BD),1),
 * Check that elastic demands fully sprecifed
       IF((NOT SUM((T,S,CUR)$COM_BPRICE(R,T,C,S,CUR),1)) +

@@ -2700,3 +2700,24 @@ Added files...: (3)
 ppm_ext.ecb
 equ_ext.ecb
 rpt_ext.ecb
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.1
+-----------------------------------------------------------------------------------------
+Date: 9-Apr-2023 [AL]: Maintenance release
+1) Added option for preventing cascaded forced retrofits
+2) Fixed some loose ends in the recent logit market sharing
+3) Added QA check against missing base prices under TIMESED
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.1
+setglobs.gms  : (3)
+ppmain.mod    : (1)
+readbprice.mod: (3)
+eqdeclr.mod   : (1)
+pp_qack.mod   : (3)
+prepret.dsc   : (1)
+ppm_ext.ecb   : (2)
+rpt_ext.ecb   : (2)
+rpt_ext.mlf   : (2)
+recurrin.stc  : (1)

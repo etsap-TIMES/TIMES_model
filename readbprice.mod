@@ -28,6 +28,9 @@ $GDXIN
 
  OPTION DEM < COM_PROJ;
  DEM(R,C)$COM_TMAP(R,'DEM',C) = YES;
+* Fill in missing tail milestoneyrs to reduce abruption
+ OPTION FORWARD < SOL_BPRICE; FIL(T) = PROD(FORWARD(TT),ORD(TT)<ORD(T));
+ LOOP(FIL(TT(T+1)),COM_BPRICE(R,TT,C,S,CUR) $= SOL_BPRICE(R,T,C,S,CUR));
  COM_BPRICE(R,T,C,S,CUR)$DEM(R,C) $= SOL_BPRICE(R,T,C,S,CUR);
  OPTION CLEAR=DEM;
 *--------------------------------------------------------------------

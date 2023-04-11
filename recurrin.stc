@@ -81,7 +81,7 @@ $macro QE_CPT(rtp,swt)   ESE_CPT(rtp,T,SOW('1'))
 $macro QL_CPT(rtp,swt)   ESL_CPT(rtp,T,SOW('1'))
 $macro Q_DSCRET(cpt,sw)  ES_DSCRET(cpt,T,SOW('1'))
 $macro Q_CUMRET(r,v,p,w) ES_CUMRET(r,v,p,T,SOW('1'))
-$macro QL_REFIT(rttp,swt) ESL_REFIT(rttp,T,SOW('1'))
+$macro QL_REFIT(rttp,l,swt) ESL_REFIT(rttp,l,T,SOW('1'))
 $macro Q_DSCNCAP(rtp,sw) ES_DSCNCAP(rtp,T,SOW('1'))
 $macro Q_DSCONE(rtp,swt) ES_DSCONE(rtp,T,SOW('1'))
 

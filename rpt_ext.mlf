@@ -13,7 +13,7 @@ $ BATINCLUDE rptlite.rpt
 *-----------------------------------------------------------------------
 $ SET METHOD LP
 $ IFI %NONLP%==NL $SET METHOD NLP
-  DOITER=1;
+  DOITER=1-INF$(DOITER=NA);
   LOOP(NITER$DOITER,
 *   Perform Negishi iterations with tax rebate
 *-----------------------------------------------------------------------
@@ -28,7 +28,7 @@ $   BATINCLUDE rpt_obj.rpt '' "" '' '%SYSPREFIX%' 0
 $   BATINCLUDE cost_ann.rpt
 *-----------------------------------------------------------------------
 *   Calculate new Negishi weights
-    IF(CARD(MR),
+    IF(CARD(MR)-MIN(0,DOITER),
       TM_NWTIT(NITER,MR) = TM_NWT(MR);
       LOOP(TB(T-1), MY_ARRAY(PP) = ABS(EQ_TRDBAL.M(PP)/EQ_TRDBAL.M(T)));
       TM_NWT(MR(R)) = SUM(PP, MY_ARRAY(PP)*(VAR_C.L(R,PP)+VAR_NTX.L(R,PP)));
@@ -40,8 +40,8 @@ $   BATINCLUDE cost_ann.rpt
       TM_TAXREV(MR(R),PP(T)) = REG_ACOST(R,T,'INVX')+REG_ACOST(R,T,'FIXX')+REG_ACOST(R,T,'VARX');
       DFUNC = SMAX(MR(R),TM_SCALE_CST*SUM(PP(T),COEF_PVT(R,T)*ABS(TM_TAXREV(R,T)-RB(R,T)))/SUM(PP(T),COEF_PVT(R,T)*VAR_EC.L(R,T)*TM_HDF(R,T)));
       DISPLAY "Negishi Tolerance, Negishi Gap, Tax Gap:",F,Z,DFUNC;
-      IF(MAX(Z,DFUNC)<F, DOITER=0;
-      ELSE SOLVE %MODEL_NAME% MAXIMIZING VAR_UTIL USING %METHOD%)
+      DOITER=(MAX(Z,DFUNC)>=F+MIN(0,DOITER));
+      IF(DOITER, SOLVE %MODEL_NAME% MAXIMIZING VAR_UTIL USING %METHOD%)
     ELSE DOITER=0));
 
 *-----------------------------------------------------------------------
