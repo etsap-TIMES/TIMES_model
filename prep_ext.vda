@@ -38,8 +38,10 @@ $IF DEFINED PRC_REACT $BATINCLUDE powerflo.vda PREP
 $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda
 $BATINCLUDE equcrtp.vda PREP_EXT
 *------------------------------------------------------------------------------
+* Special vintaging options
 $IF %VINTOPT%==1 $BATINCLUDE fillvint VDA_FLOP R 'P,CG,TS' X_RPGS
 $IF %VINTOPT%==1 $BATINCLUDE fillvint ACT_EFF R 'P,CG,TS' X_RPGS
+  FLO_FUNCX(R,LL,P,C,CG)$(NOT PRC_VINT(R,P)) = 0;
 *------------------------------------------------------------------------------
 
 * Tailored interpolation of PRC_RESID

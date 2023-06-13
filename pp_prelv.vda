@@ -59,6 +59,7 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)
   FLO_SUM(RTP(R,V,P),CG2,C,CG,S)$(RPC_PG(R,P,C)$CG_GRP(R,P,CG2,CG)) = VDA_FLOP(RTP,CG,S)*(1/PRC_ACTFLO(RTP,C));
 * Finally, handle single commodities without a group (and not in PG either)
   FLO_SUM(RTP(R,V,P),CG,C,COM,S)$(RP_PG(R,P,CG)*RPC_PG(R,P,C)*TRACKPC(R,P,COM)) $= VDA_FLOP(RTP,COM,S)*(1/PRC_ACTFLO(RTP,C));
+  FLO_FUNC(RTP(R,V,P),ACTCG,C,ANNUAL(S))$((FLO_FUNCX(RTP,ACTCG,C)<0)$TRACKPC(R,P,C)) $= VDA_FLOP(RTP,C,S);
   OPTION CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=VDA_FLOP,CLEAR=CG_GRP,CLEAR=RPCC_FFUNC;
 *-----------------------------------------------------------------------------
 * Distribute IRE_FLOSUM for ACT; Ignore possible overwriting for now

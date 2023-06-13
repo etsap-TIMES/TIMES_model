@@ -97,7 +97,7 @@ $ LABEL SYSD
   SET RTPS_BD(R,ALLYEAR,P,S,BD) 'Multi-purpose work set'                //;
   SET CG_GRP(REG,PRC,CG,CG)     'Multi-purpose work set'                //;
   SET FSCK(REG,PRC,CG,C,CG)     'Multi-purpose work set'                //;
-  SET FSCKS(REG,PRC,CG,C,CG,S)  'Multi-purpose work set'                //;
+  SET FSCKS(REG,PRC,CG,C,CG,TS) 'Multi-purpose work set'                //;
   SET RPC_IREIO(R,P,C,IE,IO)    'Types of trade flows'                  //;
   SET RPC_LS(R,P,C)             'Load sifting control'                  //;
 * process types
@@ -173,7 +173,7 @@ $ LABEL SYSD
   PARAMETER COEF_ICOM(R,ALLYEAR,T,PRC,C)       'Commodity flow at investment time'      //;
   PARAMETER COEF_OCOM(R,ALLYEAR,T,PRC,C)       'Commodity flow at decommissioning time' //;
   PARAMETER COEF_CIO(R,ALLYEAR,T,P,C,IO)       'Capacity-related commodity in/out flows'//;
-  PARAMETER COEF_PTRAN(REG,ALLYEAR,PRC,CG,C,CG,S) 'Multiplier for EQ_PTRANS'            //;
+  PARAMETER COEF_PTRAN(REG,ALLYEAR,PRC,CG,C,CG,TS) 'Multiplier for EQ_PTRANS'           //;
   PARAMETER COEF_RPTI(R,ALLYEAR,P)             'Repeated investment cycles'             //;
   PARAMETER COEF_ILED(R,ALLYEAR,P)             'Investment lead time'                   //;
   PARAMETER COEF_PVT(R,T)                      'Present value of time in periods'       //;

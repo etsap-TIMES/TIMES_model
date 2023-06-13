@@ -19,6 +19,7 @@ $ SETGLOBAL ECB YES
   SET COM_LIM  / (SET.REG).'_MSVIOL_'.N  /;
   SET RTC_MS(R,YEAR,C)              'Commodities with market sharing' // ;
   PARAMETER COEF_LMS(R,ALLYEAR,C,P) 'Logit Market Share coefficients' // ;
+  PARAMETER ECB_NCAPR(R,ALLYEAR,P)  'First pass LEC results' //;
 
 $ SET RESET 0
 $ BATINCLUDE fillparm COM_MSHGV R C ",'','','','',''"   T 'RTC(R,T,C)' 'GE 0'

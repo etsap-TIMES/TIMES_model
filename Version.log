@@ -2721,3 +2721,19 @@ ppm_ext.ecb   : (2)
 rpt_ext.ecb   : (2)
 rpt_ext.mlf   : (2)
 recurrin.stc  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.2
+-----------------------------------------------------------------------------------------
+Date: 9-Jun-2023 [AL]: Maintenance release
+1) Added support for non-vintaged ACT_FLO variant
+2) Added reporting of first pass LEC under the ECB extension
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.2
+setglobs.gms  : (1)
+pp_lvlff.mod  : (1)
+prep_ext.vda  : (1)
+pp_prelv.vda  : (1)
+ppm_ext.ecb   : (2)
+rpt_ext.ecb   : (2)

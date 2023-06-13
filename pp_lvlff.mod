@@ -10,17 +10,17 @@
 * - Assumption is that values can be given at any levels
 *-----------------------------------------------------------------------------
 *$ONLISTING
-  SET FFCKS(REG,PRC,CG,CG,S)  //;
+  SET FFCKS(REG,PRC,CG,CG,TS)  //;
 
 * check all commodities in the groups of a process at other than PRC_TS level
-  LOOP(V,FFCKS(R,P,CG,COM_GRP,S)$((NOT PRC_TS(R,P,S))$FLO_FUNC(R,V,P,CG,COM_GRP,S)) = YES);
-  LOOP(FFCKS(R,P,CG,COM_GRP,S)$(NOT ANNUAL(S)),CG_GRP(R,P,CG,COM_GRP) = YES);
+  OPTION FFCKS <= FLO_FUNC; FFCKS(R,P,CG,CG2,S)$(PRC_TS(R,P,S)+ACTCG(CG))=NO;
+  LOOP(FFCKS(R,P,CG,COM_GRP,S)$STOA(S),CG_GRP(R,P,CG,COM_GRP) = YES);
 *-----------------------------------------------------------------------------
 * Leveling by simultaneous aggregation/inheritance
 *-----------------------------------------------------------------------------
   LOOP((CG_GRP(R,P,CG,COM_GRP),RTP(R,V,P)),
     TS_ARRAY(ALL_TS) = FLO_FUNC(R,V,P,CG,COM_GRP,ALL_TS);
-    FLO_FUNC(R,V,P,CG,COM_GRP,TS)$PRC_TS(R,P,TS) =
+    FLO_FUNC(R,V,P,CG,COM_GRP,TS)$((NOT TS_ARRAY(TS))$PRC_TS(R,P,TS)) =
       SUM(RS_TREE(FINEST(R,S),TS), G_YRFR(R,S) * (TS_ARRAY(S) +
            SUM(RS_BELOW(R,ALL_TS,S)$((NOT SUM(TS_MAP(R,SL,S)$RS_BELOW(R,ALL_TS,SL),TS_ARRAY(SL)))$TS_ARRAY(ALL_TS)),
                TS_ARRAY(ALL_TS))))/G_YRFR(R,TS));
