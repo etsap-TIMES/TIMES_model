@@ -227,7 +227,8 @@ $LABEL RESTOBJ
     RS_TSLVL(R,ALL_TS)  'Timeslice levels'
     TS_ARRAY(ALL_TS)    'Array for leveling parameter values across timeslices'
     STOA(ALL_TS)        'ORD Lag from each timeslice to ANNUAL'
-    STOAL(ALL_REG,TS)   'ORD Lag from the LVL of each timeslice to ANNUAL';
+    STOAL(ALL_REG,TS)   'ORD Lag from the LVL of each timeslice to ANNUAL'
+    BDSIG(LIM)          'Bound signum' / LO 1, UP -1 /;
 
 
 *-----------------------------------------------------------------------------

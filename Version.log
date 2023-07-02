@@ -2737,3 +2737,16 @@ prep_ext.vda  : (1)
 pp_prelv.vda  : (1)
 ppm_ext.ecb   : (2)
 rpt_ext.ecb   : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.3
+-----------------------------------------------------------------------------------------
+Date: 3-Jul-2023 [AL]: Maintenance release
+1) Fixed bug introduced when using S_FLO_FUNC under stochastic mode
+2) Loosened default lower bounds VAR_CLITOT
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.3
+setglobs.gms  : (1)
+coef_obj.mod  : (1)
+mod_vars.cli  : (2)

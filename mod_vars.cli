@@ -21,5 +21,6 @@ EQUATIONS
 ;
 OPTION CLEAR=%EQ%_CLITOT;
 *-----------------------------------------------------------------------------
-* Allow slightly negative emissions
-%VAR%_CLITOT.LO(CM_VAR,LL %SOW%)$CM_LED(LL) = MIN(-10,CM_BEMI(CM_VAR,LL));
+* Allow some negative emissions
+  %VAR%_CLITOT.LO(CM_VAR,LL %SOW%)$CM_LED(LL) = MIN(-15,CM_BEMI(CM_VAR,LL));
+  %VAR%_CLITOT.LO(CM_VAR('FORCING'),LL%SOW%)$CM_LED(LL) = -2;

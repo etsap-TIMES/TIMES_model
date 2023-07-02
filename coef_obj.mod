@@ -21,7 +21,6 @@
 * For shaped demand elasticises
   ALIAS(AGE,SPAN);
   SET SHEDJ(LIM,J) 'Elastic demand shape indexes';
-  PARAMETER BDSIG(L);
   PARAMETER SHAPED(BD,J,AGE) 'Elastic demand shape curves' //;
 
 * establish eachyear sets matching documentation
@@ -187,6 +186,7 @@ $IF NOT %TIMESED% ==YES  $GOTO TCOST
   BDSIG(BDNEQ)=CEIL(SMAX(RTC_SHED(R,T,C,BDNEQ,J),COM_VOC(R,T,C,BDNEQ))*100); BDSIG('LO')=MIN(100,BDSIG('LO'));
   SHAPED(SHEDJ(BDNEQ,J),AGE)$(ORD(AGE) LE BDSIG(BDNEQ)) = (1+.01/(1+(ORD(AGE)-1)/100))**(1/MAX(1E-3,SHAPE(J,AGE)));
   LOOP((AGE,SPAN(AGE-1),BDNEQ(BD))$(ORD(AGE) LE BDSIG(BD)),SHAPED(SHEDJ(BD,J),AGE) = SHAPED(BD,J,AGE)*SHAPED(BD,J,SPAN));
+  BDSIG(BDNEQ) = 1-2$BDUPX(BDNEQ);
 *-----------------------------------------------------------------------------
 $IF NOT %VALIDATE%==YES $GOTO TCOST
 * Flat period assignment
@@ -203,4 +203,3 @@ $IF NOT %VALIDATE%==YES $GOTO TCOST
 
 $LABEL TCOST
 * ignore investment cost for learned technologies when ETL active: COEF_EXT.ETL
-  BDSIG(BDNEQ) = 1-2$BDUPX(BDNEQ);
