@@ -11,7 +11,7 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Provide as much in detail as possible information for reproducing the bug:
+Provide information for reproducing the bug, as much in detail as possible:
 - Which TIMES feature used in your model appears to be triggering the bad behavior?
 - What exactly is the manifested incorrect or undesirable behaviour?
 - Which steps would be needed to be able to reproduce the bad behavior?
@@ -23,7 +23,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Test case**
-If possible, attach a ZIP file containing the TIMES input files (*.DD, *.RUN) and the listing file (*.LST) for a test case reproducing the issue.
+If possible, attach a ZIP file containing the TIMES input files (*.DD, \*.RUN) and the listing file (\*.LST) for a test case reproducing the issue.
 
 **Versions (please complete the following information):**
  - GAMS version used (e.g. GAMS 27.3)
