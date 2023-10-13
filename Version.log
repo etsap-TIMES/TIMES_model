@@ -2750,3 +2750,21 @@ initsys.mod   : Increased version number to 4.7.3
 setglobs.gms  : (1)
 coef_obj.mod  : (1)
 mod_vars.cli  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.4
+-----------------------------------------------------------------------------------------
+Date: 13-Oct-2023 [AL]: Maintenance release
+1) Fixed bug related to zero new capacities when deriving logit market shares
+2) Fixed bug related to zero SHAPE values for NCAP_CPX
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.4
+ppmain.mod    : (3)
+coef_shp.mod  : (2)
+eqobjvar.mod  : (3)
+eqobjels.mod  : (3)
+eqobjvar.rpt  : (3)
+equ_ext.abs   : (3)
+rpt_ext.ecb   : (1)

@@ -40,6 +40,7 @@ $ macro var_bsfnsp(r,v,t,p,c,s) %var%_bsprs(r,v,t,p,c,s,'FX'%SOW%)
 $ macro var_bsupsr(r,v,t,p,s,bd) %var%_bsprs(r,v,t,p,%PGPRIM%,s,bd%SOW%)
 $ macro var_bslack(r,t,p,c,s) %var%_bsprs(r,t,t,p,c,s,'UP'%SOW%)
 * Capacity-CPT expression
+$IF %STAGES%==YES  $%SW_STVARS%
 $SET TMP SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%))
 
 *-----------------------------------------------------------------------------

@@ -37,7 +37,7 @@ $IFI %STAGES%==YES Z=SUM(W(SOW),SW_PROB(W));
         SUM(RHS_COMBAL(R,T,C,S), VAR_COMNET.L(R,T,C,S) * %5(%TPULSE% (OBJ_COMNT(R,%4,C,S,'TAX',CUR)+OBJ_COMNT(R,%4,C,S,'SUB',CUR)))) +
         SUM(RHS_COMPRD(R,T,C,S), VAR_COMPRD.L(R,T,C,S) * %5(%TPULSE% (OBJ_COMPD(R,%4,C,S,'TAX',CUR)+OBJ_COMPD(R,%4,C,S,'SUB',CUR))));
 $IFI %STAGES%==YES
-  %1_COMC(%3RTC(R,T,C),CUR)$RDCUR(R,CUR) $= SUM((RTCS_VARC(RTC,S),COM_VAR,SW_TSW(SOW,T,W))$S_COM_TAX(RTC,S,COM_VAR,CUR,'1',W),(%5(%TMP%S_COM_TAX(R,%4,C,S,COM_VAR,CUR,'1',W))*(VAR_COMPRD.L(RTC,S)$(ORD(COM_VAR)=2)+VAR_COMNET.L(RTC,S)$UC_NAME(COM_VAR))+%1_COMC(J,RTC,CUR)*G_YRFR(R,S))*SW_PROB(W)/Z);
+  %1_COMC(%3RTC(R,T,C),CUR)$RDCUR(R,CUR) $= SUM((RTCS_VARC(RTC,S),COM_VAR,SW_TSW(SOW,T,W))$S_COM_TAX(RTC,S,COM_VAR,CUR,'1',W),(%5(%TMP%S_COM_TAX(R,%4,C,S,COM_VAR,CUR,'1',W))*(VAR_COMPRD.L(RTC,S)$DIAG('PRD',COM_VAR)+VAR_COMNET.L(RTC,S)$DIAG('NET',COM_VAR))+%1_COMC(J,RTC,CUR)*G_YRFR(R,S))*SW_PROB(W)/Z);
 
 *------------------------------------------------------------------------------
 * Commodity costs associated with imports/exports from outside study area

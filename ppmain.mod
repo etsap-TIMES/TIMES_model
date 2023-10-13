@@ -1166,8 +1166,9 @@ $ BATINCLUDE prepxtra.mod UCINT
 * Remove RHS from DYNDIR if LHS present:
   UC_DYNDIR(R,UC_N,'RHS')$UC_DYNDIR(R,UC_N,'LHS') = NO;
   UC_TSL(UC_DYNDIR(R_UC,'RHS'),TSL)$UC_TSL(R_UC,'LHS',TSL)=YES; UC_DYNDIR(R_UC,SIDE)=NO;
-* Add implicit T_SUCC and remove T_EACH whenever T_SUCC:
-  LOOP(SIDE, UC_T_SUCC(UC_T_EACH(R,UC_N,T))$UC_DYNDIR(R,UC_N,SIDE) = YES);
+* Add implicit T_SUCC and remove T_EACH whenever T_SUCC
+  UC_T_SUCC(UC_T_EACH(R,UCN,T)) $= SUM(UC_DYNDIR(R,UCN,SIDE),1);
+  UC_T_SUCC(UC_T_EACH(R,UCN,T))$UC_R_SUM(R,UCN) $= SUM(UC_T_SUCC(UC_R_SUM(REG,UCN),T),1);
   UC_T_EACH(UC_T_SUCC) = NO;
 * Remove last MILESTONYR from UC_T_SUCC unless GROWTH constraint is RHS-based:
   UC_T_SUCC(UC_T_SUCC(R,UC_N,T))$(ORD(T) EQ CARD(T)) = UC_DYNDIR(R,UC_N,'RHS');
@@ -1175,7 +1176,6 @@ $ BATINCLUDE prepxtra.mod UCINT
 
 *-----------------------------------------------------------------------------
 * Assigning commodities and processes to UC group map sets
-
   SET UC_MAP_FLO(UC_N,SIDE,ALL_REG,PRC,COM) 'Assigning processes to UC_GRP';
   SET UC_MAP_IRE(UC_N,ALL_REG,PRC,COM,IE)   'Assigning processes to UC_GRP';
 

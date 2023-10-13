@@ -46,6 +46,6 @@ $LABEL RHS
 *------------------------------------------------------------------------------
 
 * Step bounds for linear CES demand functions
-  %EQ%L_COMCES(RTC(R,T,COM),C,S%SWT%)$(RTCS_VARC(R,T,C,S)$MI_DOPE(R,T,C)$MI_DMAS(R,COM,C))..
+  %EQ%L_COMCES(RTC(%R_T%,COM),C,S%SWT%)$(RTCS_VARC(R,T,C,S)$MI_DOPE(R,T,C)$MI_DMAS(R,COM,C))..
    SUM(RCJ(R,C,J,BDNEQ(BD))$COM_ELAST(R,T,C,S,BD),%VAR%_ELAST(R,T,C,S,J,BD%SOW%)*COM_STEP(R,C,BD)/ORD(J)/(DDF_QREF(R,T,C)*COM_FR%MX%(R,T,C,S)*COM_VOC(R,T,C,BD)))
    =L= %VAR%_COMPRD(R,T,COM,'ANNUAL'%SOW%)/DDF_QREF(R,T,COM);

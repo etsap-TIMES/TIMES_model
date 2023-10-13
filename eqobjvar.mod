@@ -45,7 +45,7 @@ $IF %STAGES% == YES $SETLOCAL SWTD 'SUM(SW_TSW(SOW,T,WW),' SET SOW ',WW'
        SUM(%TPULSE% * SUM(COSTYPE,OBJ_COMNT(R,Y_EOH,C,S,COSTYPE,CUR)))) +
      SUM(RHS_COMPRD(R,T,C,S), %VAR%_COMPRD(R,T,C,S %SOW%) *
        SUM(%TPULSE% * SUM(COSTYPE,OBJ_COMPD(R,Y_EOH,C,S,COSTYPE,CUR)))) +
-$IFI %STAGES%==YES SUM((RTCS_VARC(R,T,C,S),COM_VAR,W(WW))$S_COM_TAX(R,T,C,S,COM_VAR,CUR,'1',W),SUM(Y_EOH(Y)$OBJ_LINT(R,T,Y,CUR),OBJ_LINT(R,T,Y,CUR)*S_COM_TAX(R,Y,C,S,COM_VAR,CUR,'1',W))*(%VAR%_COMPRD(R,T,C,S%SOW%)$(ORD(COM_VAR)=2)+%VAR%_COMNET(R,T,C,S%SOW%)$UC_NAME(COM_VAR))) +
+$IFI %STAGES%==YES SUM((RTCS_VARC(R,T,C,S),COM_VAR,W(WW))$S_COM_TAX(R,T,C,S,COM_VAR,CUR,'1',W),SUM(Y_EOH(Y)$OBJ_LINT(R,T,Y,CUR),OBJ_LINT(R,T,Y,CUR)*S_COM_TAX(R,Y,C,S,COM_VAR,CUR,'1',W))*(%VAR%_COMPRD(R,T,C,S%SOW%)$DIAG('PRD',COM_VAR)+%VAR%_COMNET(R,T,C,S%SOW%)$DIAG('NET',COM_VAR))) +
 
 *------------------------------------------------------------------------------
 * Commodity costs/tax/sub associated with imports/exports from outside study area
