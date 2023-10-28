@@ -1,5 +1,10 @@
 # do not attempt any end-of-line conversion
 * -text
+# Exclude files from archive
+/.github          export-ignore
+/.gitattributes   export-ignore
+/.gitignore       export-ignore
+
 # These files are in the GAMS language
 *.gms linguist-language=GAMS
 *.mod linguist-language=GAMS
@@ -8,6 +13,7 @@
 *.def linguist-language=GAMS
 *.dsc linguist-language=GAMS
 *.cli linguist-language=GAMS
+*.ecb linguist-language=GAMS
 *.etl linguist-language=GAMS
 *.ier linguist-language=GAMS
 *.lin linguist-language=GAMS
