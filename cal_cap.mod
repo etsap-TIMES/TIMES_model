@@ -23,8 +23,6 @@
 * CAL_NCOM: the term associated with invest/decommission commodities in the EQ_COMxxx
          SUM(RPC_CAPFLO(R,V,P,C)$COEF_%2COM(R,V,T,P,C), COEF_%2COM(R,V,T,P,C) *
              %3
-             G_YRFR(R,S) * (%VARV%_NCAP%4(R,V,P %SWS%)$T(V)
-$ IF '%2'=='O'            + NCAP_PASTI(R,V,P)$PASTYEAR(V)
-             )
+             G_YRFR(R,S) * (%VARV%_NCAP%4(R,V,P %SWS%)$T(V)+NCAP_PASTI(R,V,P)$PASTYEAR(V))
          )
 *$OFFLISTING

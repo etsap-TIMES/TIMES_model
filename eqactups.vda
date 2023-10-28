@@ -135,7 +135,7 @@ $IFI %OBMAC%==YES $macro var_sift(v,s,l) %var%_udp(r,v,t,p,s,l%sow%)*prc_capact(
       SUM(PRC_TS(R,P,TS)$RS_BELOW1(R,S,TS),%VAR%_ACT(R,V,T,P,TS%SOW%))$STG_SIFT(RTP,%PGPRIM%,S) +
       SUM((TOP(RPC_STG(R,P,C),'OUT'),RPCS_VAR(R,P,C,TS)),%VAR%_SOUT(R,V,T,P,C,TS%SOW%))$ANNUAL(S)$ACTCG(COM) +
       (%VAR%_SIN(R,V,T,P,COM,S%SOW%) + %VAR%_ACT(R,V,T,P,S%SOW%))$PRC_TS(R,P,S) + %VAR%_SOUT(R,T,T,P,%PGPRIM%,S%SOW%) -
-      SUM((TOP(RPC_STG(R,P,C),'OUT'),RTCS_VARC(RTC(R,T,C),TS))$RS_FR(R,S,TS),(STG_SIFT(RTP,C,TS)$(PRC_TS(R,P,S)+ANNUAL(S)$ACTCG(COM))+STG_SIFT(RTP,%PGPRIM%,S))*%VAR%_COMPRD(RTC,TS%SOW%)/COM_IE(RTC,TS)*RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS)))) -
+      SUM((TOP(RPC_STG(R,P,C),'OUT'),RTCS_VARC(RTC(R,T,C),TS))$RS_FR(R,S,TS),(STG_SIFT(RTP,C,TS)$(PRC_TS(R,P,S)+ANNUAL(S)$ACTCG(COM))+STG_SIFT(RTP,%PGPRIM%,S))*%VAR%_COMPRD(R,T,C,TS%SOW%)/COM_IE(RTC,TS)*RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS)))) -
 * Get net sifting, force zero shifting at seasonal level
     SUM(BD(L)$LNX(L),
       (SUM((TOP(RPC_STG(R,P,C),'OUT'),RPCS_VAR(R,P,C,TS))$RS_FR(R,S,TS),%VAR%_SOUT(R,V,T,P,C,TS%SOW%)*RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))) -

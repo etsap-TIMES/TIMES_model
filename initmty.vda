@@ -22,7 +22,7 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
   SET STL / SET.S%MX% /;
   PARAMETERS
   NCAP_AFAC(REG,ALLYEAR,PRC,CG)      'Annual availability of capacity for commodity group CG' //
-  NCAP_AFC(REG,ALLYEAR,PRC,CG,STL)   'Availability of capacity for commodity group CG'
+  NCAP_AFC(REG,ALLYEAR,PRC,CG,STL)   'Availability of capacity for commodity group CG'//
   NCAP_AFCS(REG,ALLYEAR,PRC,CG,TS)   'Availability of capacity for commodity group CG'//;
 *-----------------------------------------------------------------------------
 * Dynamic UC variable bounds (UC_DYNBND user-defined)

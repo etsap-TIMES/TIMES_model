@@ -480,9 +480,9 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'NCAP_TLIFE out of feasible range
 * Checks for host processes of refits
    SET PRC_RCAP //; PARAMETER PRC_REFIT //;
    PRC_REFIT(R,P,PRC)$PRC_REFIT(R,P,PRC)=MAX(ABS(ROUND(PRC_REFIT(R,P,PRC))),MIN(6,ABS(MAX(ROUND(PRC_REFIT(R,P,P)),-1)*2)))*MOD(ROUND(PRC_REFIT(R,P,PRC)),2);
-   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<-4,NCAP_ELIFE(RTP(R,T,P))$(NCAP_ELIFE(RTP)<1)=NCAP_TLIFE(RTP);
-      NCAP_TLIFE(RTP(R,T,P))=MAX(NCAP_TLIFE(R,T,PRC)+NCAP_ILED(R,T,PRC)-1,NCAP_TLIFE(RTP))));
-   LOOP((RP(R,PRC),P)$((NOT PRC_RCAP(RP))$PRC_REFIT(RP,P)),RTP_OFF(R,T,P)=YES);
+   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(NOT PRC_RCAP(RP),RTP_OFF(R,T,P)=YES);
+     IF(PRC_REFIT(RP,P)<-4,NCAP_ELIFE(RTP(R,T,P))$(NCAP_ELIFE(RTP)<1)=NCAP_TLIFE(RTP); 
+       NCAP_TLIFE(RTP(R,T,P))=MAX(NCAP_TLIFE(R,T,PRC)+NCAP_ILED(R,T,PRC)-1,NCAP_TLIFE(RTP))));
 
 *-----------------------------------------------------------------------------
 * capacity transfer v = year of installation and thus data values where
@@ -541,7 +541,7 @@ $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 1 'Inconsistent CAP_BND(UP/LO/FX) def
 *-----------------------------------------------------------------------------
 * turn off RTP/CPTYR if no new investment & installed capacity no longer available
     LOOP(BDUPX(BD),RTP_OFF(RTP)$((NCAP_BND(RTP,BD)=0)$NCAP_BND(RTP,BD)) = YES);
-    NO_RVP(RTP_OFF(R,T,P)) = YES;
+    NO_RVP(RTP_OFF(R,T,P))$(NOT NCAP_PASTI(R,T,P)) = YES;
     LOOP(T, NO_RVP(R,TT,P)$(RTP_CPTYR(R,T,TT,P)$(NOT RTP_OFF(R,T,P))) = NO);
     LOOP(PYR(V), NO_RVP(R,T,P)$(RTP_CPTYR(R,V,T,P)$NCAP_PASTI(R,V,P)) = NO);
     RTP(NO_RVP) = NO;

@@ -33,8 +33,8 @@ $   BATINCLUDE bnd_flo.%1
 *-----------------------------------------------------------------------------
 * limit on storage
 *-----------------------------------------------------------------------------
-$   BATINCLUDE bnd_stg.%1 SIN  STGIN  0
-$   BATINCLUDE bnd_stg.%1 SOUT STGOUT -INF
+$   BATINCLUDE bnd_stg.%1 SIN  IN  0
+$   BATINCLUDE bnd_stg.%1 SOUT OUT -INF
 
 *-----------------------------------------------------------------------------
 * limit on total installation of new capacity

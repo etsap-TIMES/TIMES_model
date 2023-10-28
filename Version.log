@@ -2768,3 +2768,20 @@ eqobjels.mod  : (3)
 eqobjvar.rpt  : (3)
 equ_ext.abs   : (3)
 rpt_ext.ecb   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.5
+-----------------------------------------------------------------------------------------
+Date: 28-Oct-2023 [AL]: Maintenance release
+1) Fixed divide by zero error in certain condition of PASTI with ILED within active horizon
+2) Added support for NCAP_ICOM for past investments
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.5
+ppmain.mod    : (1)
+cal_cap.mod   : (2)
+bndmain.mod   : (3)
+bnd_stg.mod   : (3)
+initmty.vda   : (3)
+eqactups.vda  : (3)
