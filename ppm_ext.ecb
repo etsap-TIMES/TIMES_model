@@ -27,7 +27,8 @@ $ BATINCLUDE fillparm NCAP_MSPRF R 'C,P,L' ",'','',''"  T 'RTP(R,T,P)' 'GE 0'
 
 * Initialize probing shares
   RTC_MS(RTC(R,T,C))$(SUM(TOP(RPC_PG(R,P,C),'OUT')$(NOT RTP_OFF(R,T,P)),ORD(T)>1)$COM_MSHGV(R,T,C)) = YES;
-  LOOP(RTC_MS(R,T,C),PRC_YMAX(RP_FLO(PRC_CAP(R,P)))$TOP(R,P,C,'OUT') = RPC_PG(R,P,C)$(NOT RTP_OFF(R,T,P));
+  LOOP(RTC_MS(R,T,C), OPTION CLEAR=PRC_YMAX;
+    PRC_YMAX(RP_FLO(PRC_CAP(R,P)))$TOP(R,P,C,'OUT') = RPC_PG(R,P,C)$(NOT RTP_OFF(R,T,P));
     Z=SUM(P$PRC_YMAX(R,P),1); IF(Z, COEF_LMS(R,T,C,P)$PRC_YMAX(R,P) = -0.05 / Z));
 
 * Complete flow controls for dummy

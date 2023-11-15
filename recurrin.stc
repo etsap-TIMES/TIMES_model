@@ -16,6 +16,7 @@ $IFI %OBMAC%==YES $SET TST YES
 $GOTO %1
 *-----------------------------------------------------------------------------
 $LABEL MXPAR
+$IF %STAGES%==YES $SETGLOBAL VARMAC '1==1' SETGLOBAL VAS VAS
 * Do we need MX parameter macroes?
 $SET NEED NO
 $IF DEFINED S_NCAP_AFS $SET NEED YES

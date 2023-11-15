@@ -38,7 +38,6 @@ $   IF  %STAGES% == YES $SET SENSIS 'NO' SET OBJANN NO
 $   IF SET TIMESTEP $SETGLOBAL STEPPED +
 $   SET R_T 'R,T' SET TX 'T' SET R_V_T 'R,V,T' SET RTPX ''
 $   IF SET STEPPED $SET R_T 'R,SUBT(T)' SET TX 'SUBT(T)' SET R_V_T 'R,V,SUBT(T)'
-$   IF SET FIXBOH
 $   IF DEFINED REG_FIXT $SET R_T 'RT_PP(%R_T%)' SET R_V_T 'RVT(%R_V_T%)' SET RTPX X
 *-----------------------------------------------------------------------------
 * do a check on user data

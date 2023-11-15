@@ -45,9 +45,7 @@
                  ((STG_LOSS(R,V,P,ALL_TS))/(EXP(STG_LOSS(R,V,P,ALL_TS))-1)-1))$STG_LOSS(R,V,P,ALL_TS)
              )
 * storage charge
-    + STG_CHRG(R,T,P,S--RS_STG(R,S))
-
-    ;
+    + STG_CHRG(R,T,P,S--RS_STG(R,S));
 
 
 *--- Balancer Equation ---
@@ -82,14 +80,12 @@
              SUM(TOP(PRC_STGIPS(R,P,C),IO), 1 / PRC_ACTFLO(R,V,P,C) *
                 %VAR%_SIN(R,V,T,P,C,S %SOW%)$IPS(IO) - %VAR%_SOUT(R,V,T,P,C,S %SOW%)$(NOT IPS(IO))) -
 * balancer flow
-             %VAR%_SOUT(R,V,T,P,%PGPRIM%,S%SOW%))
-
-    ;
+             %VAR%_SOUT(R,V,T,P,%PGPRIM%,S%SOW%));
 
 
 *--- Levelizer Equation ---
 
-    EQ_STSLEV(RTP_VINTYR(%R_V_T%,P),TSL,RTS(S)%SWX%)$((STOAL(R,S)=PRC_SGL(R,P))$TS_GROUP(R,TSL,S)$RP_STL(R,P,TSL,'UP'))..
+    EQ_STSLEV(RTP_VINTYR(%R_V_T%,P),TSL,RTS(S)%SWX%)$(%SWTX%(STOAL(R,S)=PRC_SGL(R,P))$TS_GROUP(R,TSL,S)$RP_STL(R,P,TSL,'UP'))..
 
 * Sum of levelizers must be less than average variation over S
         SUM(TS_MAP(R,TS,S)$STOA(TS),(%VAR%_SIN(R,V,T,P,%PGPRIM%,TS%SOW%)+%VAR%_UDP(R,V,T,P,TS,'LO'%SOW%)+VAR_STS(R,V,T,P,TS,'N'))/RS_STGPRD(R,TS))

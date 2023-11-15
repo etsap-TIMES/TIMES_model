@@ -2785,3 +2785,23 @@ bndmain.mod   : (3)
 bnd_stg.mod   : (3)
 initmty.vda   : (3)
 eqactups.vda  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.6
+-----------------------------------------------------------------------------------------
+Date: 15-Nov-2023 [AL]: Maintenance release
+1) Fixed bug in ECB extension when defining multiple markets with Logit choices
+2) Added stochastic support for flexible STS storage option (STSFLX)
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.6
+maindrv.mod   : (3)
+setglobs.gms  : (3)
+eqstgtss.mod  : (2)
+eqdamage.mod  : (3)
+preshape.gms  : (3)
+solve.stp     : (3)
+prepret.dsc   : (3)
+recurrin.stc  : (3)
+ppm_ext.ecb   : (1)

@@ -14,7 +14,7 @@ $ IF NOT DEFINED DAM_ELAST PARAMETER DAM_ELAST //;
   SET JSUBJ(J,J)           'All steps up to J' //;
   SET DAM_NUM(R,C,J,BD);
   SET DAMOBJ / DAM, DAS, DAM-EXT /;
-  SET WWDAM /DELTA-ATM/, RTDAM(R,T,C%SWD%), SWW(ALLSOW,ALLSOW);
+  SET WWDAM /DELTA-ATM/, RTDAM(R,T,C,ALLSOW), SWW(ALLSOW,ALLSOW);
   PARAMETER DAM_SIZE(REG,T,COM,LIM) 'Size of emission steps' //;
 *-----------------------------------------------------------------------------
   OPTION CLEAR=RXX;
@@ -66,23 +66,27 @@ $IFI %STAGES%==YES OPTION SWW<=SW_TSW; LOOP(SOW,DAM_COST(R,T,C,CUR)$S_DAM_COST(R
 * Set number of FX steps (any non-zero DAM_STEP(R,C,'N') disables endogenous damage)
   DAM_STEP(TRACKC(R,C),'FX')$(DAM_STEP(R,C,'N') EQ 0) = 1+1$SUM(T$(DAM_SIZE(R,T,C,'N') GT 0),YES);
   IF(CARD(DAM_COST)=0,SUM_OBJ('OBJDAM',ITEM)=0);
-  RTDAM(RXX(R,T,C)%SOW%)$(%SWTX%YES+WWDAM(C)) = YES;
+  RTDAM(RXX(R,T,C)%SWX%)$(%SWTX%YES+WWDAM(C)) = YES;
 
 *-----------------------------------------------------------------------------
   SET OBV / OBJDAM /;
 $IF %DAMAGE%==NO SUM_OBJ('OBJDAM',ITEM)=0;
-$IFI %SPINES%==YES $%SW_TAGS%
+$IF %VARMAC% $SET VAR %VAS%
 $IF %DAMAGE%==NO $GOTO FINISH
-$IF %DAMAGE%==NLP $GOTO NLPDAM
 *-----------------------------------------------------------------------------
-* Set bounds for damage variables:
-  LOOP(SAMEAS(J,'1'),DAM_NUM(TRACKC(R,C),J+(DAM_STEP(R,C,BD)-1),BD) = YES);
-  %VAR%_DAM.UP(R,T,C,BD,J %SWD%) = INF;
-  %VAR%_DAM.UP(RTC(R,T,C),'LO',J%SOW%)$((ORD(J) LE DAM_STEP(R,C,'LO'))$RTDAM(RTC%SOW%)) = DAM_SIZE(RTC,'LO');
-  %VAR%_DAM.UP(RTC(R,T,C),'LO','1'%SOW%)$(DAM_ELAST(R,C,'N')$RTDAM(RTC%SOW%)) = DAM_SIZE(RTC,'LO')+DAM_TQTY(RTC)-DAM_TVOC(RTC,'LO');
-  %VAR%_DAM.UP(RTC(R,T,C),'UP',J%SOW%)$((ORD(J) LT DAM_STEP(R,C,'UP'))$RTDAM(RTC%SOW%)) = DAM_SIZE(RTC,'UP');
-  %VAR%_DAM.UP(RTC(R,T,C),'FX','1'%SOW%)$(DAM_TVOC(R,T,C,'UP')$RTDAM(RTC%SOW%)) = DAM_SIZE(RTC,'FX');
-  %VAR%_DAM.UP(RTC(R,T,C),'FX','2'%SOW%)$RTDAM(RTC%SOW%) = DAM_SIZE(RTC,'N')$(NOT DAM_ELAST(R,C,'N'));
+* Emission balance equation
+
+  %EQ%_DAMAGE(RTC(%R_T%,C) %SOW%)$(SUM(RDCUR(R,CUR)$DAM_COST(R,T,C,CUR),1)$RTDAM(RTC%SWX%))..
+
+   SUM(DAM_NUM(R,C,JJ,BD),SUM(JSUBJ(JJ,J),%VAR%_DAM(R,T,C,BD,J %SOW%)))
+
+   =E= (
+$IF %CLI%==YES SUM(CM_VAR(C),%VART%_CLITOT(CM_VAR,T%SWS%)$CM_KIND(CM_VAR)+%VAR%_CLIBOX(CM_VAR,T%SOW%)$(NOT CM_KIND(CM_VAR)))$(NOT RC(R,C)) +
+   SUM(COM_TS(RC(R,C),S),DAM_COEF(R,T,C,S)*%VAR%_COMNET(R,T,C,S %SOW%)$(NOT DAM_ELAST(R,C,'N')) +
+                         DAM_COEF(R,T,C,S)*%VAR%_COMPRD(R,T,C,S %SOW%)$DAM_ELAST(R,C,'N'))
+       )$DAM_STEP(R,C,'FX');
+
+$IF %DAMAGE%==NLP $GOTO NLPDAM
 *-----------------------------------------------------------------------------
 $LABEL LPDAM
 * Damage cost equation
@@ -105,18 +109,9 @@ $IFI %STAGES%==YES   S_DAM_COST(R,T,C,CUR,'1',WW))
 
 %3  =E=  SUM(OBV,SUM_OBJ('OBJDAM',OBV)*%VAR%_OBJ(R,OBV,CUR %SOW%));
 
-$GOTO FINISH
+$GOTO BOUND
 *=============================================================================
 $LABEL NLPDAM
-* Set bounds for damage variables:
-  DAM_STEP(TRACKC(R,C),'LO') = 1;
-  DAM_STEP(TRACKC(R,C),'UP') = 1;
-  LOOP(SAMEAS(J,'1'),DAM_NUM(TRACKC(R,C),J+(DAM_STEP(R,C,BD)-1),BD) = YES);
-  %VAR%_DAM.UP(R,T,C,BD,J %SWD%) = INF;
-  %VAR%_DAM.UP(RTC(R,T,C),'LO','1'%SOW%)$RTDAM(RTC%SOW%) = (DAM_TQTY(RTC)-DAM_SIZE(RTC,'N'))$DAM_STEP(R,C,'LO');
-  %VAR%_DAM.UP(RTC(R,T,C),'FX','1'%SOW%)$RTDAM(RTC%SOW%) = EPS;
-  %VAR%_DAM.UP(RTC(R,T,C),'FX','2'%SOW%)$RTDAM(RTC%SOW%) = DAM_SIZE(RTC,'N');
-*-----------------------------------------------------------------------------
 * Damage cost equation
   %EQ%_OBJDAM(RDCUR(R,CUR)%SOW%)..
     SUM(RTC(R,T,C)$(DAM_STEP(R,C,'FX')$DAM_COST(R,T,C,CUR)), 
@@ -138,21 +133,29 @@ $IFI %STAGES%==YES   S_DAM_COST(R,T,C,CUR,'1',WW))
     )
 
  =E=  SUM(OBV,SUM_OBJ('OBJDAM',OBV)*%VAR%_OBJ(R,OBV,CUR %SOW%));
-
+*-----------------------------------------------------------------------------
+$LABEL BOUND
+$IF %DAMAGE%==NLP $GOTO BDNLP
+* Set bounds for damage variables:
+  LOOP(SAMEAS(J,'1'),DAM_NUM(TRACKC(R,C),J+(DAM_STEP(R,C,BD)-1),BD) = YES);
+  %VAR%_DAM.UP(R,T,C,BD,J %SWD%) = INF;
+  %VAR%_DAM.UP(RTC(R,T,C),'LO',J%SOW%)$((ORD(J) LE DAM_STEP(R,C,'LO'))$RTDAM(RTC%SWX%)) = DAM_SIZE(RTC,'LO');
+  %VAR%_DAM.UP(RTC(R,T,C),'LO','1'%SOW%)$(DAM_ELAST(R,C,'N')$RTDAM(RTC%SWX%)) = DAM_SIZE(RTC,'LO')+DAM_TQTY(RTC)-DAM_TVOC(RTC,'LO');
+  %VAR%_DAM.UP(RTC(R,T,C),'UP',J%SOW%)$((ORD(J) LT DAM_STEP(R,C,'UP'))$RTDAM(RTC%SWX%)) = DAM_SIZE(RTC,'UP');
+  %VAR%_DAM.UP(RTC(R,T,C),'FX','1'%SOW%)$(DAM_TVOC(RTC,'UP')$RTDAM(RTC%SWX%)) = DAM_SIZE(RTC,'FX');
+  %VAR%_DAM.UP(RTC(R,T,C),'FX','2'%SOW%)$RTDAM(RTC%SWX%) = DAM_SIZE(RTC,'N')$(NOT DAM_ELAST(R,C,'N'));
+$GOTO FINISH
+*-----------------------------------------------------------------------------
+$LABEL BDNLP
+* Set bounds for damage variables:
+  DAM_STEP(TRACKC,BDNEQ) = 1;
+  LOOP(SAMEAS(J,'1'),DAM_NUM(TRACKC(R,C),J+(DAM_STEP(R,C,BD)-1),BD) = YES);
+  %VAR%_DAM.UP(R,T,C,BD,J %SWD%) = INF;
+  %VAR%_DAM.UP(RTC(R,T,C),'LO','1'%SOW%)$RTDAM(RTC%SWX%) = (DAM_TQTY(RTC)-DAM_SIZE(RTC,'N'))$DAM_STEP(R,C,'LO');
+  %VAR%_DAM.UP(RTC(R,T,C),'FX','1'%SOW%)$RTDAM(RTC%SWX%) = EPS;
+  %VAR%_DAM.UP(RTC(R,T,C),'FX','2'%SOW%)$RTDAM(RTC%SWX%) = DAM_SIZE(RTC,'N');
 *-----------------------------------------------------------------------------
 $LABEL FINISH
-*-----------------------------------------------------------------------------
-* Emission balance equation
-
-  %EQ%_DAMAGE(RTC(%R_T%,C) %SOW%)$(SUM(RDCUR(R,CUR)$DAM_COST(R,T,C,CUR),1)$RTDAM(RTC%SOW%))..
-
-   SUM(DAM_NUM(R,C,JJ,BD),SUM(JSUBJ(JJ,J),%VAR%_DAM(R,T,C,BD,J %SOW%)))
-
-   =E= (
-$IF %CLI%==YES SUM(CM_VAR(C),%VART%_CLITOT(CM_VAR,T%SWS%)$CM_KIND(CM_VAR)+%VAR%_CLIBOX(CM_VAR,T%SOW%)$(NOT CM_KIND(CM_VAR)))$(NOT RC(R,C)) +
-   SUM(COM_TS(RC(R,C),S),DAM_COEF(R,T,C,S)*%VAR%_COMNET(R,T,C,S %SOW%)$(NOT DAM_ELAST(R,C,'N')) +
-                         DAM_COEF(R,T,C,S)*%VAR%_COMPRD(R,T,C,S %SOW%)$DAM_ELAST(R,C,'N'))
-       )$DAM_STEP(R,C,'FX');
 *-----------------------------------------------------------------------------
   OPTION CLEAR=TRACKC,CLEAR=RXX,CLEAR=DAM_TVOC; 
   DAM_TVOC(R,T,C,'N')$DAM_SIZE(R,T,C,'N') = ((DAM_SIZE(R,T,C,'N')/DAM_TQTY(R,T,C))**DAM_ELAST(R,C,'LO'))$DAM_ELAST(R,C,'N');

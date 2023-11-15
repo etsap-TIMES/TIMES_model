@@ -273,11 +273,11 @@ $IF %REDUCE%==YES %VAR%_ACT.LO(RTP_VINTYR(R,V,T,P),S%SOW%)$(RTP_IRE(R,T,P,IE)*PR
 *-----------------------------------------------------------------------------
 $IF '%RTPX%'==X FIL(T)=FORWARD(T); LOOP(R, FORWARD(T)=FIL(T)$(NOT NO_RT(R,T));
 * Activities and flows
-   VAR_ACT.FX(RTP_VINTYR(R,V,FORWARD(T),P),S)$(PRC_TS(R,P,S)) =                             0;
-   VAR_FLO.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RP_FLO(R,P)) =           0;
-   VAR_IRE.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S,IE)$(RPCS_VAR(R,P,C,S)*RPC_IRE(R,P,C,IE)) =  0;
-   VAR_SIN.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =        0;
-   VAR_SOUT.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =       0;
+   VAR_ACT.FX(RTP_VINTYR(R,V,FORWARD(T),P),S)$(PRC_TS(R,P,S)) =                            0;
+   VAR_FLO.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RP_FLO(R,P)) =          0;
+*  VAR_IRE.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S,IE)$(RPCS_VAR(R,P,C,S)*RPC_IRE(R,P,C,IE)) = 0;
+   VAR_SIN.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =       0;
+   VAR_SOUT.FX(RTP_VINTYR(R,V,FORWARD(T),P),C,S)$(RPCS_VAR(R,P,C,S)*RPC_STG(R,P,C)) =      0;
 * Commodities
    VAR_COMNET.FX(RTCS_VARC(R,FORWARD(T),C,S)) = 0;
    VAR_COMPRD.FX(RTCS_VARC(R,FORWARD(T),C,S)) = 0;

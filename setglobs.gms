@@ -7,6 +7,8 @@
 * %1 - optional variable label to jump
 *=========================================================================
 $ SETARGS X1 X2
+* --- FIXT Dump ---
+$ IF NOT SET FIXBOH $KILL REG_FIXT
 * --- DATA Dump ---
 $ IF NOT %DATAGDX%==YES $GOTO SYSD
 $ IF NOT ERRORFREE $GOTO SYSD
@@ -339,8 +341,8 @@ $IF NOT "%MX%%SCUM%%SW_STVARS%"=='%X1%%X1%%X1%' $%ControlAbort%: MX / SW_STVARS 
 $SETGLOBAL CAPJD '%X1%' SETGLOBAL CAPWD %X1%
 $IF NOT '%CAPJD%%CAPWD%'=='%X1%%X1%' $%ControlAbort%: CAPxD
 *
-$SETGLOBAL SWX '%X1%' SETGLOBAL SWTX %X1%
-$IF NOT "%SWX%%SWTX%"=='%X1%%X1%' $%ControlAbort%: SWX
+$SETGLOBAL SWX '%X1%' SETGLOBAL SWTX '%X1%' SETGLOBAL VARMAC %X1%
+$IF NOT "%SWX%%SWTX%%VARMAC%"=='%X1%%X1%%X1%' $%ControlAbort%: SWX
 $SETGLOBAL SWX ,'1'
 *
 $SET TMP '%CTST%' SETGLOBAL CTST %X1%
@@ -351,4 +353,5 @@ $SETGLOBAL CTST %TMP%
 $SETGLOBAL SW_TAGS %X1%
 $IF NOT "%SW_TAGS%"=='%X1%' $%ControlAbort%: SW_TAGS
 $IF NOT '%X1%'=='' $SETLOCAL X1 '' GOTO RESET
+$SETGLOBAL VARMAC 0==1
 *-------------------------------------------------------------------------
