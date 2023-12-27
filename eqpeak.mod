@@ -15,14 +15,14 @@
     %EQ%_PEAK(%R_T%,CG2,RTS(SL)%SWT%)$(SUM(COM_GMAP(R,CG2,C)$RTC(R,T,C),1)$COM_PKTS(R,CG2,SL)) ..
 
      SUM((COM_GMAP(R,CG2,C),COM_TS(R,C,S))$RS_FR(R,SL,S),
-      RS_FR(R,SL,S) *
+       RS_FR(R,SL,S) *
+* Apply maximum reserve among CG2 and C
+       (1/(1+MAX(SUM(COM(CG2),COM_PKRSV(R,T,COM)),COM_PKRSV(R,T,C))))*COM_IE(R,T,C,S)*
 
-      (1/(1+MAX(SMAX(COM(CG2),COM_PKRSV(R,T,COM)),COM_PKRSV(R,T,C))))*COM_IE(R,T,C,S)*
-
-      (SUM(RPC_PKC(PRC_CAP(R,P),C), G_YRFR(R,S) * PRC_CAPACT(R,P) *
+       (SUM(RPC_PKC(R,P,C), G_YRFR(R,S) * PRC_CAPACT(R,P) *
            SUM(V$COEF_CPT(R,V,T,P),COEF_CPT(R,V,T,P)*PRC_ACTFLO(R,V,P,C)*NCAP_PKCNT(R,V,P,S)*
                (%VARV%_NCAP(R,V,P %SWS%)$MILESTONYR(V)+NCAP_PASTI(R,V,P)$PASTYEAR(V) %RCAPSUB%))
-          ) +
+           ) +
 
 *
 * production
@@ -34,9 +34,8 @@ $      BATINCLUDE cal_ire.%1 EXP IN IE '*(-NCAP_PKCNT(R,V,P,S)/COM_IE(R,T,C,S))$
            (
 
 *GG*PK no multiplier
-*[UR] 25.04.2003 added NCAP_PKCNT multiplier to turn off contribution by setting NCAP_PKCNT to zero
-*[AL] 25.01.2007 allow using PKNO to switch process to production-based peak contribution
-*[AL] When PKNO=YES no default PKCNT is assigned -> process contributes only if PKCNT set by user
+* [UR] 25.04.2003 added NCAP_PKCNT multiplier to turn off contribution by setting NCAP_PKCNT to zero
+* allow using PKNO to switch process to production-based peak contribution (contributes only if PKCNT set by user)
 
 *   storage
 $            BATINCLUDE cal_stgn.%1 OUT IN '*STG_EFF(R,V,P)' '' "(NOT PRC_NSTTS(R,P,TS))" '*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))$RPC_PKF(R,P,C)'
@@ -54,27 +53,26 @@ $IF SET PEAKCHP $BATINCLUDE %PEAKCHP%
 
      SUM((COM_GMAP(R,CG2,C),COM_TS(R,C,S))$RS_FR(R,SL,S),
          RS_FR(R,SL,S) *
-* Apply the maximum of flexibilities among CG2 an C
+* Apply maximum flexibility among CG2 and C
          (1+MAX(SUM(COM(CG2),COM_PKFLX(R,T,COM,SL)),COM_PKFLX(R,T,C,S)))*
          (
-              (
 *
 * consumption
 *
 *GG*PK pass TS as timeslice
 
 *   individual flows
-$              BATINCLUDE cal_fflo.%1 IN I  '*FLO_PKCOI(R,T,P,C,TS)'
+$          BATINCLUDE cal_fflo.%1 IN I  '*FLO_PKCOI(R,T,P,C,TS)'
 
 *   inter-regional trade from region
-$              BATINCLUDE cal_ire.%1 EXP IN IE '*FLO_PKCOI(R,T,P,C,TS)' -
+$          BATINCLUDE cal_ire.%1 EXP IN IE '*FLO_PKCOI(R,T,P,C,TS)' -
 
 * capacity related commodity flows
 *   fixed commodity associated with installed capacity or investment
-$              BATINCLUDE cal_cap.%1 IN I '1$(NOT PRC_PKNO(R,P))*'
-              ) +
+$          BATINCLUDE cal_cap.%1 IN I '1$(NOT PRC_PKNO(R,P))*'
+           +
 *   storage
-$          BATINCLUDE cal_stgn.%1 IN OUT '' 'STG_EFF(R,V,P)*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))*' "((NOT PRC_MAP(R,'NST',P))+PRC_NSTTS(R,P,TS))" "$(NOT RPC_PKC(R,P,C)*PRC_CAP(R,P))"
+$          BATINCLUDE cal_stgn.%1 IN OUT '' 'STG_EFF(R,V,P)*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))*' "((NOT PRC_MAP(R,'NST',P))+PRC_NSTTS(R,P,TS))" "$(NOT RPC_PKC(R,P,C))"
 
 *   blending
            SUM(BLE_OPR(R,BLE,OPR)$(BLE_INP(R,BLE,C)*BLE_TP(R,T,BLE)),G_YRFR(R,S)*(1+RTCS_FR(R,T,C,S,'ANNUAL'))*BL_INP(R,BLE,C)*PEAKDA_BL(R,BLE,T)*%VAR%_BLND(R,T,BLE,OPR %SOW%)) +

@@ -2805,3 +2805,26 @@ solve.stp     : (3)
 prepret.dsc   : (3)
 recurrin.stc  : (3)
 ppm_ext.ecb   : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.7
+-----------------------------------------------------------------------------------------
+Date: 27-Dec-2023 [AL]: Maintenance release
+1) Fixed divide by zero issue in the ECB extension
+2) Performance improvement for EQ_PEAK in large models
+3) Added optional output attribute for process units
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.7
+initmty.mod   : (4)
+units.def     : (3)
+setglobs.gms  : (2)
+pp_lvlpk.mod  : (2)
+pp_shapr.mod  : (2)
+pp_reduce.red : (2)
+eqpeak.mod    : (2)
+cal_ire.mod   : (2)
+err_stat.mod  : (4)
+rpt_ext.ecb   : (1)
+solsetv.v3    : (3)

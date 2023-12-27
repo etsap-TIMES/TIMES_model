@@ -7,11 +7,32 @@
 *=============================================================================*
 
 * units by group
-  SET UNITS             'Units'            / Bv-km, Bv-kma, GW, Mt, Mta, kt, t, PJ, PJa, TJ, uvol, CUR, GPKM, GVKM, Mcar, UCU /
+  SET UNITS             'Units'            / Bv-km, Bv-kma, GW, MW, Mt, Mta, kt, kta, kth, t, PJ, PJa, TJ, TJa, TWh, GWh, MWh, uvol, CUR, GPKM, GVKM, Mcar, UCU /
       ALIAS(UNITS,U);
   SET UNITS_COM(UNITS)  'Commodity Units'  / Bv-km, Mt, kt, t, PJ, TJ, uvol, GPKM, GVKM, UCU /
-  SET UNITS_CAP(UNITS)  'Capacity Units'   / PJa, GW, Mta, Bv-kma, Mcar /
-  SET UNITS_ACT(UNITS)  'Activity Units'   / Mt, kt, PJ, TJ, GPKM, GVKM /
+  SET UNITS_CAP(UNITS)  'Capacity Units'   / PJa, GW, MW, Mta, kta, Bv-kma, Mcar /
+  SET UNITS_ACT(UNITS)  'Activity Units'   / Mt, kt, kth, PJ, TJ, TWh, GWh, MWh, GPKM, GVKM /
   SET UNITS_MONY(UNITS) 'Monatary Units'   / CUR /
 
 * unit mapping table(s)
+  PARAMETER G_UNCA(UNITS,UNITS_ACT) 'Cap-to-Act conversions' /
+  GW.GWH 	8760
+  GW.PJ 	31.536
+  GW.TWH 	8.760
+  GWH.PJ 	0.0036
+  GWH.TJ  	3.6
+  GWH.TWH 	0.001
+  MW.GWH 	8.76
+  MW.MWH 	8760
+  MW.PJ 	0.031536
+  MW.TJ 	31.536
+  MWH.GWH 	0.001
+  MWH.TJ 	0.0036
+  PJA.PJ 	1
+  TJA.TJ 	1
+  TWH.PJ  	3.6
+  Mta.Mt 	1
+  Mta.kt 	1000
+  kta.Mt 	0.001
+  kta.kt 	1
+  kta.kth 	8760  /;

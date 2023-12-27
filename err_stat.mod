@@ -29,8 +29,15 @@ SET SOLVESTAT(J) /
   8 "Integer solution"
   9 "Intermediate non-integer"
  10 "Integer infeasible"
+ 11 "Lic problem"
  12 "Error unknown"
  13 "Error no solution"
+ 14 "No solution returned"
+ 15 "Solved unique"
+ 16 "Solved locally unique"
+ 17 "Solved singular"
+ 18 "Unbnd no solution"
+ 19 "Infes no solution"
 /;
 FILE SCREEN / '' /;
 FILE END_GAMS / %TMP% /;
@@ -46,7 +53,7 @@ $IF NOT ERRORFREE $ECHO %3%5 > %TMP%
 $GOTO DONE
 
 $LABEL SOLVE
- Z = MIN(14,%MODEL_NAME%.MODELSTAT)-1; IF(Z > 12, Z=11);
+ Z = MIN(14,%MODEL_NAME%.MODELSTAT)-1; IF(Z > 18, Z=11);
  IF(Z>=0,PUT SCREEN /"--- TIMES Solve status: ";
    LOOP(SAMEAS(J,'1'), PUT SOLVESTAT.TE(J+Z));
    PUTCLOSE;

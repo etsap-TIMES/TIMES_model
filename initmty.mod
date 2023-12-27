@@ -13,7 +13,7 @@
 *   - consider PRC_MAP(PRC_GRP,PRC_SUBGRP,PRC) where PRC_SUBGRP = PRC_RSOURC + any user-provided sub-groupings
 *   - SOW/COM/PRC/CUR master sets (merged) == entire list, that is not REG
 *   - lists (eg, DEM_SECT) for _MAP sets not REG (but individual mappings are)
-*   - HAVE THE USER *.SET/DD files OMIT the declarations to ease maintenance changes
+*   - HAVE THE USER *.DD files OMIT the declarations to ease maintenance changes
 *-----------------------------------------------------------------------------
 * Version control
 $IF NOT FUNTYPE rpower $ABORT TIMES Version 4.0 and above Requires GAMS 22.0 or above!
@@ -23,6 +23,7 @@ $IF gamsversion 230 $SETGLOBAL OBMAC YES
 $IF gamsversion 236 $SETGLOBAL G2X6 YES
 $LABEL DECL
 $ONEMPTY
+
 *-----------------------------------------------------------------------------
 * SET SECTION
 *-----------------------------------------------------------------------------
@@ -455,7 +456,7 @@ $IF %PGPRIM%==ACT  $SETGLOBAL RETIRE 'YES' SETGLOBAL DSCAUTO Yes
 $IFI %DSC%==YES    $KILL RCAP_BLK
 
 * Initialize list of standard extensions to be loaded
-$SETGLOBAL EXTEND
+$SET VDA 'YES' SETGLOBAL EXTEND
 
 * Add recognized extensions if defined
 $IFI '%ECB%'==YES   $SETGLOBAL EXTEND '%EXTEND% ECB'
@@ -473,7 +474,7 @@ $IFI '%MCA%' == YES $SETGLOBAL EXTEND '%EXTEND% MCA'
 $SETGLOBAL EXTEND %EXTEND% %1 %2 %3 %4 %5 %6
 
 * Load all extension declarations
-$IF NOT '%EXTEND%' == '' $BATINCLUDE main_ext.mod initmty %EXTEND%
+$BATINCLUDE main_ext.mod initmty %EXTEND%
 
 $IF ERRORFREE
 $BATINCLUDE err_stat.mod '$IF NOT ERRORFREE' ABORT 'Errors in Compile' 'VARIABLE OBJz' ': Required _TIMES.g00 Restart File Missing'

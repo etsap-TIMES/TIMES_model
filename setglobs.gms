@@ -77,7 +77,7 @@ $ LABEL SYSD
   SET RPC_MARKET(R,P,C,IE)      'Market exchange process indicator'      //;
   SET RPC_PG(R,P,C)             'Commodities in the primary group'       //;
   SET RPC_SPG(R,P,C)            'Commodities in the shadow primary group'//;
-  SET RPCS_VAR(R,P,C,ALL_TS)    'The timeslices at which VAR_FLOs are to be created'//;
+  SET RPCS_VAR(R,P,C,ALL_TS)    'Timeslices at which VAR_FLOs are to be created'//;
   SET RPS_S1(R,P,ALL_TS)        'All timeslices at the PRC_TSL/COM_TSLspg'//;
   SET RPS_S2(R,P,ALL_TS)        'All timeslices at/above PRC_TSL/COM_TSLspg'//;
   SET RPS_PRCTS(R,P,ALL_TS)     'All timeslices at/above the PRC_TSL'    //;
@@ -91,10 +91,11 @@ $ LABEL SYSD
   SET RTPCS_VARF(ALL_REG,ALLYEAR,P,C,ALL_TS) 'The VAR_FLOs control set'  //;
   SET RTP_VARA(R,ALLYEAR,P)     'The VAR_ACT control set'                //;
   SET RTP_VARP(R,T,P)           'RTPs that have a VAR_CAP'               //;
-  SET RTP_VINTYR(ALL_REG,ALLYEAR,ALLYEAR,PRC) 'v/t years when vintaging involved'//;
+  SET RTP_VINTYR(REG,ALLYEAR,ALLYEAR,PRC) 'v/t years according to vintaging'//;
   SET RTP_TT(R,YEAR,T,PRC)      'Retrofit control periods'               //;
   SET RVP(R,ALLYEAR,P)          'ALIAS(RTP) for Process/time'            //;
   SET RTP_CAPYR(R,YEAR,YEAR,P)  'Capacity vintage years'                 //;
+  SET RTP_ISHPR(REG,ALLYEAR,PRC)'Attribute existence indicator'         //;
   SET RTP_CGC(REG,YEAR,P,CG,CG) 'Multi-purpose work set'                //;
   SET RTPS_BD(R,ALLYEAR,P,S,BD) 'Multi-purpose work set'                //;
   SET CG_GRP(REG,PRC,CG,CG)     'Multi-purpose work set'                //;
