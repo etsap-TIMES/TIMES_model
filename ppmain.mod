@@ -41,12 +41,14 @@ $ IF WARNINGS $BATINCLUDE pp_qaput.%1 PUTOUT 0 * 'GAMS Warnings Detected%TMP%'
 * establish initial primary looping control sets indicating what region/process/commodities
 *-----------------------------------------------------------------------------
 * process/commodities in each region, including inter-regional exchanges
+   PRC_ACTUNT(R,P,%PGPRIM%,UNITS_ACT) = NO;
    OPTION RPC_AIRE <  TOP_IRE; RPC_IRE(RPC_AIRE,'IMP') = YES;
    OPTION RPC_AIRE <= TOP_IRE; RPC_IRE(RPC_AIRE,'EXP') = YES;
-   OPTION CLEAR=RPC_AIRE;
+   OPTION CLEAR=RPC_AIRE, PRC_ACT < PRC_ACTUNT;
    RP_IRE(ALL_R,P)$SUM(RPC_IRE(ALL_R,P,C,IE),1) = YES;
    TOP(RP_IRE(R,P),C,'IN')$RPC_IRE(R,P,C,'EXP') = NO;
    TOP(RP_IRE(R,P),C,'OUT')$RPC_IRE(R,P,C,'IMP') = NO;
+   TOP(RPG_RED(PRC_ACT(R,P),C,IO))$(COM_TMAP(R,'ENV',C)+RP_IRE(R,P)) = YES;
 * process/commodities in each region
    RPC(R,P,C)$(SUM(TOP(R,P,C,IO),1) + SUM(RPC_IRE(R,P,C,IE),1)) = YES;
    RC(R,C)$SUM(RPC(R,P,C),1) = YES;
@@ -54,8 +56,8 @@ $ IF WARNINGS $BATINCLUDE pp_qaput.%1 PUTOUT 0 * 'GAMS Warnings Detected%TMP%'
    RP_FLO(RP)$(NOT RP_IRE(RP)) = YES;
 
 * establish PCG, checking for missing ones
-   PRC_ACTUNT(R,P,%PGPRIM%,UNITS_ACT) = NO;
-   OPTION RP_PG < PRC_ACTUNT; PRC_ACT(RP)$(NOT SUM(RP_PG(RP,CG),1))=YES;
+   OPTION RP_PG < PRC_ACTUNT, CLEAR=RPG_RED, CLEAR=PRC_ACT;
+   PRC_ACT(RP)$(NOT SUM(RP_PG(RP,CG),1))=YES;
    IF(CARD(PRC_ACT),
       TRACKPC(PRC_ACT(R,P),C)$((NOT COM_TMAP(R,'ENV',C)+COM_TMAP(R,'FIN',C))$TOP(R,P,C,'OUT'))=YES;
       PRC_ACT(RP)$(SUM(TRACKPC(RP,C),1) NE 1)=NO; RP_PG(TRACKPC(PRC_ACT,C))=YES;
@@ -145,7 +147,7 @@ $IFI %OBJ%==MOD M(T) = 0;
     IF(ALTOBJ=1,ALTOBJ=1$SUM(T,M(T) NE YEARVAL(T)));
 
 * establish 1st/last run year
-    MIYR_1(MILESTONYR)$(ORD(MILESTONYR) = 1) = YES;
+    MIYR_1(T)$(ORD(T) = 1) = YES;
     IF(ALTOBJ,
 * If alternate objective, set B and E, D and M:
        E(T(TT-1)) = FLOOR((YEARVAL(T)+YEARVAL(TT))/2); B(T(TT+1)) = E(TT)+1;
@@ -154,7 +156,7 @@ $IFI %OBJ%==MOD M(T) = 0;
        D(T)=E(T)-B(T)+1; M(T) = YEARVAL(T));
 *V0.5c 980904 - set 1st value to B not milestone itself
     MIYR_V1 = SMIN(MIYR_1, B(MIYR_1));
-    MIYR_VL = SMAX(MILESTONYR$(ORD(MILESTONYR) = CARD(MILESTONYR)), E(MILESTONYR));
+    MIYR_VL = SMAX(T$(ORD(T) = CARD(T)), E(T));
 $IFI '%OBLONG%'==YES IF(MIYR_V1+SUM(T,E(T)+1-B(T))-MIYR_VL NE 1,ABORT "Inconsistent periods - cannot use OBLONG.");
     LOOP(MIYR_1(LL),PASTYEAR(LL-(YEARVAL(LL)-MIYR_V1+1)) = YES);
 * Set LEADs and LAGs for periods
@@ -481,7 +483,7 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'NCAP_TLIFE out of feasible range
    SET PRC_RCAP //; PARAMETER PRC_REFIT //;
    PRC_REFIT(R,P,PRC)$PRC_REFIT(R,P,PRC)=MAX(ABS(ROUND(PRC_REFIT(R,P,PRC))),MIN(6,ABS(MAX(ROUND(PRC_REFIT(R,P,P)),-1)*2)))*MOD(ROUND(PRC_REFIT(R,P,PRC)),2);
    LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(NOT PRC_RCAP(RP),RTP_OFF(R,T,P)=YES);
-     IF(PRC_REFIT(RP,P)<-4,NCAP_ELIFE(RTP(R,T,P))$(NCAP_ELIFE(RTP)<1)=NCAP_TLIFE(RTP); 
+     IF(PRC_REFIT(RP,P)<-4,NCAP_ELIFE(RTP(R,T,P))$(NCAP_ELIFE(RTP)<1)=NCAP_TLIFE(RTP);
        NCAP_TLIFE(RTP(R,T,P))=MAX(NCAP_TLIFE(R,T,PRC)+NCAP_ILED(R,T,PRC)-1,NCAP_TLIFE(RTP))));
 
 *-----------------------------------------------------------------------------
@@ -1181,9 +1183,11 @@ $ BATINCLUDE prepxtra.mod UCINT
 
 * FLO / IRE / COM
   OPTION UC_MAP_FLO < UC_FLO;
+  UC_QAFLO('1',UC_MAP_FLO(UCN,SIDE,RP_IRE(R,P),C))=YES;
   UC_CAPFLO(UC_N,SIDE,R,P,C)$(NOT UC_MAP_FLO(UC_N,SIDE,R,P,C)) = NO;
   UC_MAP_FLO(UC_N,SIDE,RP_IRE,C) = NO;
   OPTION UC_MAP_IRE < UC_IRE;
+  UC_QAFLO('2',UCN,'LHS',RP_FLO,C)$=SUM(UC_MAP_IRE(UCN,RP_FLO,C,IE),1);
   UC_MAP_IRE(UC_N,R,P,C,IE)$(NOT RPC_IRE(R,P,C,IE)) = NO;
   OPTION UC_GMAP_C < UC_COM;
   UC_ATTR(R,UCN,SIDE,UC_GRPTYPE,UC_DYNT)$UC_ATTR(R,UCN,SIDE,'COMCON',UC_DYNT)$=SUM(UC_GMAP_C(R,UCN,COM_VAR,C,'COMCON')$COV_MAP(COM_VAR,UC_GRPTYPE),1);

@@ -2828,3 +2828,22 @@ cal_ire.mod   : (2)
 err_stat.mod  : (4)
 rpt_ext.ecb   : (1)
 solsetv.v3    : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.8
+-----------------------------------------------------------------------------------------
+Date: 19-Jan-2024 [AL]: Maintenance QA release
+1) Added QA checks against invalid attributes
+2) Improved topology check for auxiliary IRE flows
+3) Small performance/cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.8
+ppmain.mod    : (1),(2)
+setglobs.gms  : (1)
+pp_lvlpk.mod  : (3)
+eqpeak.mod    : (3)
+cal_fflo.mod  : (3)
+pp_qack.mod   : (1)
+init_ext.vda  : (2)
+pp_prelv.vda  : (3)

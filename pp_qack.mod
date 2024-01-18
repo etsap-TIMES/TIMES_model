@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -220,11 +220,20 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'IRE Process with invalid Paramet
        IF(Z = 3, PUT QLOG ' WARNING       - IRE with FLO_SHAR: R=',%RL%,' P=',%PL%,' C=',CG.TL);
        IF(Z = 4, PUT QLOG ' WARNING       - IRE with ACT_EFF:  R=',%RL%,' P=',%PL%,' CG=',CG.TL);
   );
-  OPTION CLEAR=UNCD7;
-  UNCD7(UC_N,SIDE--ORD(SIDE),R,LL--ORD(LL),P,C,S--ORD(S)) $= UC_FLO(UC_N,SIDE,R,LL,P,C,S)$RP_IRE(R,P);
-  LOOP(UNCD7(UC_N,SIDE,R,LL,P,C,S),
+  OPTION CLEAR=RXX;
+  LOOP(UC_QAFLO('1',UCN,SIDE,R,P,C)$(NOT UC_CAPFLO(UCN,SIDE,R,P,C)),RXX(R,P,UCN)=YES);
+  LOOP(RXX(R,P,UC_N),
 $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'IRE Process with invalid Parameters'
        PUT QLOG ' WARNING       - IRE with UC_FLO:   R=',%RL%,' P=',%PL%,' UC_N=',UC_N.TL;
+  );
+  OPTION CLEAR=RXX; PUTGRP=0;
+  LOOP(PRC_MAP(R,'IRE',P)$(RP(R,P)$(NOT RP_IRE(R,P))),
+$      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 09 'Standard Flow Process with invalid Attributes'
+       PUT QLOG ' SEVERE ERROR  - Process Group is IRE:  R=',%RL%,' P=',%PL%;
+  );
+  LOOP(UC_QAFLO('2',UC_N,SIDE,RPC(R,P,C)),
+$      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Standard Flow Process with invalid Parameters'
+       PUT QLOG ' WARNING       - FLO flow with UC_IRE:  R=',%RL%,' P=',%PL%,' C=',%CL%,' UC_N=',UC_N.TL;
   );
 *-----------------------------------------------------------------------------
   PUTGRP = 0;

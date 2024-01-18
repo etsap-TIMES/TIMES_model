@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=========================================================================
@@ -118,6 +118,7 @@ $ LABEL SYSD
   SET UC_GMAP_P(REG,UC_N,UC_GRPTYPE,PRC)         'Assigning processes to UC_GRP';
   SET UC_GMAP_U(ALL_R,UC_N,UC_N)                 'Assigning constraints to UC_GRP' //;
   SET UC_DYNBND(UC_N,LIM)                        'Dynamic process-wise UC bounds' //;
+  SET UC_QAFLO(J,UC_N,SIDE,R,P,C)                'QA_checks for UC FLO/IRE tuples'
   SET RC_CUMCOM(REG,COM_VAR,ALLYEAR,ALLYEAR,COM) 'Cumulative commodity PRD/NET';
   SET RPC_CUMFLO(REG,PRC,COM,ALLYEAR,ALLYEAR)    'Cumulative process flows';
 
@@ -143,6 +144,7 @@ $ LABEL SYSD
   SET BDLOX(BD) / LO, FX /;
   SET BDNEQ(BD) / LO, UP /;
   SET RP_PRC(R,P);
+  SET RPG_RED(R,P,CG,IO) //;
   SET RP_GRP(REG,PRC,CG);
   SET RP_CCG(REG,PRC,C,CG);
   SET RP_CGG(REG,PRC,C,CG,CG);

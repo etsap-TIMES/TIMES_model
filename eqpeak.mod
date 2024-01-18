@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -41,7 +41,7 @@ $      BATINCLUDE cal_ire.%1 EXP IN IE '*(-NCAP_PKCNT(R,V,P,S)/COM_IE(R,T,C,S))$
 $            BATINCLUDE cal_stgn.%1 OUT IN '*STG_EFF(R,V,P)' '' "(NOT PRC_NSTTS(R,P,TS))" '*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))$RPC_PKF(R,P,C)'
 
 *   individual flows
-$            BATINCLUDE cal_fflo.%1 OUT O '*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))$RPC_PKF(R,P,C)'
+$            BATINCLUDE cal_fflo.%1 OUT O '*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))' '$RPC_PKF(R,P,C)'
 
            0)
 
@@ -72,7 +72,7 @@ $          BATINCLUDE cal_ire.%1 EXP IN IE '*FLO_PKCOI(R,T,P,C,TS)' -
 $          BATINCLUDE cal_cap.%1 IN I '1$(NOT PRC_PKNO(R,P))*'
            +
 *   storage
-$          BATINCLUDE cal_stgn.%1 IN OUT '' 'STG_EFF(R,V,P)*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))*' "((NOT PRC_MAP(R,'NST',P))+PRC_NSTTS(R,P,TS))" "$(NOT RPC_PKC(R,P,C))"
+$          BATINCLUDE cal_stgn.%1 IN OUT '' 'STG_EFF(R,V,P)*(NCAP_PKCNT(R,V,P,S)**RPC_PKF(R,P,C))*' "((NOT PRC_MAP(R,'NST',P))+PRC_NSTTS(R,P,TS))" "$RPC_PKF(R,P,C)"
 
 *   blending
            SUM(BLE_OPR(R,BLE,OPR)$(BLE_INP(R,BLE,C)*BLE_TP(R,T,BLE)),G_YRFR(R,S)*(1+RTCS_FR(R,T,C,S,'ANNUAL'))*BL_INP(R,BLE,C)*PEAKDA_BL(R,BLE,T)*%VAR%_BLND(R,T,BLE,OPR %SOW%)) +

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -18,9 +18,9 @@
 *-----------------------------------------------------------------------------
 * Levelization of NCAP_PKCNT
   OPTION RTP_ISHPR < NCAP_PKCNT;
-  TRACKPC(RPC(R,P,C))$((TOP(RPC,'OUT')+RPC_IRE(RPC,'IMP')+PRC_PKNO(R,P))$TRACKC(R,C)) = YES;
-  RTP_GRP(RTP_ISHPR(RTP(R,V,P)),C,IO('OUT'))$(SUM(RCS(R,C,S)$(NOT NCAP_PKCNT(R,V,P,S)),1)$TRACKPC(R,P,C)) = YES;
-  FLO_PKCOI(RTP(R,T,P),C,S)$(TRACKPC(R,P,C)$PRC_PKNO(R,P)) = 0;
+  FLO_PKCOI(RTP(R,T,P),C,S)$(TRACKC(R,C)$PRC_PKNO(R,P)) = 0;
+  TRACKPC(RPC(R,P,C))$((TOP(RPC,'OUT')+RPC_IRE(RPC,'IMP'))$TRACKC(R,C)) = YES;
+  RTP_GRP(RTP_ISHPR(RTP(R,V,P)),C,IO(IPS))$(SUM(RCS(R,C,S)$(NOT NCAP_PKCNT(R,V,P,S)),1)$TRACKPC(R,P,C)) = YES;
 *-----------------------------------------------------------------------------
 * Aggregation/inheritance to target timeslices
 *-----------------------------------------------------------------------------
@@ -39,12 +39,12 @@
 *-----------------------------------------------------------------------------
 * Peak contribution
 * If PRC_PKAF, apply PKCNT only for capacity
- TRACKP(PRC_PKAF(RP))=NOT PRC_PKNO(RP); RPC_PKF(TRACKPC(RP,C))=EPS**1$TRACKP(RP);
- TRACKPC(PRC_PKNO(RP),C)=NO;
-* If no PKCNT provided, Copy NCAP_AF if PRC_PKAF; Otherwise set default 1
- LOOP(TRACKPC(R,P,C),PRC_TS2(R,P,S)$((NOT SUM(RTP(R,V,P),NCAP_PKCNT(RTP,S)))$RCS(R,C,S)) = YES);
- NCAP_PKCNT(RTP(R,V,P),S)$PRC_TS2(R,P,S) = 1$(NOT PRC_PKAF(R,P)) +
-   SUM(PRC_TS(R,P,TS)$RS_TREE(R,S,TS),SMAX(BD,NCAP_AF(RTP,TS,BD))*(1+(G_YRFR(R,TS)/G_YRFR(R,S)-1)$RS_BELOW(R,S,TS)))$PRC_PKAF(R,P);
+  TRACKP(PRC_PKAF(RP))=NOT PRC_PKNO(RP); TRACKPC(PRC_PKNO(RP),C) = NO;
+  RPC_PKF(RPC(RP_FLO(R,P),C))$TRACKC(R,C) = EPS**1$TRACKP(R,P);
+* If no PKCNT provided, copy NCAP_AF if PRC_PKAF; otherwise set default 1
+  LOOP(TRACKPC(R,P,C),PRC_TS2(R,P,S)$((NOT SUM(RTP(R,V,P),NCAP_PKCNT(RTP,S)))$RCS(R,C,S)) = YES);
+  NCAP_PKCNT(RTP(R,V,P),S)$PRC_TS2(R,P,S) = 1$(NOT PRC_PKAF(R,P)) +
+    SUM(PRC_TS(R,P,TS)$RS_TREE(R,S,TS),SMAX(BD,NCAP_AF(RTP,TS,BD))*(1+(G_YRFR(R,TS)/G_YRFR(R,S)-1)$RS_BELOW(R,S,TS)))$PRC_PKAF(R,P);
 *-----------------------------------------------------------------------------
 * RPC_PKC indicator for peak contribution by capacity
  RPC_PKC(TRACKPC(RPC_ACT(TRACKP(RP_STD),C)))=YES;

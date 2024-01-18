@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -86,29 +86,26 @@ $IF NOT %OBMAC%==YES PARAMETER VAR_SIFT(LL,S,L) //;
   PRC_RESID(R,LL--ORD(LL),P)$((PRC_RESID(R,LL,P)>0)$PRC_RESID(R,LL,P)) = PRC_RESID(R,'0',P)+EPS;
   NCAP_PASTI(R,PYR_S,P)$PRC_RESID(R,'0',P) = 1;
 *-----------------------------------------------------------------------------
-* Initial Preprocessing of VDA_EMCB and FLO_EMIS
+* Initial Preprocessing of VDA_EMCB, FLO_EMIS and IRE_FLOSUM
   FLO_EMIS(R,LL,P,CG,C,S) $= FLO_EFF(R,LL,P,CG,C,S);
   OPTION CLEAR=RXX,CLEAR=FLO_EFF;
-  VDA_EMCB(R,DATAYEAR,C,COM)$COM_TMAP(R,'ENV',C) = 0;
-  LOOP((R,DATAYEAR,C,COM)$VDA_EMCB(R,DATAYEAR,C,COM),RXX(R,C,COM) = YES;);
+  VDA_EMCB(R,YEAR,C,COM)$COM_TMAP(R,'ENV',C) = 0;
+  LOOP((R,DATAYEAR,C,COM)$VDA_EMCB(R,DATAYEAR,C,COM),RXX(R,C,COM) = YES);
   RXX(R,C,COM)$(NOT COM_TMAP(R,'ENV',COM)) = NO;
   LOOP((TOP(R,P,C,'IN'),RXX(R,C,COM)),FS_EMCB(R,P,COM,C)=YES);
   FS_EMCB(R,P,COM,C)$TOP(R,P,COM,'IN') = NO;
   OPTION TRACKPC <= FS_EMCB; TOP(TRACKPC,'OUT') = YES;
-  OPTION CLEAR=RXX, CLEAR=TRACKPC, PRC_ACT < PRC_ACTUNT;
+  OPTION CLEAR=RXX, CLEAR=TRACKPC;
   LOOP((R,DATAYEAR,P,CG,C,S)$FLO_EMIS(R,DATAYEAR,P,CG,C,S),RPC_EMIS(R,P,C) = YES);
-  TOP(RPC_EMIS(PRC_ACT(R,P),C),'OUT')$(COM_TMAP(R,'ENV',C)*(NOT TOP(R,P,C,'IN'))) = YES;
+  RPG_RED(RPC_EMIS(R,P,C),'OUT')$(NOT TOP(R,P,C,'IN')) = YES;
+  LOOP((R,DATAYEAR,P,C,S,IE,COM,IO)$(PRC_MAP(R,'IRE',P)$IRE_FLOSUM(R,DATAYEAR,P,C,S,IE,COM,IO)),RPG_RED(R,P,COM,IO) = YES);
 *-----------------------------------------------------------------------------
 * Initial Preprocessing of COM_AGG and VDA_FLOP
   COM_AGG(R,LL,C,C)$COM_AGG(R,LL,C,C) = 0;
   VDA_FLOP(R,LL,P,CG,S) $= ACT_FLO(R,LL,P,CG,S);
   KEEP_FLOF(R,P,C)$VDA_FLOP(R,'%DFLBL%',P,C,'ANNUAL') = YES;
 $IFI %SHELL%==ANSWER KEEP_FLOF(R,P,C)$PRC_ACTFLO(R,'%DFLBL%',P,C) = YES;
-*-----------------------------------------------------------------------------
-* Initial Preprocessing of IRE_FLOSUM
-  LOOP((R,DATAYEAR,P,C,S,IE,COM,IO)$IRE_FLOSUM(R,DATAYEAR,P,C,S,IE,COM,IO),RPG_ACE(R,P,COM,IO) = YES);
-  TOP(RPG_ACE(PRC_ACT,C,IO)) = YES;
-  OPTION CLEAR=PRC_ACT,CLEAR=ACT_FLO,CLEAR=RPG_ACE;
+  OPTION CLEAR=ACT_FLO;
 *-----------------------------------------------------------------------------
 * Handle Updatable OFF-ranges & REG_BDNCAP process-based bounds
   NCAP_START(R,P)$(NCAP_START(R,P)<=MIYR_BOH)=0;
