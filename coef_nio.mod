@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -11,8 +11,7 @@
 *[AL] Corrected bugs in the end of commodity flows in the OCOM case
 *-----------------------------------------------------------------------------
 * commodity flows tied to new capacity
-*V0.5b 980828 re-adjust v,t handling to capture enclosed periods & condition to
-*             handle period of length 1
+*V0.5b 980828 re-adjust v,t handling to capture enclosed periods & condition to handle period of length 1
      RPC_CAPFLO(R,V,P,C)$(NOT RTP(R,V,P)) = 0;
      FIL(V) = YEARVAL(V) GE MIYR_V1;
 *V05c 980923 - use the capacity flow control set
@@ -33,26 +32,24 @@
      );
 
 * commodity flows tied to decommissioning of capacity
-*V05c 980921 - include the PASTInvestments, was looping over MILESTONYR
-*V05c 980923 - use the capacity flow control set
+*V05c 980923 - use the capacity flow control set, including PASTInvestments
      LOOP(RPC_CAPFLO(R,V,P,C)$NCAP_OCOM(R,V,P,C),
-       F = NCAP_ILED(R,V,P); MY_F = NCAP_TLIFE(R,V,P);
+       F = NCAP_ILED(R,V,P)+NCAP_DLAG(R,V,P); MY_F = NCAP_TLIFE(R,V,P);
        Z = MAX(1,NCAP_DLIFE(R,V,P)); DFUNC = COEF_RPTI(R,V,P);
        IF(DFUNC GT 1,
          FOR(CNT = 1 TO CEIL(DFUNC),
            COEF_OCOM(R,V,T,P,C)$(YEARVAL(T) >= YEARVAL(V)) =
                                  COEF_OCOM(R,V,T,P,C) + MIN(1,DFUNC-CNT+1) *
-                                 (MAX(0,(MIN(B(V)+F+(CNT*MY_F)+NCAP_DLAG(R,V,P)+Z,E(T)+1) -
-                                         MAX(B(V)+F+(CNT*MY_F)+NCAP_DLAG(R,V,P),B(T))
+                                 MAX(0,(MIN(B(V)+F+(CNT*MY_F)+Z,E(T)+1) -
+                                        MAX(B(V)+F+(CNT*MY_F),B(T))
                                         ) / FPD(T)
-                                     ) * (NCAP_OCOM(R,V,P,C) / Z)
-                                 )
+                                    ) * (NCAP_OCOM(R,V,P,C) / Z)
             )
        ELSE
           COEF_OCOM(R,V,T,P,C)$(YEARVAL(T) >= YEARVAL(V)) =
 * some part of release in T
-            MAX(0,(MIN(B(V)+F+MY_F+NCAP_DLAG(R,V,P)+Z,E(T)+1) -
-                   MAX(B(V)+F+MY_F+NCAP_DLAG(R,V,P),B(T))
+            MAX(0,(MIN(B(V)+F+MY_F+Z,E(T)+1) -
+                   MAX(B(V)+F+MY_F,B(T))
                   ) / FPD(T)
                ) * (NCAP_OCOM(R,V,P,C) / Z)
        );

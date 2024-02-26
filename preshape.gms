@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2024 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *******************************************************************************
 * PRESHAPE : Prepare SHAPE parameters for preprocessing
 * Description: Interpolation of X parameter on user request
@@ -42,7 +42,7 @@ LOOP(%6(%2,'%DFLBL%'%TAIL%%4),
      DFUNC=DFUNC-10);
    IF(DFUNC GE 2,
 * Do back/forward extrapolate
-     IF(DFUNC=4, Z = INF; ELSEIF DFUNC=5, F = 0);
+     IF(DFUNC=4, Z = INF; ELSEIF DFUNC=5, F = 0; ELSEIF DFUNC=(2-F), LAST_VAL=EPS; Z=0);
      %1(%2,%5%TAIL%)$%7 $= FIRST_VAL$(YEARVAL(%5)<F) + LAST_VAL$(YEARVAL(%5)>Z);
    );
   );

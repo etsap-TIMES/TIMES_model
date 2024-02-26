@@ -2847,3 +2847,23 @@ cal_fflo.mod  : (3)
 pp_qack.mod   : (1)
 init_ext.vda  : (2)
 pp_prelv.vda  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.7.9
+-----------------------------------------------------------------------------------------
+Date: 25-Feb-2024 [AL]: Maintenance QA release
+1) Added support for shaping NCAP_OCOM based on COEF_CPT
+2) Fixed performance bug within IRE_FLO levelizing
+3) Improved QA checks for ACT_EFF default shadow group
+4) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.7.9
+ppmain.mod    : (1)
+setglobs.gms  : (1)
+preshape.gms  : (4)
+pp_lvlif.mod  : (2)
+pp_reduce.red : (4)
+coef_nio.mod  : (1)
+coef_shp.mod  : (1)
+ppm_ext.vda   : (3)

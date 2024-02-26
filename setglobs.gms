@@ -96,7 +96,7 @@ $ LABEL SYSD
   SET RVP(R,ALLYEAR,P)          'ALIAS(RTP) for Process/time'            //;
   SET RTP_CAPYR(R,YEAR,YEAR,P)  'Capacity vintage years'                 //;
   SET RTP_ISHPR(REG,ALLYEAR,PRC)'Attribute existence indicator'         //;
-  SET RTP_CGC(REG,YEAR,P,CG,CG) 'Multi-purpose work set'                //;
+  SET RTP_CGC(R,YEAR,P,CG,CG)   'Multi-purpose work set'                //;
   SET RTPS_BD(R,ALLYEAR,P,S,BD) 'Multi-purpose work set'                //;
   SET CG_GRP(REG,PRC,CG,CG)     'Multi-purpose work set'                //;
   SET FSCK(REG,PRC,CG,C,CG)     'Multi-purpose work set'                //;

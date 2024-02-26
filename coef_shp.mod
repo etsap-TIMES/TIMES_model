@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -43,7 +43,7 @@
   RTP_FFCX(RTP_CAPYR,'CAPFLO',CG) = 0;
 * Option for non-vintaged FLO_FUNC multipliers
   RTP_FFCX(RTP_VINTYR(R,V,T,P),CG,CG2)$((FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')>0)$RTP_CGC(R,V,P,CG,CG2))=FLO_FUNC(R,T,P,CG,CG2,'ANNUAL')/FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')-1;
-  OPTION CLEAR=RTP_CGC,CLEAR=TRACKP,CLEAR=RVPRL,CLEAR=RP_GRP;
+  OPTION CLEAR=TRACKP,CLEAR=RVPRL,CLEAR=RP_GRP;
 *------------------------------------------------------------------------------
 * Shaping of COEF_CPT
 *------------------------------------------------------------------------------
@@ -72,4 +72,11 @@
   );
   OPTION RTP_CPX <= COEF_CAP;
   COEF_CPT(R,V,T,P)$COEF_CAP(R,V,T,P) = COEF_CPT(R,V,T,P)*(COEF_CAP(R,V,T,P)+1);
-  OPTION CLEAR=PRC_YMIN,CLEAR=PRC_YMAX,CLEAR=TRACKP,CLEAR=COEF_CAP,CLEAR=RVPRL;
+
+* Override COEF_OCOM if conditions met for using capacity transfer
+  RTP_CGC(RTP(R,V,P),CG('CAPFLO'),C)$((MAX(NCAP_ILED(RTP),NCAP_DLIFE(RTP),NCAP_DLAG(RTP))<=0)$(FLO_FUNCX(R,'0',P,CG,C)=2)$NCAP_OCOM(RTP,C))=YES;
+  OPTION TRACKPG <= RTP_CGC;
+  LOOP(TRACKPG(R,P,CG('CAPFLO')),
+    COEF_OCOM(R,VNT(V,T),P,C)$RTP_CGC(R,V,P,CG,C) = (MAX(0,1-COEF_CPT(R,V,T,P))*NCAP_OCOM(R,V,P,C)/FPD(T))$VNT(T,V);
+    COEF_OCOM(R,V,TT(T+1),P,C)$(RTP_CPTYR(R,V,T,P)$NCAP_OCOM(R,V,P,C)$RTP_CGC(R,V,P,CG,C))=MAX(0,COEF_CPT(R,V,T,P)-COEF_CPT(R,V,TT,P))*NCAP_OCOM(R,V,P,C)/FPD(TT));
+  OPTION CLEAR=PRC_YMIN,CLEAR=PRC_YMAX,CLEAR=TRACKP,CLEAR=TRACKPG,CLEAR=RTP_CGC,CLEAR=COEF_CAP,CLEAR=RVPRL;
