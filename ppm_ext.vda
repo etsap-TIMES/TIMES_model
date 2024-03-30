@@ -3,17 +3,18 @@
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
-* PPM_EXT.xtd oversees extended preprocessor activities
+* PPM_EXT.VDA oversees extended preprocessor activities
 *   %1 - mod or v# for the source code to be used
 *=============================================================================*
 * Questions/Comments:
 *-----------------------------------------------------------------------------
   DISPLAY 'VEDA PPM_EXT Invoked';
 $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
-  OPTION RP_UPL<ACT_UPS; RP_UPL(RP,L)$(NOT PRC_CAP(RP)*RP_STD(RP)) = NO;
+  OPTION RP_UPL < ACT_UPS;
+  RP_UPL(RP,L)$(NOT PRC_CAP(RP)*RP_STD(RP)) = NO;
   RP_PL(R,P,LNX) $= SUM(V$ACT_LOSPL(R,V,P,'FX'),1);
 *-----------------------------------------------------------------------------
-* Prepare FLO_SUMs for emissions
+* Prepare FLO_SUMs for VDA_EMCB emissions
   FS_EMCB(RP_IRE(R,P),COM,C) = NO;
   OPTION FSCK <= FLO_SUM;
   FLO_SUM(RTP(R,V,P),COM,C,COM,S)$((NOT FLO_SUM(RTP,COM,C,COM,S))$RPCS_VAR(R,P,C,S)$FS_EMCB(R,P,COM,C)) = VDA_EMCB(R,V,C,COM);
@@ -21,14 +22,14 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
 *-----------------------------------------------------------------------------
 * Auxiliary flow variable can be replaced by term (source flow x coefficient)
   CG_GRP(R,P,C,COM)$FSCK(R,P,C,COM,C) = YES;
-  CG_GRP(FS_EMCB(R,P,COM,C)) = YES;
-  TRACKPG(RPC(RP_FLO(RP),C)) $= SUM(CG_GRP(RP,C,COM),1);
+  CG_GRP(FS_EMCB) = YES;
+  TRACKPG(RPC(RP_FLO,C)) $= SUM(CG_GRP(RPC,COM),1);
   TRACKPG(RPC_PG) = NO; TRACKPG(RPC_FFUNC) = NO; TRACKPG(RPC_EMIS) = NO;
   LOOP(CG_GRP(R,P,C,COM)$RPC_EMIS(R,P,COM),TRACKPG(R,P,C)=NO);
-  FS_EMIS(CG_GRP(TRACKPG(R,P,COM),C),COM) = YES;
+  FS_EMIS(CG_GRP(TRACKPG(R,P,C),COM),C) = YES;
 * Prevent reduction of source commodity if target reduced
-  OPTION TRACKPC < FS_EMIS; TRACKPG(TRACKPC) = NO;
-  OPTION CLEAR=CG_GRP, CLEAR=TRACKPC, CLEAR=FS_EMCB, CLEAR=FSCK;
+  OPTION FS_EMIT < FS_EMIS, TRACKPC < FS_EMIS; TRACKPG(TRACKPC) = NO;
+  OPTION CLEAR=CG_GRP, CLEAR=TRACKPC, CLEAR=FS_EMIS, CLEAR=FS_EMCB, CLEAR=FSCK;
 *-----------------------------------------------------------------------------
 * ACT_EFF preparation, inheritance and aggregation
   TRACKPC(RPC_ACE(RPC)) = YES;

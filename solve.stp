@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -192,16 +192,8 @@ $IF DEFINED XTP $SETLOCAL TOLR '2E-8' SETLOCAL TOLA 1E-6
    %SW1%CAP_BND(R,T,P,'LO'%SW2%)                           $= %SW1%CAP_BND(R,T,P,'LO'%SW2%)*(1-%TOLR%);
   );
 $  BATINCLUDE bnd_ucw.%1
-* Redefine UC_RHSMAP according to current flags
-  OPTION CLEAR=UC_RHSMAP;
-  LOOP((UC_R_EACH(R,UC_N),T,LIM)$UC_RHSRT(R,UC_N,T,LIM),
-   IF(    SUM(UC_TS_SUM(R,UC_N,S),1)$UC_T_EACH(R,UC_N,T),UC_RHSMAP(UC_N,'EACH','SEVERAL',R,T,ANNUAL) = YES;
-   ELSEIF SUM(UC_TS_SUM(R,UC_N,S),1)$UC_T_SUCC(R,UC_N,T),UC_RHSMAP(UC_N,'SUCC','SEVERAL',R,T,ANNUAL) = YES;
-  ));
-  LOOP((UC_R_EACH(R,UC_N),T,S,LIM)$UC_RHSRTS(R,UC_N,T,S,LIM),
-   IF(    UC_TS_EACH(R,UC_N,S)$UC_T_EACH(R,UC_N,T),UC_RHSMAP(UC_N,'EACH','EACH',R,T,S) = YES;
-   ELSEIF UC_TS_EACH(R,UC_N,S)$UC_T_SUCC(R,UC_N,T),UC_RHSMAP(UC_N,'SUCC','EACH',R,T,S) = YES;
-  ));
+* Redefine UC_T according to current flags
+  OPTION UC_RTSUC < UC_T_SUCC;
   IF(CARD(REG_CUMCST),LOOP((R,T)$NO_RT(R,T),REG_CUMCST(R,YEAR,LL,COSTCAT,CUR,'UP')$SUPERYR(T,LL) = 0));
 *-----------------------------------------------------------------------------
 * Activities and flows

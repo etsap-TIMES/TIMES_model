@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -28,6 +28,7 @@ $IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
    PAR_RPMX(R,P,J,LL,T,C,CUR)
    PAR_RCMX(R,C,J,T,CUR)
    PAR_OBJCAP(R,ALLYEAR,P,CUR)
+   PAR_XPRI(R,T,P,C,TS,REG,COM)
    COEF_OBJINV(R,ALLYEAR,PRC)      //
    COEF_OBINV(R,ALLYEAR,P,CUR)     //
    COEF_OBFIX(R,ALLYEAR,P,CUR)     //

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -23,7 +23,7 @@ $IF %6==2  (1+(FPD(T)+(COEF_PVT(R,T)-FPD(T))$UC_ATTR(R,UC_N,'LHS','FLO','PERDISC
 $IF %6==S  (1/G_YRFR(R,S)) *
 *          "SUM(UC_TS_SUM(R,UC_N,S)," or bracket "("
            %3
-                 SUM((RTP_VINTYR(R,V,%4,P),UC_MAP_FLO(UC_N,%5,R,P,C),RTPCS_VARF(R,%4,P,C,TS))$RS_FR(R,S,TS),
+                 SUM((RTP_VINTYR(R,V,%4,P),RTPCS_VARF(R,%4,P,C,TS))$(UC_MAP_FLO(UC_N,%5,R,P,C)$RS_FR(R,S,TS)),
                           %11(%12
 *V0.9a S reference should be TS
 * [UR] model reduction %REDUCE% is set in *.run

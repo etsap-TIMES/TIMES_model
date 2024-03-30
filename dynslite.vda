@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -12,6 +12,19 @@ $ GOTO %1
 *------------------------------
 $ LABEL PRELEV
 $ IFI %DUC%==YES Abort "TS_OFF cannot be used with DUC";
+* Re-calculate the leads for the SEASON timeslice cycle
+  LOOP((R,ANNUAL(S),T), F=0;
+   LOOP(RS_BELOW1(R,S,TS)$(NOT NORTS(R,T,TS)), IF(F, RS_STG(R,TS)=ORD(TS)-Z; Z=ORD(TS); ELSE Z=ORD(TS); F=Z));
+   RS_STG(R,S+(F-ORD(S)))$F = F-Z);
+* Re-calculate average residence time for storage activity for SEASON
+  LOOP((TS_GROUP(R,'SEASON',S),TS(S--RS_STG(R,S)))$RS_STGPRD(R,S),RS_STGAV(R,S) = (G_YRFR(R,S)+G_YRFR(R,TS))/2/RS_STGPRD(R,S));
+* QA Check
+  PUTGRP=0;
+  LOOP(RT_PP(R,T), Z=SUM((RS_BELOW1(R,ANNUAL,TS),S(TS--RS_STG(R,TS)))$((NOT NORTS(R,T,TS))$NORTS(R,T,S)),1);
+    IF(Z,
+$    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Unsupported dynamic timeslice trees with overlap -- Fatal'
+     PUT QLOG ' FATAL ERROR   - Timeslice trees have shared branches (R.T)=',RT_PP.TE(RT_PP)));
+*------------------------------
 * Remove timeslices turned off
 * Bounds+varcosts pre-cleared only
     ACT_BND(R,T,P,S,BD)%TMP%=0;
@@ -110,6 +123,7 @@ $ SETLOCAL SWT %SWD%)$(%SWT%RT_PP(R,T)%TMP%
    %VAR%_UDP.FX(RTP_VINTYR(R,V,T,P),S,BD%SWT%$PRC_TS(R,P,S)$RP_UPR(R,P,BD)) = 0;
    %VAR%_COMNET.FX(RTC_NET(R,T,C),S%SWT%$COM_TS(R,C,S)) = 0;
    %VAR%_COMPRD.FX(RTC_PRD(R,T,C),S%SWT%$COM_TS(R,C,S)) = 0;
+$IF %VAR_UC%==YES UC_RHSMAP(R,T,UCN,UC_NUMBER,S)%TMP% = NO;
 *------------------------------
 $ LABEL FINISH
   );

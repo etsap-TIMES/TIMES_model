@@ -113,12 +113,18 @@ $ LABEL SYSD
   SET RREG(ALL_REG,ALL_REG) 'Set of paired regions' //;
 
 * cumulatives & UCs
+  SET RHS(SIDE) / RHS /;
+  SET UC_NUMBER / SET.TSLVL /;
   SET UC_ON(ALL_R,UC_N)                          'Active UCs by region' //;
   SET UC_GMAP_C(REG,UC_N,COM_VAR,COM,UC_GRPTYPE) 'Assigning commodities to UC_GRP';
   SET UC_GMAP_P(REG,UC_N,UC_GRPTYPE,PRC)         'Assigning processes to UC_GRP';
-  SET UC_GMAP_U(ALL_R,UC_N,UC_N)                 'Assigning constraints to UC_GRP' //;
+  SET UC_GMAP_U(ALL_R,UC_N,UC_N)                 'Assigning constraints to UC_GRP'//;
   SET UC_DYNBND(UC_N,LIM)                        'Dynamic process-wise UC bounds' //;
+  SET UC_DYNDIR(ALL_R,UC_N,SIDE)                 'Direction of dynamic constraint'//;
+  SET UC_DS(ALL_R,UC_N,TSLVL)                    'Levels of TS-dynamic constraints';
   SET UC_QAFLO(J,UC_N,SIDE,R,P,C)                'QA_checks for UC FLO/IRE tuples'
+  SET UC_RTSUC(ALL_R,ALLYEAR,UC_N)               'RT-map for T_SUCC';
+  SET G_UDS(S,SIDE,S)                            'Timeslice-dynamic candidates';
   SET RC_CUMCOM(REG,COM_VAR,ALLYEAR,ALLYEAR,COM) 'Cumulative commodity PRD/NET';
   SET RPC_CUMFLO(REG,PRC,COM,ALLYEAR,ALLYEAR)    'Cumulative process flows';
 
@@ -127,6 +133,7 @@ $ LABEL SYSD
     RS_BELOW(ALL_REG,TS,TS)  'Timeslices stictly below a node'     //
     RS_BELOW1(ALL_REG,TS,TS) 'Timeslices strictly one level below' //
     RS_TREE(ALL_REG,TS,TS)   'Timeslice subtree'                   //
+    RS_PREV(R,S,S)           'Previous timeslice in parent cycle'  // 
     FINEST(R,ALL_TS)         'Set of the finest timeslices in use' //
     PASTMILE(ALLYEAR)        'PAST years that are not MILESYONYR'  //
     EACHYEAR(ALLYEAR)        'Each year from 1st NCAP_PASTI-Y to last MILESTONYR + DUR_MAX' //
@@ -226,7 +233,6 @@ $LABEL RESTOBJ
     RD_SHAR(R,T,C,C)    'Demand aggregation share' //
     RP_AFB(REG,PRC,BD)  'Processes with NCAP_AF by bound type' //
     RS_STG(R,ALL_TS)    'Lead from previous storage timeslice'
-    RS_UCS(R,S,SIDE)    'Lead for TS-dynamic UC'
     RS_STGPRD(R,ALL_TS) 'Number of storage periods for each timeslice'
     RS_STGAV(R,ALL_TS)  'Average residence time for storage activity'
     RS_TSLVL(R,ALL_TS)  'Timeslice levels'
@@ -280,6 +286,7 @@ $LABEL RESTOBJ
   SET  RPC_AIRE(ALL_REG,PRC,COM)      'Exchange process with only one commodity exchanged'  //;
   SET  RPC_EMIS(R,P,COM_GRP)          'Process with emission COM_GRP'                       //;
   SET  FS_EMIS(R,P,COM_GRP,C,COM)     'Indicator for emission related FLO_SUM'              //;
+  SET  FS_EMIT(R,P,COM,COM_GRP,C)     'Indicator for emission related FLO_SUM'              //;
   SET  RC_IOP(R,C,IO,P)               'Processes associated with commodity'                 //;
   SET  RTCS_SING(R,T,C,S,IO)          'Commodity not being consumed'                        //;
   SET  RTPS_OFF(R,T,P,S)              'Process being turned off'                            //;

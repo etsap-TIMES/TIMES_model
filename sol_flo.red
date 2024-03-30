@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -38,6 +38,6 @@ $IF '%3'=='.M' $EXIT
 
 * Emission flows
 %1%2(RTP_VINTYR(R,V,T,P),C,S%5)$(RTPCS_VARF(R,T,P,C,S)%6$RPC_EMIS(R,P,C)) =
-   SUM((FS_EMIS(R,P,CG1,COM,C),RS_TREE(R,S,TS))$%1%2(R,V,T,P,COM,TS%5),
+   SUM((FS_EMIT(R,P,C,CG1,COM),RS_TREE(R,S,TS))$%1%2(R,V,T,P,COM,TS%5),
          %1%2(R,V,T,P,COM,TS%5) * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,COM,S,TS)) *
          COEF_PTRAN(R,V,P,CG1,COM,C,TS)%SHP3%);

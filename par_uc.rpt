@@ -1,20 +1,29 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *====================================================================
-* Par_uc.rpt : reporting parameters for UC (no STAGES/SENSIS)
+* Par_uc.rpt : reporting parameters for UCs (no STAGES/SENSIS)
 * %1 - parameter suffix
 * %2 - equation prefix
 *--------------------------------------------------------------------
-  LOOP(UC_TSL(R,UC_N,'LHS',TSL),%2_UCRTS.M(UC_N,R,T,S) $= %2_UCRS.M(R,UC_N,T,TSL,S));
+  PARAMETER PAR_RTUS(R,YEAR,UC_N,S) //;
+  PARAMETER PAR_URTS(UC_N,R,YEAR,S) //;
   %3PAR_UC%1(%4UC_N,'NONE','NONE','NONE') $= %2_UC.M(UC_N);
-  %3PAR_UC%1(%4UC_N,R,'NONE','NONE')      $= %2_UCR.M(UC_N,R);
   %3PAR_UC%1(%4UC_N,'NONE',T,'NONE')      $= %2_UCT.M(UC_N,T);
-  %3PAR_UC%1(%4UC_N,R,T,'NONE')           $= %2_UCRT.M(UC_N,R,T)*(1/COEF_PVT(R,T));
   %3PAR_UC%1(%4UC_N,'NONE',T,S)           $= %2_UCTS.M(UC_N,T,S);
-  %3PAR_UC%1(%4UC_N,R,T,S)                $= %2_UCRTS.M(UC_N,R,T,S)*(1/COEF_PVT(R,T));
   %3PAR_UC%1(%4UC_N,'NONE',T,'NONE')      $= %2_UCSU.M(UC_N,T);
   %3PAR_UC%1(%4UC_N,'NONE',T,S)           $= %2_UCSUS.M(UC_N,T,S);
-  %3PAR_UC%1(%4UC_N,R,T,'NONE')           $= %2_UCRSU.M(UC_N,R,T)*(1/COEF_PVT(R,T));
-  %3PAR_UC%1(%4UC_N,R,T,S)                $= %2_UCRSUS.M(UC_N,R,T,S)*(1/COEF_PVT(R,T));
+* Handle shuffled indexes
+  PAR_RTUS(R,'0',UC_N,ANNUAL)             $= %2_UCR.M(R,UC_N);
+  PAR_RTUS(R,T,UC_N,ANNUAL)               $= %2_UCRT.M(R,T,UC_N);
+  PAR_RTUS(R,T,UC_N,ANNUAL)               $= %2_UCRSU.M(R,T,UC_N);
+  OPTION PAR_URTS<PAR_RTUS,CLEAR=PAR_RTUS;
+  %3PAR_UC%1(%4UC_N,R,'NONE','NONE')      $= PAR_URTS(UC_N,R,'0','ANNUAL');
+  %3PAR_UC%1(%4UC_N,R,T,'NONE')           $= PAR_URTS(UC_N,R, T, 'ANNUAL')*(1/COEF_PVT(R,T));
+  PAR_RTUS(R,T,UC_N,S)                    $= %2_UCRTS.M(R,T,UC_N,S);
+  PAR_RTUS(R,T,UC_N,S)                    $= %2_UCRSUS.M(R,T,UC_N,S);
+  LOOP(TSL,PAR_RTUS(R,T,UC_N,S)           $= %2_UCRS.M(R,T,UC_N,TSL,S));
+  OPTION PAR_URTS<PAR_RTUS,CLEAR=PAR_RTUS;
+  %3PAR_UC%1(%4UC_N,R,T,S)                $= PAR_URTS(UC_N,R,T,S)*(1/COEF_PVT(R,T));
+  OPTION CLEAR=PAR_URTS;

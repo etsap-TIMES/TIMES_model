@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -115,11 +115,11 @@ $macro Q_CUMPRD(rc,y1,y2,sow) ES_CUMPRD(rc,y1,y2,'1')
 $macro Q_CUMFLO(rpcyy,sw)     ES_CUMFLO(rpcyy,'1')
 $macro Q_BNDCST(r,y,y2,c,m,w) ES_BNDCST(r,y,y2,c,m,'1')
 $macro QE_UC(uc,sow)          ESE_UC(uc,'1')
-$macro QE_UCR(uc,r,sow)       ESE_UCR(uc,r,'1')
+$macro QE_UCR(ruc,sow)        ESE_UCR(ruc,'1')
 $macro QE_UCSU(uc,t,sw)       ESE_UCSU(uc,t,'1')
 $macro QE_UCSUS(uc,t,s,sw)    ESE_UCSUS(uc,t,s,'1')
-$macro QE_UCRSU(uc,r,t,sw)    ESE_UCRSU(uc,r,t,'1')
-$macro QE_UCRSUS(uc,r,t,s,sw) ESE_UCRSUS(uc,r,t,s,'1')
+$macro QE_UCRSU(rtuc,sw)      ESE_UCRSU(rtuc,'1')
+$macro QE_UCRSUS(rtuc,s,sw)   ESE_UCRSUS(rtuc,s,'1')
 $macro QL_SCAP(rtp,ip,sow)    ESL_SCAP(rtp,ip,'1')
 $LABEL DYQDONE
 *-----------------------------------------------------------------------------

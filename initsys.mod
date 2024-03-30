@@ -1,4 +1,4 @@
-$TITLE  TIMES -- VERSION 4.7.9
+$TITLE  TIMES -- VERSION 4.8.0
 *==========================================================================================*
 * INITSYS.MOD has all the fixed system declarations for ETSAP TIMES                        *
 *==========================================================================================*
@@ -141,8 +141,8 @@ $ SETGLOBAL MAXSOW 96
   SET UC_ANNUL(UC_NAME) / INVCOST, INVTAX, INVSUB /;
   SET UC_DYNT(UC_NAME) / N, CUMSUM, CUM+, SYNC /;
 
-  SET UC_NUMBER 'Determines way of handling of REG,T and TS'
-    / SEVERAL, SUCC, EACH /;
+  SET UC_NUMBER 'Determines way of handling REG,T and TS'
+    / SEVERAL, SUCC, EACH, DYNAMIC /;
 
   SET UC_PERDS(UC_NAME) / PERIOD, NEWFLO /;
   SET UC_NEWFLO(UC_NAME) / NEWFLO /;
@@ -167,15 +167,15 @@ $ SET RUN_NAME      TEST
 * control of whether all 0 lines are dumped in *.PUT files; user provides 0 to NOT print lines with all 0s (or empty)
   SCALAR DUMP0 /1/, OPTFILEID /1/;
 * user set to 'YES' to activate
-$ SET DEBUG          NO
-$ SET DUMPSOL        NO
-$ SET SOLANS         NO
+$ SET DEBUG         NO
+$ SET DUMPSOL       NO
+$ SET SOLANS        NO
 * user set to 'NO' to not abort when error condition fails
-$ SET ERR_ABORT      YES
+$ SET ERR_ABORT     YES
 * user sets to 'WWW' to activate
-$ SET GAMS_CGI       NO
+$ SET GAMS_CGI      NO
 * user sets to 'NO' if only want to compile
-$ SET SOLVE_NOW      YES
+$ SET SOLVE_NOW     YES
 
 * get list of default units
 $ BATINCLUDE units.def

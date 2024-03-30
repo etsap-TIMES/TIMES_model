@@ -78,10 +78,10 @@ $    BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 99 'Illegal system commodity in topolo
   PUTGRP = 0; Z = 1;
 * see that components of any CG for a process in topology
   LOOP(PRC_CG(R,P,CG)$(NOT COM_TYPE(CG)),
-      Z = NOT SUM(COM_GMAP(R,CG,C)$RPC(R,P,C),1);
-      LOOP(COM_GMAP(R,CG,C)$((NOT RPC(R,P,C))$Z),
+    IF(NOT SUM(COM_GMAP(R,CG,C)$RPC(R,P,C),1),
+      LOOP(COM_GMAP(R,CG,C)$(NOT RPC(R,P,C)),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Commodity in CG of process P but not in topology'
-         PUT QLOG ' SEVERE WARNING  -   R=',%RL%,' P=',%PL%,' C=',%CL%,' CG=',CG.TL ;
+         PUT QLOG ' SEVERE WARNING  -   R=',%RL%,' P=',%PL%,' C=',%CL%,' CG=',CG.TL );
       )
     );
   PUTGRP = 0;
@@ -159,7 +159,7 @@ $     BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Process with missing or mismatche
   PRC_CG(RP_PG(R,P,CG))$=SUM(RPC_AFLO(R,P,C)$(NOT RPC_FFUNC(R,P,C)),1);
   PUTGRP = 0;
 * Make a QA Complaint about invalid FS_EMIS substitution
-  LOOP(FS_EMIS(R,P,CG,C,COM)$RPC_EMIS(R,P,C),
+  LOOP(FS_EMIT(R,P,COM,CG,C)$RPC_EMIS(R,P,C),
 $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'Illegal dependency of substituted auxiliary commodities C1 and C2 in FLO_SUM'
     PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' C1=',%CL%,' C2=',COM.TL;
   );

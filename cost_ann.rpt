@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -132,10 +132,11 @@ LOOP(OBJ_FCUR(R,FIL(V),P,CUR)$PRC_RESID(R,'0',P),
                EQ_IRE.M(REG,T,P,COM,'IMP',S) *
                IRE_CCVT(REG,COM1,REG,COM) * IRE_CCVT(R,C,REG,COM1) * RS_FR(R,ALL_TS,TS) * IRE_TSCVT(R,ALL_TS,REG,S)));
 
-  PAR_IPRIC(RTPCS_VARF(R,T,P,C,TS),'EXP')$RPC_IREIO(R,P,C,'EXP','IN') $=
-    SMAX(TOP_IRE(R,C,REG,COM,P),SUM((RS_TREE(R,TS,ALL_TS),S)$(IRE_TSCVT(R,ALL_TS,REG,S)$EQ_IRE.M(REG,T,P,COM,'IMP',S)),
-               EQ_IRE.M(REG,T,P,COM,'IMP',S) * IRE_FLO(R,T,P,C,REG,COM,S) *
-               IRE_CCVT(R,C,REG,COM) * RS_FR(R,ALL_TS,TS) * IRE_TSCVT(R,ALL_TS,REG,S)));
+  PAR_XPRI(RTPCS_VARF(R,T,P,C,TS),REG,COM)$(TOP_IRE(R,C,REG,COM,P)$RPC_IREIO(R,P,C,'EXP','IN')) =
+    SUM((RS_TREE(R,TS,ALL_TS),S)$(IRE_TSCVT(R,ALL_TS,REG,S)$EQ_IRE.M(REG,T,P,COM,'IMP',S)),
+              EQ_IRE.M(REG,T,P,COM,'IMP',S) * IRE_FLO(R,T,P,C,REG,COM,S) *
+              IRE_CCVT(R,C,REG,COM) * RS_FR(R,ALL_TS,TS) * IRE_TSCVT(R,ALL_TS,REG,S));
+  PAR_IPRIC(RTPCS_VARF(R,T,P,C,TS),'EXP')$RPC_IREIO(R,P,C,'EXP','IN') $= SMAX(TOP_IRE(R,C,REG,COM,P),PAR_XPRI(R,T,P,C,TS,REG,COM));
 
   PAR_IPRIC(RTP(R,T,P),C,TS,'EXP') $= EQ_IRE.M(R,T,P,C,'EXP',TS);
   LOOP(RPC_EQIRE(REG,P,COM,'EXP'),
@@ -149,7 +150,7 @@ LOOP(OBJ_FCUR(R,FIL(V),P,CUR)$PRC_RESID(R,'0',P),
   %1REG_IREC(%2R) $= SUM(P,PRC_YMAX(R,P));
   PAR_IPRIC(R,T,P,C,TS,IE)$PAR_IPRIC(R,T,P,C,TS,IE) = PAR_IPRIC(R,T,P,C,TS,IE)*(1/COEF_PVT(R,T));
 $IF %1==S  %1PAR_IPRIC(%2R,T,P,C,TS,IE) $= PAR_IPRIC(R,T,P,C,TS,IE);
-  OPTION CLEAR=CG_GRP,CLEAR=PAR_OBJCAP,CLEAR=RTP_OBJ,CLEAR=RTP_NPV,CLEAR=COEF_CRF,CLEAR=COEF_RVPT;
+  OPTION CLEAR=CG_GRP,CLEAR=PAR_OBJCAP,CLEAR=PAR_XPRI,CLEAR=RTP_OBJ,CLEAR=RTP_NPV,CLEAR=COEF_CRF,CLEAR=COEF_RVPT;
 
 *------------------------------------------------------------------------------
 * Marginal costs associated with endogenous imports/exports

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -38,9 +38,10 @@ $SET TMP $(NOT RP_UX(R,P))+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)%UPSCAPS%
 
   %EQ%_CAPLOAD(RTP_VINTYR(%R_V_T%,P),S,BDNEQ(BD)%SWT%)$AFUPS(R,T,P,S)..
 
+* activity bounded from LO/UP
    %VAR%_ACT(R,V,T,P,S%SOW%)*BDSIG(BD)  =G=  %VAR%_UPS(R,V,T,P,S,'FX'%SOW%)$RTP_PL(R,V,P)$BDLOX(BD) +
 
-* capacity - vintaged or not
+* fraction of capacity - vintaged or not
    (%CAPON%%UPSCAPS%) * MIN(COEF_AF%1(R,V,T,P,S,'UP')*BDSIG(BD),SUM(TS_ANN(S,TS)$(NOT RTP_PL(R,V,P)),ACT_UPS(R,V,P,TS,'FX'))$BDLOX(BD)) *
    PRC_CAPACT(R,P) * G_YRFR(R,S);
 
@@ -49,7 +50,7 @@ $SET TMP $(NOT RP_UX(R,P))+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)%UPSCAPS%
   %EQ%_ACTRAMP(RTP_VINTYR(%R_V_T%,P),RTS(S),BDNEQ(BD)%SWT%)$(SUM(TS_ANN(S,TS)$ACT_UPS(R,V,P,TS,BD),1)$PRC_TS(R,P,S)$RP_UPL(R,P,BD))..
 
 * max fraction of capacity
-   SUM(PRC_TS(R,P,TS(S--RS_STG(R,S))),PRC_CAPACT(R,P)*SUM(TS_ANN(S,SL),ACT_UPS(R,V,P,SL,BD)) *
+   SUM(RS_PREV(R,S,TS)$PRC_TS(R,P,TS),PRC_CAPACT(R,P)*SUM(TS_ANN(S,SL),ACT_UPS(R,V,P,SL,BD)) *
      (%MX%%TMP% + ((%VAR%_UPS(R,V,T,P,S,'N'%SOW%)-%VAR%_UPS(R,V,T,P,TS,'N'%SOW%))$BDLOX(BD))$RPS_UPS(R,P,S)) +
 
 * dynamic ramp limits
@@ -64,7 +65,7 @@ $SET TMP $(NOT RP_UX(R,P))+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)%UPSCAPS%
   %EQ%E_ACTUPS(RTP_VINTYR(%R_V_T%,P),TSL,L(BND_TYPE),RTS(S)%SWT%)$(TS_GROUP(R,TSL,S)$RP_UPS(R,P,TSL,L))..
 
 * start-up/shut-down capacity
-   (SUM(TS(S--RS_STG(R,S)),%VAR%_UPS(R,V,T,P,S,'N'%SOW%)-%VAR%_UPS(R,V,T,P,TS,'N'%SOW%)-SUM(BD,%VAR%_UPS(R,V,T,P,S,BD%SOW%)*BDSIG(BD)))$STOA(S) +
+   (SUM(RS_PREV(R,S,TS),%VAR%_UPS(R,V,T,P,S,'N'%SOW%)-%VAR%_UPS(R,V,T,P,TS,'N'%SOW%)-SUM(BD,%VAR%_UPS(R,V,T,P,S,BD%SOW%)*BDSIG(BD)))$STOA(S) +
     SUM(ANNUAL(S)$RP_PL(R,P,'N'),%VAR%_UPS(R,V,T,P,S,L%SOW%)-SUM(PRC_TS(R,P,TS),%VAR%_UPS(R,V,T,P,TS,'FX'%SOW%))))$(BDSIG(L)<0) +
    SUM(BDLOX(BD(L)),%MX%%TMP%-%VAR%_UDP(R,V,T,P,S,'FX'%SOW%)-%VAR%_UPS(R,V,T,P,S,'FX'%SOW%)$RP_UPL(R,P,'FX'))
 
@@ -87,8 +88,8 @@ $SET TMP $(NOT RP_UX(R,P))+%VAR%_CAP(R,T,P%SOW%)$RP_UX(R,P)%UPSCAPS%
 * max number of cycles
    (SUM(RS_BELOW1(R,S,SL),%VAR%_UPS(R,V,T,P,SL,'UP'%SOW%)) - (%CAPON%%UPSCAPS%)*ACT_TIME(R,T,P,L))$IPS(L) +
 * min UP/LO hours
-   SUM(BD(L),SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),
-       %VAR%_UPS(R,V,T,P,SL,L%SOW%)$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ACT_TIME(R,T,P,L)/8760)) -
+   SUM(BD(L),
+     SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),%VAR%_UPS(R,V,T,P,SL,L%SOW%)$(RS_MODUS(R,S,JS,SL) < ACT_TIME(R,T,P,L)/8760)) -
      SUM(RS_UP(R,S,J,TS),%VAR%_UPS(R,V,T,P,TS,'FX'%SOW%))$BDUPX(BD)-%VAR%_UPS(R,V,T,P,S,'N'%SOW%)*BDSIG(L))
 
     =L= 0;

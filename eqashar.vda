@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -18,9 +18,9 @@ $IF NOT '%1' == '' $GOTO EQDEF
 
 * We have been left with any C not in CG or not in RPC
   IF(CARD(CG_GRP),
-    LOOP((CG_GRP(RPC(R,P,C),C),COM_TMAP(R,COM_TYPE(CG),C)),RPCG_ASHAR(R,P,C,CG,S)$(PRC_SGL(R,P)=STOAL(R,S))=-1;
-      FLO_ASHAR(R,V,P,C,CG,S,BD)$=FLO_ASHAR(R,V,P,C,C,S,BD); FLO_ASHAR(R,LL,P,C,C,S,BD)=0);
-    CG_GRP(RPC(RP,C),C)=NO;
+    LOOP((CG_GRP(RPC(R,P,C),C),COM_TMAP(R,COM_TYPE(CG),C)),RPCG_ASHAR(R,P,C,CG,S)$(PRC_SGL(R,P)=STOAL(R,S))=-1);
+    FLO_ASHAR(RTP(R,V,P),C,COM_TYPE(CG),S,BD)$COM_TMAP(R,COM_TYPE,C) $= FLO_ASHAR(R,V,P,C,C,S,BD); 
+    FLO_ASHAR(R,LL,P,C,C,S,BD) = 0; CG_GRP(RPC(RP,C),C) = NO;
     RP_PGFLO(RP_FLO(RP)) $= SUM(CG_GRP(NO_ACT(RP),C,ACTCG),1);
     RPCG_ASHAR(CG_GRP(RPC,CG),S)$=RPCS_VAR(RPC,S);
     RPCG_ASHAR(CG_GRP(RPC_STG(RP,C),ACTCG),S)=RPS_STG(RP,S)+PRC_TSL(RP,'ANNUAL')$ANNUAL(S);

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -23,7 +23,7 @@
            %3
               SUM(UC_GMAP_C(R,UC_N,'%9',C,UC_GRPTYPE),
 $IF %6==2 (1+(FPD(T)+(COEF_PVT(R,T)-FPD(T))$UC_ATTR(R,UC_N,'LHS',UC_GRPTYPE,'PERDISC')-1)$UC_DT(R,UC_N)) *
-                  SUM(RHS_COM%8(R,%4,C,TS)$RS_TREE(R,S,TS),
+                  SUM(RHS_COM%8(R,%4,C,TS)$RS_FR(R,S,TS),
                       UC_COM(UC_N,'%9',%5,R,%7,C,TS,UC_GRPTYPE) * %VAR%_COM%9(R,%4,C,TS %SOW%)*
                       (1+(1/COM_IE(R,%4,C,TS)-1)$(UC_ATTR(R,UC_N,%5,UC_GRPTYPE,'EFF') XOR DIAG(UC_GRPTYPE,'COM%9'))) *
 

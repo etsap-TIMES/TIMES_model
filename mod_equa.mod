@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -156,8 +156,8 @@ $IF %TIMESED%==YES  %EQ%L_COMCES
     %EQ%E_UCR
     %EQ%E_UCT
     %EQ%E_UCRS
-    %EQ%E_UCRT
     %EQ%E_UCTS
+    %EQ%E_UCRT
     %EQ%E_UCRTS
     %EQ%E_UCSU
     %EQ%E_UCRSU
@@ -170,8 +170,8 @@ $IF '%VAR_UC%' == YES $GOTO UCDONE
     EQG_UCR
     EQG_UCT
     EQG_UCRS
-    EQG_UCRT
     EQG_UCTS
+    EQG_UCRT
     EQG_UCRTS
     EQG_UCSU
     EQG_UCRSU
@@ -182,8 +182,8 @@ $IF '%VAR_UC%' == YES $GOTO UCDONE
     EQL_UCR
     EQL_UCT
     EQL_UCRS
-    EQL_UCRT
     EQL_UCTS
+    EQL_UCRT
     EQL_UCRTS
     EQL_UCSU
     EQL_UCRSU

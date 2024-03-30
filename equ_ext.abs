@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================
@@ -101,7 +101,7 @@ $      BATINCLUDE %cal_red% C COM TS P T
 * ABSEQ5-6 : Minimum online and offline times (adjusted)
   EQ_BS05(RTP_VINTYR(%R_V_T%,P),TSL,BD(L),RTS(S)%SWX%)$(%SWTX%TS_GROUP(R,TSL,S)$BS_UPC(R,P,TSL,L))..
   SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),
-    V_U(UPS,R,V,T,P,SL,L)$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ACT_TIME(R,T,P,L)/8760)) +
+    V_U(UPS,R,V,T,P,SL,L)$(RS_MODUS(R,S,JS,SL)<ACT_TIME(R,T,P,L)/8760)) +
   SUM(LIM(BDNEQ)$(BDSIG(LIM)*BDSIG(L)<0),VAR_BSUPSR(R,V,T,P,S,LIM)$BS_SBD(R,S,LIM) -
     (SUM(RS_UP(R,S,J,TS),V_U(UPS,R,V,T,P,TS,'FX'))$BDUPX(BD)+VAR_OFF(R,V,T,P,S)*BDSIG(BD))$(BS_SBD(R,S,LIM)+YES$ACT_TIME(R,T,P,L)))
   =L= 0;
@@ -200,5 +200,5 @@ $     BATINCLUDE %cal_red% C COM TS P T
 *-----------------------------------------------------------------------------
 * ABSEQ28 : Maintenence 2 - continuous duration
   EQ_BS28(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%PRC_TS(R,P,S)$BS_MAINT(R,V,P,S))..
-  SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),VAR_BSMUP(R,V,T,P,SL)$(MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+1/JS_CCL(R,JS),1/JS_CCL(R,JS))<ABS(BS_MAINT(R,V,P,S))/8760))
+  SUM((RS_UP(R,S,JS),RJ_SL(R,JS,SL)),VAR_BSMUP(R,V,T,P,SL)$(RS_MODUS(R,S,JS,SL)<ABS(BS_MAINT(R,V,P,S))/8760))
   =L=  %TMP%*(1-COEF_AF%MX%(R,V,T,P,S,'UP'))-(%UPSCAPS%*COEF_AF%MX%(R,V,T,P,S,'UP'));

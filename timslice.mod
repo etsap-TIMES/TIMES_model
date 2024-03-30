@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -13,6 +13,7 @@
   SET RJLVL(J,R,TSLVL), RLUP(R,TSL,TSL);
   PARAMETERS RS_HR(R,S) //, MY_SUM /0/, NORTS(R,YEAR,S) //;
   SETS RS_UP(R,TS,J,TS), RJ_SL(R,J,TS,TS), JS(J,TS) /1.ANNUAL/;
+  PARAMETER RS_MODUS(R,S,J,TS,S) //;
 *-----------------------------------------------------------------------------
   TS_GROUP(ALL_R,'ANNUAL',S) = ANNUAL(S);
   OPTION STOAL < TS_GROUP;
@@ -118,4 +119,5 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Duplicate parent timeslices - Fata
     OPTION JS < RS_UP; RJ_SL(R,J,S,TS)$(NOT JS(J,S)) = NO;
 *   Cycles
     JS_CCL(R,JS(J,S)) = MAX(1/G_YRFR(R,S),365/TS_CYCLE(R,S));
+    RS_MODUS(RS_UP(R,S,JS),SL)$RJ_SL(R,JS,SL) = MOD(RS_HR(R,S)-RS_HR(R,SL)+G_YRFR(R,S)/RS_STGPRD(R,S)/2+2/JS_CCL(R,JS),1/JS_CCL(R,JS));
   );

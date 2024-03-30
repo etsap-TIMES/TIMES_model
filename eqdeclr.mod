@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -141,41 +141,41 @@ $LABEL MACROBJ BATINCLUDE eqdeclr.tm
 
 * User-constraints
     %EQ%E_UC(UC_N %SWD%) 		'User-constraints (=E=)'
-    %EQ%E_UCR(UC_N,R %SWD%) 		'User-constraints (=E=)'
+    %EQ%E_UCR(R,UC_N %SWD%) 		'User-constraints (=E=)'
     %EQ%E_UCT(UC_N,T %SWTD%) 		'User-constraints (=E=)'
-    %EQ%E_UCRT(UC_N,R,T %SWTD%) 	'User-constraints (=E=)'
+    %EQ%E_UCRT(R,T,UC_N %SWTD%) 	'User-constraints (=E=)'
     %EQ%E_UCTS(UC_N,T,S %SWTD%) 	'User-constraints (=E=)'
-    %EQ%E_UCRS(R,UC_N,T,TSL,S %SWD%) 	'User-constraints (=E=)'
-    %EQ%E_UCRTS(UC_N,R,T,S %SWTD%) 	'User-constraints (=E=)'
+    %EQ%E_UCRS(R,T,UC_N,TSL,S %SWTD%)	'User-constraints (=E=)'
+    %EQ%E_UCRTS(R,T,UC_N,S %SWTD%) 	'User-constraints (=E=)'
     %EQ%E_UCSU(UC_N,T %SWD%) 		'User-constraints (=E=)'
     %EQ%E_UCSUS(UC_N,T,S %SWD%) 	'User-constraints (=E=)'
-    %EQ%E_UCRSUS(UC_N,R,T,S %SWD%) 	'User-constraints (=E=)'
-    %EQ%E_UCRSU(UC_N,R,T %SWD%) 	'User-constraints (=E=)'
+    %EQ%E_UCRSUS(R,T,UC_N,S %SWD%) 	'User-constraints (=E=)'
+    %EQ%E_UCRSU(R,T,UC_N %SWD%) 	'User-constraints (=E=)'
 
 $IF %VAR_UC% == YES $GOTO UCDONE
     EQG_UC(UC_N) 			'User-constraints (=G=)'
-    EQG_UCR(UC_N,R) 			'User-constraints (=G=)'
+    EQG_UCR(R,UC_N) 			'User-constraints (=G=)'
     EQG_UCT(UC_N,T) 			'User-constraints (=G=)'
-    EQG_UCRT(UC_N,R,T) 			'User-constraints (=G=)'
+    EQG_UCRT(R,T,UC_N) 			'User-constraints (=G=)'
     EQG_UCTS(UC_N,T,S) 			'User-constraints (=G=)'
-    EQG_UCRS(R,UC_N,T,TSL,S) 		'User-constraints (=G=)'
-    EQG_UCRTS(UC_N,R,T,S) 		'User-constraints (=G=)'
+    EQG_UCRS(R,T,UC_N,TSL,S) 		'User-constraints (=G=)'
+    EQG_UCRTS(R,T,UC_N,S) 		'User-constraints (=G=)'
     EQG_UCSU(UC_N,T) 			'User-constraints (=G=)'
     EQG_UCSUS(UC_N,T,S) 		'User-constraints (=G=)'
-    EQG_UCRSUS(UC_N,R,T,S) 		'User-constraints (=G=)'
-    EQG_UCRSU(UC_N,R,T) 		'User-constraints (=G=)'
+    EQG_UCRSUS(R,T,UC_N,S) 		'User-constraints (=G=)'
+    EQG_UCRSU(R,T,UC_N) 		'User-constraints (=G=)'
 
     EQL_UC(UC_N) 			'User-constraints (=L=)'
-    EQL_UCR(UC_N,R) 			'User-constraints (=L=)'
+    EQL_UCR(R,UC_N) 			'User-constraints (=L=)'
     EQL_UCT(UC_N,T) 			'User-constraints (=L=)'
-    EQL_UCRT(UC_N,R,T) 			'User-constraints (=L=)'
+    EQL_UCRT(R,T,UC_N) 			'User-constraints (=L=)'
     EQL_UCTS(UC_N,T,S) 			'User-constraints (=L=)'
-    EQL_UCRS(R,UC_N,T,TSL,S) 		'User-constraints (=L=)'
-    EQL_UCRTS(UC_N,R,T,S) 		'User-constraints (=L=)'
+    EQL_UCRS(R,T,UC_N,TSL,S) 		'User-constraints (=L=)'
+    EQL_UCRTS(R,T,UC_N,S) 		'User-constraints (=L=)'
     EQL_UCSU(UC_N,T) 			'User-constraints (=L=)'
     EQL_UCSUS(UC_N,T,S) 		'User-constraints (=L=)'
-    EQL_UCRSUS(UC_N,R,T,S) 		'User-constraints (=L=)'
-    EQL_UCRSU(UC_N,R,T) 		'User-constraints (=L=)'
+    EQL_UCRSUS(R,T,UC_N,S) 		'User-constraints (=L=)'
+    EQL_UCRSU(R,T,UC_N) 		'User-constraints (=L=)'
 $LABEL UCDONE
 *-----------------------------------------------------------------------------
 *GG* V07_2 BLENDing equation

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -82,10 +82,10 @@ $macro CAPUPS (%CAPON%-SUM(rs_below(r,all_ts,s)$rps_ups(r,p,all_ts),var_off(r,v,
 
      var_on(r,v,t,p,s) =E= sum(rs_below1(r,ts,s),v_u(ups,r,v,t,p,ts,'FX')-CAPUPS)$PRC_TS(R,P,S) + (CAPUPS) - var_off(r,v,t,p,s) -
      sum(rp_upt(r,p,upt,bd),
-      sum((rs_up(r,s,js),rj_sl(r,js,sl))$(MOD(RS_HR(r,sl)-RS_HR(r,s)+G_YRFR(r,sl)/RS_STGPRD(r,s)/2+2/JS_CCL(r,js),1/JS_CCL(r,js))<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
+      sum((rs_up(r,s,js),rj_sl(r,js,sl))$(RS_MODUS(R,SL,JS,S)<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
          v_u(upt,r,v,t,p,sl,upt)*(0$DIAG(S,SL) +
                                   MAX(0,1-MOD(RS_HR(r,sl)-RS_HR(r,s)+SUDHFR(r,sl,-,s)+2/JS_CCL(r,js),1/JS_CCL(r,js))/(ACT_SDTIME(r,v,p,upt,bd)/8760))*(1-DIAG(S,SL))))$bdupx(bd) +
-      sum((rs_up(r,s,js),rj_sl(r,js,sl))$(MOD(RS_HR(r,s)-RS_HR(r,sl)+G_YRFR(r,sl)/RS_STGPRD(r,s)/2+2/JS_CCL(r,js),1/JS_CCL(r,js))<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
+      sum((rs_up(r,s,js),rj_sl(r,js,sl))$(RS_MODUS(R,S,JS,SL)<ACT_SDTIME(r,v,p,upt,bd)/8760*(1+sdtol)),
           v_u(ups,r,v,t,p,sl,bd)*(1$DIAG(S,SL) +
                                   MAX(0,1-MOD(RS_HR(r,s)-RS_HR(r,sl)+SUDHFR(r,sl,-,s)+2/JS_CCL(r,js),1/JS_CCL(r,js))/(ACT_SDTIME(r,v,p,upt,bd)/8760))*(1-DIAG(S,SL))))$bdlox(bd));
 

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================================*
@@ -29,7 +29,7 @@ $SET SHP1 "*(%SHFF%X(R,V,%5%SHG1%)%TST%)%SHP1%" SET SHP2 "*(%SHFF%X(R,V,%5%SHG2%
    (%8(%9%VAR%_FLO%6(R,%VNT%,%5,%4,%1,%3%SOW%)%10)$(NOT RPC_EMIS(R,%4,%1))
     +
 *   emission flow = flow variable * emission factor
-   SUM((FS_EMIS(R,%4,CG1,COM2,%1),ALL_TS)$(RTPCS_VARF(R,%5,%4,COM2,ALL_TS)$RS_FR(R,%3,ALL_TS)),
+   SUM((FS_EMIT(R,%4,%1,CG1,COM2),ALL_TS)$(RTPCS_VARF(R,%5,%4,COM2,ALL_TS)$RS_FR(R,%3,ALL_TS)),
      %8(%9
         (
 *        flow variable cannot be replaced

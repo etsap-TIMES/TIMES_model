@@ -22,15 +22,14 @@ $SET SHP1 "*(%SHFF%X(R,V,T%SHG%)$PRC_VINT(R,P))%SHP1%"
              SUM((RTP_VINTYR(R,V,T,P),RTPCS_VARF(R,T,P,C,TS)),
 * equation coarser than variable or equation finer than variable
 * consider COM_TS shape too, so both TS_MAP and RS_BELOW embedded
-               %VAR%_FLO(R,V,T,P,C,TS %SOW%) * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS)) %3)
+               %VAR%_FLO(R,V,T,P,C,TS %SOW%) * RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS)) %3)%4
          ) +
 * Handle RPC_EMIS flows separately; They cannot be NOFLO
-         SUM(TOP(RPC_EMIS(RP_FLO(R,P),C),'%1'),
-           SUM((FS_EMIS(R,P,CG3,COM2,C),RTPCS_VARF(R,T,P,COM2,TS))$RS_TREE(R,S,TS),
+         SUM(TOP(RPC_EMIS(RP_FLO(R,P),C),'%1')%4,
+           SUM((FS_EMIT(R,P,C,CG3,COM2),RTPCS_VARF(R,T,P,COM2,TS))$RS_FR(R,S,TS),
              SUM(RTP_VINTYR(R,V,T,P),%VAR%_FLO(R,V,T,P,COM2,TS %SOW%) *
                 COEF_PTRAN(R,V,P,CG3,COM2,C,TS) %SHP1% %3) *
              RS_FR(R,S,TS)*(1+RTCS_FR(R,T,COM2,S,TS)))) +
-
 $EXIT
 *-----------------------------------------------------------------------------
 $LABEL REDUCE

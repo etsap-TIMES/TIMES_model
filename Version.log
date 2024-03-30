@@ -2867,3 +2867,40 @@ pp_reduce.red : (4)
 coef_nio.mod  : (1)
 coef_shp.mod  : (1)
 ppm_ext.vda   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.0
+-----------------------------------------------------------------------------------------
+Date: 28-Mar-2024 [AL]: Major release
+1) Improved support for shaping NCAP_OCOM based on COEF_CPT
+2) Performance improvements, in particular related to UC and dispatching constraints (adapted from Courtesy of Justine Broihan)
+3) Other cosmetic and performance improvements
+
+initsys.mod   : Increased version number to 4.8.0
+setglobs.gms  : (3)
+ppmain.mod    : (3)
+preppm.mod    : (3)
+timslice.mod  : (2)
+coef_shp.mod  : (1)
+eqdeclr.mod   : (2),(3)
+eqmain.mod    : (2)
+equcwrap.mod  : (2),(3)
+cal_fflo.mod  : (3)
+pp_qack.mod   : (3)
+uc_com.mod    : (3)
+uc_flo.mod    : (3)
+solve.stp     : (3)
+rptlite.rpt   : (3)
+cost_ann.rpt  : (2)
+par_uc.rpt    : (3)
+cal_red.red   : (2)
+sol_flo.red   : (2)
+cal_nored.red : (3)
+ppm_ext.vda   : (2),(3)
+pp_actef.vda  : (3)
+eqlducs.vda   : (3)
+eqactups.vda  : (2)
+eqashar.vda   : (3)
+dynslite.vda  : (3)
+equ_ext.abs   : (3)
+recurrin.stc  : (3)
