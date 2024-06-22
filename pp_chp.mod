@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *==============================================================================*
@@ -55,8 +55,9 @@
   );
 * Heat share
   FLO_SHAR(RTP(R,V,P),C,CG,S,BD)$(PRC_TS(R,P,S)$RP_PG(R,P,CG)$RP_GRP(R,P,C)) = NCAP_CHPR(RTP,BD)/(NCAP_CHPR(RTP,BD)+1);
-* ACT emission
+* ACT flows
   FLO_SUM(RVP,COM,C,COM,S)$((NCAP_BPME(RVP)$NCAP_CEH(RVP)$PRC_ACTFLO(RVP,C)<0)$FLO_EFF(RVP,COM,C,S)) = FLO_EFF(RVP,COM,C,S)/PRC_ACTFLO(RVP,C);
+  IF(SUM(CHP(RP_XRED),1),PRC_ACTFLO(RVP(R,V,P),C)$RPC_AFLO(R,P,C)=1; RPC_ACT(RPC_AFLO(CHP(RP_XRED),C))=YES);
 *-----------------------------------------------------------------------------
 * Adjust PKCNT
   LOOP(RPC_PKC(CHP_ELC(R,P,C)),NCAP_PKCNT(RVP(R,V,P),S)$COM_TS(R,C,S)=NCAP_PKCNT(RVP,S)/MAX(1,PRC_ACTFLO(RVP,C)));

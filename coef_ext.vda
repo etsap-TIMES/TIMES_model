@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -45,6 +45,10 @@ $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
   TRACKC(RC)  $= SUM(RCS(RC,S),1); TRACKC(DEM)=YES;
   TRACKC(R,C) $= SUM(RPC_NOFLO(TRACKP(R,P),C),1);
   RCS_COMBAL(RTCS_VARC(R,T,C,S),L)$(NOT TRACKC(R,C)) = NO;
+* Reduce overhead from UCU trades
+  TRACKC(RC) = COM_UNIT(RC,'UCU')$(NOT TRACKC(RC));
+  RTCS_VARC(R,T,C,S)$((NOT RHS_COMPRD(R,T,C,S))$TRACKC(R,C)) = NO;
+  TOP_IRE('IMPEXP',C,TRACKC,P) = NO;
   OPTION CLEAR=TRACKC,CLEAR=TRACKP,CLEAR=RCS;
 *-----------------------------------------------------------------------------
 * Add singleton ACT_EFFs to COEF_PTRANS or ACT_FLO

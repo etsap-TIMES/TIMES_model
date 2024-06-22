@@ -48,8 +48,8 @@ $IFI %STAGES%==YES
 *------------------------------------------------------------------------------
 * Flow level costs
 *------------------------------------------------------------------------------
-
-  %1_FLOC(%2RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'COST')$RP_FLO(R,P)) =
+  OPTION TRACKPC < PAR_FLO;
+  %1_FLOC(%2RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'COST')$TRACKPC(R,P,C)) =
      SUM(RTPCS_VARF(R,T,P,C,S),
          SUM(TS_ANN(S,TS),%5(%TPULSE% (OBJ_FCOST(R,%4,P,C,TS,CUR)+OBJ_FDELV(R,%4,P,C,TS,CUR)))) * PAR_FLO(R,V,T,P,C,S));
 
@@ -77,7 +77,7 @@ $        BATINCLUDE cal_caps.mod T 'SUM(TS_ANN(TS,SL),%5(%TPULSE%(OBJ_FCOST(R,%4
 * Flow level tax/sub
 *------------------------------------------------------------------------------
 
-  %1_FLOC(%3RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'TAX')$RP_FLO(R,P)) =
+  %1_FLOC(%3RTP_VINTYR(R,V,T,P),C,CUR)$(OBJ_VFLO(R,P,C,CUR,'TAX')$TRACKPC(R,P,C)) =
      SUM(RTPCS_VARF(R,T,P,C,S),
          SUM(TS_ANN(S,TS),%5(%TPULSE% OBJ_FTAX(R,%4,P,C,TS,CUR))) * PAR_FLO(R,V,T,P,C,S));
 
@@ -95,6 +95,7 @@ $        BATINCLUDE cal_caps.mod T 'SUM(TS_ANN(TS,SL),%5(%TPULSE%(OBJ_FCOST(R,%4
       SUM(ANNUAL(S),
 $        BATINCLUDE cal_caps.mod T 'SUM(TS_ANN(TS,SL),%5(%TPULSE% OBJ_FTAX(R,%4,P,C,SL,CUR)))' TS .L
         );
+  OPTION CLEAR=TRACKPC;
 
 *------------------------------------------------------------------------------
 * Commodity blending costs

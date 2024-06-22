@@ -14,23 +14,23 @@
   TRACKPC(RPC_SPG(R,P,C))$((NOT RPG_1ACE(R,P,C,C))$RPC_ACE(R,P,%PGPRIM%)) = YES;
   Z = CARD(VDA_FLOP);
   VDA_FLOP(R,LL,P,C,S)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)) = 0;
-$IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)) = 0;
-  Z = Z-CARD(VDA_FLOP); IF(Z, DISPLAY 'DELETED FLOPS FOR SPG:',Z);
+$IFI %SHELL%==ANSWER PRC_ACTFLO(R,V,P,C)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)) = 0;
+  Z = Z-CARD(VDA_FLOP); IF(Z, DISPLAY 'Deleted FLOPS for SPG:',Z);
 * Residual values
-  ACT_FLO(R,LL,P,C,S)$(RPC_PG(R,P,C)+RPS_PRCTS(R,P,S)) = 0;
-  OPTION RPC_AFLO < ACT_FLO, CLEAR=ACT_FLO,CLEAR=TRACKPC,CLEAR=KEEP_FLOF;
+  ACT_FLO(R,LL,P,C,S)$RPS_PRCTS(R,P,S) = 0;
+  OPTION RPC_AFLO < ACT_FLO, RP_GRP < VDA_FLOP, PRC_ACT < RP_GRP, CLEAR=ACT_FLO,CLEAR=KEEP_FLOF,CLEAR=TRACKPC;
+  TRACKPC(RP_GRP(RPC)) = YES; RP_GRP(TRACKPC) = NO;
+  RP_XRED(PRC_ACT(R,P)) = (NOT RP_PGFLO(R,P)+RP_PGACT(R,P)+RP_SGS(R,P))$(CHP(R,P)->RP_XRED(R,P));
+  RPC_AFLO(TRACKPC(RP_STD(RP_XRED),C)) = YES;
+  RPC_AFLO(R,P,C)$(TRACKPC(R,P,C)->RPC_PG(R,P,C)) = NO;
   ACT_FLO(R,V,P,C,S)$RPC_AFLO(R,P,C) $= VDA_FLOP(R,V,P,C,S);
   VDA_FLOP(RTP,C,S)$ACT_FLO(RTP,C,S) = 1;
 *-----------------------------------------------------------------------------
 * Preprocessing of VDA_FLOP after establishing PRC_SPG
-  OPTION RP_GRP < VDA_FLOP;
-  TRACKPC(RP_GRP(RPC)) = YES;
-* RP_GRP contains only CGs that are not in topology, but include some C in RPC
-  RP_GRP(TRACKPC) = NO;
+* RP_GRP contains only CGs not in topology, but including some C in RPC
   RP_GRP(R,P,CG)$(NOT SUM(RPC(R,P,C)$COM_GMAP(R,CG,C),1)) = NO;
 * Set PRC_CG now automatically
   PRC_CG(RP_GRP) = YES;
-*-----------------------------------------------------------------------------
 * Identify processes with PG-based FLO_SUMs
   LOOP(TRACKPC(RPC_PG(R,P,C)),TRACKP(R,P)=YES);
 * Add default value for PG commodities not in TRACKPC
@@ -41,7 +41,7 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)
 * Partition the groups into direct/PG based ones
   CG_GRP(RP_PG(R,P,CG2),CG)$RP_GRP(R,P,CG) = YES;
   RPCC_FFUNC(CG_GRP(TRACKP(R,P),CG2,CG))$SUM(RPC_SPG(R,P,C)$COM_GMAP(R,CG,C),1) = YES;
-  CG_GRP(RPCC_FFUNC) = NO; OPTION CLEAR=RP_GRP;
+  CG_GRP(RPCC_FFUNC) = NO; OPTION CLEAR=RP_GRP,CLEAR=PRC_ACT;
 *-----------------------------------------------------------------------------
 * Remove from TRACKP those processes for which CG has been defined:
   LOOP(RPCC_FFUNC(R,P,CG2,CG),TRACKP(R,P) = NO);
@@ -74,7 +74,7 @@ $IFI %SHELL%==ANSWER PRC_ACTFLO(R,LL,P,C)$((NOT KEEP_FLOF(R,P,C))$TRACKPC(R,P,C)
   RPC_EMIS(R,P,C)$SUM(RPCC_FFUNC(R,P,COM,C),1) = NO;
 * Add groups of source commodities
   FSCK(RP_CGC(R,P,CG,COM),C)$(COM_GMAP(R,CG,C)$RPC(R,P,C)) = YES;
-  LOOP(FSCK(R,P,CG,COM,C), FLO_SUM(R,V,P,COM,C,COM,S) $= FLO_EMIS(R,V,P,CG,COM,S)); 
+  LOOP(FSCK(R,P,CG,COM,C), FLO_SUM(R,V,P,COM,C,COM,S) $= FLO_EMIS(R,V,P,CG,COM,S));
   RPC_EMIS(R,P,COM)$SUM(FSCK(R,P,CG,COM,C),1) = NO;
 * Add activity sources
   FLO_SUM(RTP(R,V,P),COM,C,COM,S)$(RPC_PG(R,P,C)$RP_CGC(R,P,%PGPRIM%,COM)) = FLO_EMIS(RTP,%PGPRIM%,COM,S)/PRC_ACTFLO(RTP,C);
@@ -88,7 +88,7 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'FLO_EMIS with no members of source
   OPTION CLEAR=RP_CGC, CLEAR=FSCK, CLEAR=RPC_EMIS, CG_GRP < RPCC_FFUNC;
   FLO_SUM(RTP(R,V,P),C,COM,C,S)$CG_GRP(R,P,C,COM) = FLO_EMIS(RTP,COM,C,S);
   FLO_EFF(RTP(R,V,P),C,COM,S)$((NOT CG_GRP(R,P,C,COM))$RPC_PG(R,P,COM)$CHP(R,P)) $= FLO_EMIS(RTP,%PGPRIM%,C,S);
-  OPTION CLEAR=CG_GRP,CLEAR=RPCC_FFUNC,CLEAR=FLO_EMIS;
+  OPTION NE<IRE_BND,CLEAR=CG_GRP,CLEAR=RPCC_FFUNC,CLEAR=FLO_EMIS;
 *=============================================================================
 * Other preprocessing stuff for the VEDA interface
 *=============================================================================
@@ -101,7 +101,9 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'FLO_EMIS with no members of source
 $ BATINCLUDE pp_lvlfc.mod FLO_FR 'P,C' RPCS_VAR ',BD' ",'0','0'" ALL_TS T RPC_CONLY(R,T,P,C)
   FLO_FR(RPC_CONLY(R,T,P,C),S,'N')=MIN(1,SUM(RS_BELOW1(R,S,TS)$RPCS_VAR(R,P,C,TS),G_YRFR(R,TS)))$TS_CYCLE(R,S);
   FLO_FR(RPC_CONLY(R,T,P,C),S,BD)$FLO_FR(R,T,P,C,S,BD)=FLO_FR(R,T,P,C,S,BD)*G_YRFR(R,S)$RPCS_VAR(R,P,C,S);
-  OPTION CLEAR=RPC_CONLY;
+* Cleanup some dummies
+  TOP_IRE('IMPEXP',C,R,C,P(DUMIMP))$(NOT NE(R,C)) = NO;
+  OPTION CLEAR=NE,CLEAR=RPC_CONLY;
 * Call the powerflo extension
 $IFI %POWERFLO%==YES $include powerflo.vda
 *-----------------------------------------------------------------------------

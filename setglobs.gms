@@ -40,6 +40,7 @@ $ LABEL SYSD
   SET RCS_COMTS(R,C,ALL_TS)         'All timeslices at/above the COM_TSL';
   SET RD_AGG(REG,COM)               'Micro aggregated demands' //;
   SET MI_DMAS(REG,COM,COM)          'Micro aggregation map' //;
+  SET NE(ALL_R,COM)                 'Non-energy Demands';
 
 * currency
   SET RDCUR(REG,CUR)              'Discounted currencies by region';
@@ -133,7 +134,7 @@ $ LABEL SYSD
     RS_BELOW(ALL_REG,TS,TS)  'Timeslices stictly below a node'     //
     RS_BELOW1(ALL_REG,TS,TS) 'Timeslices strictly one level below' //
     RS_TREE(ALL_REG,TS,TS)   'Timeslice subtree'                   //
-    RS_PREV(R,S,S)           'Previous timeslice in parent cycle'  // 
+    RS_PREV(R,S,S)           'Previous timeslice in parent cycle'  //
     FINEST(R,ALL_TS)         'Set of the finest timeslices in use' //
     PASTMILE(ALLYEAR)        'PAST years that are not MILESYONYR'  //
     EACHYEAR(ALLYEAR)        'Each year from 1st NCAP_PASTI-Y to last MILESTONYR + DUR_MAX' //
@@ -189,6 +190,7 @@ $ LABEL SYSD
   PARAMETER COEF_RPTI(R,ALLYEAR,P)             'Repeated investment cycles'             //;
   PARAMETER COEF_ILED(R,ALLYEAR,P)             'Investment lead time'                   //;
   PARAMETER COEF_PVT(R,T)                      'Present value of time in periods'       //;
+  PARAMETER COEF_VNT(R,T,PRC,ALLYEAR)          'COEF_CPT with swapped indexes'          //;
   PARAMETER COEF_CAP(R,ALLYEAR,LL,P)           'Generic re-usable work parameter';
   PARAMETER COEF_RTP(R,ALLYEAR,P)              'Generic re-usable work parameter';
   PARAMETER COEF_RVPT(R,ALLYEAR,PRC,T)         'Generic re-usable work parameter';
@@ -268,6 +270,7 @@ $LABEL RESTOBJ
     PYR_S(ALLYEAR)       'Residual vintage' //
     MY_TS(ALL_TS)        'Temporary set for timeslices' //
     R_UC(ALL_R,UC_N)     'Temporary set for UCs by region' //
+    R_UCT(ALL_REG,UC_N,ALLYEAR) 'Set for UCs by reg & period' //
     UC_T(UC_N,T)         'Temporary set for UCs by period' //
     RXX(ALL_R,*,*)       'General triples related to a region'
     UNCD1(*)             'Non-domain-controlled set'
@@ -281,6 +284,7 @@ $LABEL RESTOBJ
   SET  NO_ACT(R,P)                    'Process not requiring activity variable'             //;
   SET  RP_PGACT(R,P)                  'Process with PCG consisting of 1 commodity'          //;
   SET  RP_PGFLO(R,P)                  'Process with PCG having COM_FR'                      //;
+  SET  RP_XRED(REG,PRC)               'Process with extended reducable pcg flows'           //;
   SET  RPC_ACT(REG,PRC,CG)            'PG commodity of Process with PCG consisting of 1'    //;
   SET  RPC_AFLO(REG,PRC,CG)           'ACT_FLO residual groups to be handled specially'     //;
   SET  RPC_AIRE(ALL_REG,PRC,COM)      'Exchange process with only one commodity exchanged'  //;

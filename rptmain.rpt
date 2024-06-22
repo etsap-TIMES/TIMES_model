@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *---------------------------------------------------------------
@@ -128,9 +128,9 @@ REG_OBJ(R) = SUM((CUR,ALLYEAR),TOT_OBJ(R,ALLYEAR,CUR));
 
 * calculate discounting for the period
 PARAMETER VDA_DISC(R,ALLYEAR) //;
-* [AL] The MARKAL undiscounting method is not sufficiently accurate for TIMES
+* Refined undiscounting method (MARKAL way not sufficient for TIMES)
 *VDA_DISC(R,T) =  SUM(CUR,OBJ_DISC(R,T,CUR))*D(T);
-LOOP(RDCUR(R,CUR), VDA_DISC(R,T) =  SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR)););
+LOOP(RDCUR(R,CUR), VDA_DISC(R,T) =  SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR)));
 
 * Scenario index not supported in current version, use 1
 SOW('1') = YES;
@@ -140,7 +140,7 @@ SOW('1') = YES;
 *---------------------------------------------------------------------
 
 PAR_ACTL(RTP_VINTYR(R,V,T,P),S)$PRC_TS(R,P,S) = EPS;
-PAR_ACTL(R,V,T,P,S)                          $= VAR_ACT.L(R,V,T,P,S);
+PAR_ACTL(R,V,T,P,S)                     $= VAR_ACT.L(R,V,T,P,S);
 PAR_ACTM(R,V,T,P,S)$VAR_ACT.M(R,V,T,P,S) = VAR_ACT.M(R,V,T,P,S)/VDA_DISC(R,T);
 
 *---------------------------------------------------------------------
@@ -151,8 +151,7 @@ RTP_CAPYR(RTP_CPTYR(R,TT,T,P))$VAR_NCAP.L(R,TT,P) = YES;
 RTP_CAPYR(RTP_CPTYR(R,PYR,T,P))$NCAP_PASTI(R,PYR,P) = YES;
 
 PAR_PASTI(RTP(R,T,P)) = SUM(RTP_CAPYR(R,PYR,T,P),COEF_CPT(R,PYR,T,P)*NCAP_PASTI(R,PYR,P));
-PAR_CAPL(RTP(R,T,P))  = SUM(RTP_CAPYR(R,TT,T,P), COEF_CPT(R,TT,T,P) *VAR_NCAP.L(R,TT,P)) +
-                        PAR_PASTI(R,T,P);
+PAR_CAPL(RTP(R,T,P))  = SUM(RTP_CAPYR(R,TT,T,P), COEF_CPT(R,TT,T,P) *VAR_NCAP.L(R,TT,P)) + PAR_PASTI(R,T,P);
 
 PAR_CAPM(RTP(R,T,P))                               $= VAR_CAP.M(R,T,P)*(1/VDA_DISC(R,T));
 PAR_CAPLO(RTP(R,T,P))                              $= CAP_BND(R,T,P,'LO');
@@ -168,10 +167,10 @@ PAR_NCAPM(R,T,P)$(VAR_NCAP.M(R,T,P)*COEF_OBJINV(R,T,P)) = VAR_NCAP.M(R,T,P)/COEF
 * - split by in/out
 *---------------------------------------------------------------------
 * emission tied to CAP/INV
-F_INOUT(RTP_VINTYR(R,V,T,P),C,'IN')$RPC_CAPFLO(R,T,P,C)  = COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,'IN') * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) +
-                                                           (COEF_ICOM(R,V,T,P,C) * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)));
-F_INOUT(RTP_VINTYR(R,V,T,P),C,'OUT')$RPC_CAPFLO(R,T,P,C) = COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,'OUT') * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) +
-                                                           (COEF_OCOM(R,V,T,P,C) * (VAR_NCAP.L(R,V,P)$MILESTONYR(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)));
+F_INOUT(RTP_VINTYR(R,V,T,P),C,'IN')$RPC_CAPFLO(R,T,P,C)  = COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,'IN') * (VAR_NCAP.L(R,V,P)$T(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) +
+                                                           (COEF_ICOM(R,V,T,P,C) * (VAR_NCAP.L(R,V,P)$T(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)));
+F_INOUT(RTP_VINTYR(R,V,T,P),C,'OUT')$RPC_CAPFLO(R,T,P,C) = COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,'OUT') * (VAR_NCAP.L(R,V,P)$T(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)) +
+                                                           (COEF_OCOM(R,V,T,P,C) * (VAR_NCAP.L(R,V,P)$T(V) + NCAP_PASTI(R,V,P)$PASTYEAR(V)));
 
 * Blending flows *** PENDING!!! Code below from EQCOMBAL ***
 *PARAMETER F_BLND(R,T,C,TS,IO)  //;
@@ -201,8 +200,8 @@ F_OUT(R,V,T,P,C,'ANNUAL')$F_INOUT(R,V,T,P,C,'OUT') = F_OUT(R,V,T,P,C,'ANNUAL')+F
 F_IN(R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'IN')   = F_IN(R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'IN');
 F_OUT(R,V,T,P,C,S)$F_INOUTS(R,V,T,P,C,S,'OUT') = F_OUT(R,V,T,P,C,S)+F_INOUTS(R,V,T,P,C,S,'OUT');
 * Storage in/output flows
-F_IN(R,V,T,P,C,S)                   $= VAR_SIN.L(R,V,T,P,C,S);
-F_OUT(R,V,T,P,C,S)                  $= VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P);
+F_IN(R,V,T,P,C,S)$RPCS_VAR(R,P,C,S) $= VAR_SIN.L(R,V,T,P,C,S);
+F_OUT(R,V,T,P,C,S)$RPCS_VAR(R,P,C,S)$= VAR_SOUT.L(R,V,T,P,C,S)*STG_EFF(R,V,P);
 
 *---------------------------------------------------------------------
 * Annual undiscounted costs by process/commodity w/out CUR
@@ -225,7 +224,7 @@ CST_LATV(RTP(R,T,P))              $= PAR_OBJLAT(R,T,P,CUR)*(1/OBJ_DISC(R,T,CUR))
 CST_FIXV(RTP_CPTYR(R,V,T,P))      $= PAR_OBJFIX(R,V,T,P,CUR)*(1/OBJ_DISC(R,T,CUR));
 CST_ACTV(RTP_VINTYR(R,V,T,P),TS)  $= PAR_OBJACT(R,V,T,P,TS,CUR)*(1/OBJ_DISC(R,T,CUR));
 CST_ELSV(RTC(R,T,C))              $= PAR_OBJELS(R,T,C,CUR)*(1/OBJ_DISC(R,T,CUR));
-CST_FLOV(RTP_VINTYR(R,V,T,P),C,TS) $= PAR_OBJFLO(R,V,T,P,C,TS,CUR)*(1/OBJ_DISC(R,T,CUR));
+CST_FLOV(RTP_VINTYR(R,V,T,P),C,S) $= PAR_OBJFLO(R,V,T,P,C,S,CUR)*(1/OBJ_DISC(R,T,CUR));
 CST_COMV(RTC(R,T,C),TS)           $= PAR_OBJCOM(R,T,C,TS,CUR)*(1/OBJ_DISC(R,T,CUR));
 );
 
@@ -273,7 +272,7 @@ OPTION CLEAR = F_INOUT;
 OPTION CLEAR = F_INOUTS;
 OPTION CLEAR = F_IOSET;
 
-*[AL] Added new regional total discounted cost parameter
+* Add regional total discounted cost parameter
  PARAMETER REG_WOBJ(REG,ITEM,CUR)     //;
  REG_WOBJ(R,'INV',CUR) = SUM(OBV,SUM_OBJ('OBJINV',OBV)*VAR_OBJ.L(R,OBV,CUR))-VAR_OBJ.L(R,'OBJSAL',CUR);
  REG_WOBJ(R,'FIX',CUR) = SUM(OBV,SUM_OBJ('OBJFIX',OBV)*VAR_OBJ.L(R,OBV,CUR));

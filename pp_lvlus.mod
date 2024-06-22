@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -13,9 +13,10 @@
 *=============================================================================*
   OPTION CLEAR=UNCD7;
   LOOP((UC_N%6,SIDE,R,T,%2,S%5)$%1(UC_N%6,SIDE,R,T,%2,S%5),
-    IF((NOT %3(R,%7%10,S))$STOA(S),
-      IF(NOT UNCD7(UC_N%6,SIDE,R,%2%5,'OUT'%4), UNCD7(UC_N%6,SIDE,R,%2%5,'OUT'%4)=YES;
-        F=SMAX(%7%8_TSL(R,%7,TSL),MAX(%9+EPS,ORD(TSL)-1)); IF(F<STOAL(R,S),UNCD7(UC_N%6,SIDE,R,%2%5,'IN'%4)=YES))));
+    IF((NOT %3(R,%7%10,S))$STOA(S),Z=STOAL(R,S);
+      IF(UNCD7(UC_N%6,SIDE,R,%2%5,'OUT'%4), IF(Z>F, F=9; UNCD7(UC_N%6,SIDE,R,%2%5,'IN'%4)=YES);
+      ELSE F=SMAX(%7%8_TSL(R,%7,TSL),MAX(%9+EPS,ORD(TSL)-1));
+        IF(Z>F, F=9; UNCD7(UC_N%6,SIDE,R,%2%5,IO%4)=YES; ELSE UNCD7(UC_N%6,SIDE,R,%2%5,'OUT'%4)=YES))));
 *-----------------------------------------------------------------------------
 * Simultaneous aggregation/inheritance to target timeslices
 *-----------------------------------------------------------------------------

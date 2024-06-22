@@ -2904,3 +2904,36 @@ eqashar.vda   : (3)
 dynslite.vda  : (3)
 equ_ext.abs   : (3)
 recurrin.stc  : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.1
+-----------------------------------------------------------------------------------------
+Date: 20-Jun-2024 [AL]: Minor release
+1) Additional performance improvements inspired by the ETSAP code review project
+2) Small enhancement in the model reduction facility
+3) Other subtle improvements
+
+initsys.mod   : Increased version number to 4.8.1
+initmty.mod   : (3)
+setglobs.gms  : (1),(2)
+ppmain.mod    : (2)
+pp_lvlus.mod  : (1)
+pp_chp.mod    : (2)
+pp_reduce.red : (2)
+coef_ptr.mod  : (1)
+pp_qack.mod   : (1)
+eqmain.mod    : (1)
+eqpeak.mod    : (1)
+eqxbnd.mod    : (3)
+solve.stp     : (3)
+rptmain.rpt   : (3)
+rptmisc.rpt   : (3)
+init_ext.vda  : (1)
+pp_prelv.vda  : (2)
+ppm_ext.vda   : (1)
+pp_actef.vda  : (1)
+coef_ext.vda  : (3)
+eqactups.vda  : (1)
+eqcaflac.vda  : (1)
+equ_ext.abs   : (1)
+solsetv.v3    : (3)

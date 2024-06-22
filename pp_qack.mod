@@ -22,7 +22,6 @@
 *   - check that all attributes s-index match up with RPS and the individual commodities
 *   - warning that "NRG" used if no group matching the PG and PRC_SPG not provided
 *   - No PRC_CAPUNIT/ACTUNIT assigned and > 1 input; fatal?
-*   - PRC_CAPUNIT/ACTUNIT cg should be the same; serious?
 *   - Check that anticipated mapping list members that may affect matrix generation are provided (e.g., FRE/LIMRENEW)
 *   - check the TS associated with any attribute (as well as COM/PRC_TS) is OK
 *   - check that if list of peak timeslices provided by the user then actual peak is in said list
@@ -36,11 +35,9 @@
 *V0.5c 980904 - File opened in PPMAIN.MOD, setup to append in case any PP_MAIN messages output
 *  FILE QLOG / QA_CHECK.LOG /;
   ALIAS(U2,U3,U4,*);
-  PUT QLOG;
-  IF(PUTOUT, QLOG.AP = 1);
-
-* make 2 decimals points and allow for wider page
-  QLOG.NW=10;QLOG.ND=2;QLOG.PW=150;
+  IF(YES, PUT QLOG; QLOG.AP$PUTOUT = 1;
+*...make 2 decimals points and allow for wider page
+    QLOG.NW=10; QLOG.ND=2; QLOG.PW=150);
 
   PUTGRP = 0;
 *-----------------------------------------------------------------------------
@@ -48,20 +45,26 @@
 * Complete merely CAP dependent flow indicators
   RPC_CONLY(RTPC(R,T,P,C))$RPC_NOFLO(R,P,C) = YES;
 * Complete flow variable indicators
-  RTPCS_VARF(RPC_CONLY(R,T,P,C),S) = NO;
+  RTPCS_VARF(RPC_CONLY,S) = NO;
 * Remove superfluous entries from RCS_COMBAL
   RCS_COMBAL(RHS_COMBAL,BDNEQ) = NO;
 * Establish the RPG_RED control set
   TRACKPC(R,P,C)$(RPC_ACT(R,P,C)+RPC_FFUNC(R,P,C)+RPC_EMIS(R,P,C)) = YES;
   RPG_RED(R,P,CG,IO)$(NOT SUM(TOP(TRACKPC(R,P,C),IO)$COM_GMAP(R,CG,C),1)) = NO;
-  OPTION CLEAR = TRACKPC;
 $ IFI %VAR_UC%==YES OPTION UC_GMAP_U<=UC_UCN;
   RTP(NO_RVP) = NO;
+* Vintage controls for generation performance
+  OPTION COEF_VNT < COEF_CPT, TRACKP < RP_UPL;
+  TRACKP(R,P)$=SUM(RP_PL(R,P,L),1); TRACKP(RP_XRED)=YES; TRACKP(CHP)=YES;
+  RVP_KMAP(RTP(R,V,P),V)$(PRC_VINT(R,P)$TRACKP(R,P)) = YES; TRACKP(PRC_VINT)=NO;
+  RVP_KMAP(RTP(R,T,P),V)$(COEF_VNT(RTP,V)$TRACKP(R,P)) = YES;
+  OPTION CLEAR=TRACKPC,CLEAR=TRACKP,CLEAR=RP_XRED;
+
 *-----------------------------------------------------------------------------
 * Year fractions
 *-----------------------------------------------------------------------------
   LOOP(R, TS_ARRAY(S) = 0;
-    LOOP(TS_MAP(R,TS,S)$(G_YRFR(R,S) EQ 0), TS_ARRAY(S) = 1;);
+    LOOP(TS_MAP(R,TS,S)$(G_YRFR(R,S) EQ 0), TS_ARRAY(S) = 1);
     LOOP(S$TS_ARRAY(S),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 99 'Year Fraction G_YRFR is ZERO!'
          PUT QLOG ' FATAL ERROR   -     R=',%RL%,' S=',S.TL;
@@ -295,7 +298,7 @@ $IF DEFINED RPG_ACE LOOP(RPG_ACE(R,P,CG,IO),TRACKPC(RPC_ACE(R,P,C)) = YES);
   TRACKPC(RPC_NOFLO) = YES;
   TRACKPC(RPC_FFUNC) = YES;
   LOOP(T, TRACKP(RP_STD(R,P))$RTP_VARA(R,T,P) = YES);
-  LOOP(TOP(TRACKP(R,P),C,IO)$(NOT TRACKPC(R,P,C)),
+  LOOP(TOP(RPC(TRACKP(R,P),C),IO)$(NOT TRACKPC(R,P,C)),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'RPC in TOP not found in any ACTFLO/FLO_SHAR/FLO_FUNC/FLO_SUM'
          PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' C=',%CL%,' IO=',IO.TL;
   );

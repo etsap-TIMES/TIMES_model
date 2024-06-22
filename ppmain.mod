@@ -254,17 +254,11 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
     RT_PP(R,T) = YES;
 
 * maximum NCAP_ILED+NCAP_TLIFE+NCAP_DLAG+NCAP_DLIFE+NCAP_DELIF
-    DUR_MAX=G_TLIFE;
-    LOOP(RVP(R,T,P)$((NCAP_ILED(RVP)+NCAP_TLIFE(RVP)+NCAP_DLAG(RVP)+NCAP_DLIFE(RVP)+NCAP_DELIF(RVP)) GT DUR_MAX),
-         DUR_MAX=(NCAP_ILED(RVP)+NCAP_TLIFE(RVP)+NCAP_DLAG(RVP)+NCAP_DLIFE(RVP)+NCAP_DELIF(RVP));
-    );
+    DUR_MAX=MAX(G_TLIFE,SMAX(RVP(R,T,P),NCAP_ILED(RVP)+NCAP_TLIFE(RVP)+NCAP_DLAG(RVP)+NCAP_DLIFE(RVP)+NCAP_DELIF(RVP)));
 
-* establish each year in OBJ
-*   years before 1st period
+* add PASTYEAR to EOHYEARS before 1st period
     EOHYEARS(PYR)$(YEARVAL(PYR)<MINYR) = YES;
-
-* UR 10/04/00
-* EACHYEAR goes until (MIYR_VL+DUR_MAX)
+* establish EACHYEAR: goes until (MIYR_VL+DUR_MAX)
     EACHYEAR(PASTYEAR) = YES;
     EACHYEAR(ALLYEAR)$((YEARVAL(ALLYEAR) >= MINYR) * (YEARVAL(ALLYEAR) <= (MIYR_VL+DUR_MAX))) = YES;
 
@@ -275,16 +269,22 @@ $ IFI %INTEXT_ONLY% == YES $EXIT
 * establish rest of primary looping control sets indicating what region/process/commodities
 *-----------------------------------------------------------------------------
 * expand individual commodities in own CG
+    MI_DMAS(COM_GMAP(RC,C)) = YES; MI_DMAS(R,C,C) = NO;
+    IF(CARD(MI_DMAS),OPTION DEM<TOP; PUTGRP=0;
+      LOOP(MI_DMAS(DEM(R,C),COM),
+$       BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 09 'Commodity group found in topology violating its integrity'
+        PUT QLOG ' SEVERE ERROR  - Group removed from topology:   R=',%RL%,' CG=',C.TL);
+      OPTION DEM<=MI_DMAS; RC(DEM)=NO; RPC(R,P,C)$DEM(R,C)=NO; OPTION CLEAR=MI_DMAS,CLEAR=DEM);
     COM_GMAP(RC(R,C),C) = YES;
 
 * UR 02/22/99 PRC_CG is now internally generated
     PRC_CG(RPC)   = YES;
     PRC_CG(RP_PG) = YES;
 
-* Add aggregate commodities into RC:
-  OPTION MI_DMAS<=COM_AGG,FIN<COM_TMAP;
-  LOOP(MI_DMAS(R,COM,C)$(FIN(R,COM)$FIN(R,C)),RC(R,C)=YES);
-  OPTION CLEAR=FIN,CLEAR=MI_DMAS;
+* Add aggregate commodities into RC
+    OPTION MI_DMAS<=COM_AGG,FIN<COM_TMAP;
+    LOOP(MI_DMAS(R,COM,C)$(FIN(R,COM)$FIN(R,C)),RC(R,C)=YES);
+    OPTION CLEAR=FIN,CLEAR=MI_DMAS;
 
 * determination of capacity related flows - initialization
     RPC_CAPFLO(RTP,C)$(NCAP_ICOM(RTP,C)+NCAP_OCOM(RTP,C)) = YES;
@@ -413,8 +413,8 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
 
 * identify shadow group timeslice level
 * For LOAD processes, take the maximum TSLVL
-  LOOP((RTC(R,T,C),S)$COM_FR(R,T,C,S),TRACKC(R,C) = YES);
-  LOOP(COM_TSL(TRACKC(R,C),'ANNUAL'), TRACKP(RP_FLO(R,P))$RPC_PG(R,P,C) = YES);
+  OPTION DEM < COM_FR;
+  LOOP(COM_TSL(DEM(R,C),'ANNUAL'),TRACKP(RP_FLO(R,P))$RPC_PG(R,P,C) = YES);
   PRC_YMAX(RP(R,P)) = SMAX((RPC_SPG(R,P,C),COM_TSL(R,C,TSL)),TSLVLNUM(TSL));
   PRC_YMAX(TRACKP(R,P)) = SMAX((RPC(R,P,C),COM_TSL(R,C,TSL)),TSLVLNUM(TSL));
   PRC_YMAX(RP_STG) = 0;
@@ -430,9 +430,10 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
 * save the finer of the PRC_TS and the finest commodity in the shadow primary
     RPS_S1(RP(R,P),S)$(TS_ARRAY(S) = PRC_YMAX(R,P)) = YES;
     RPS_S2(RPS_S1(R,P,S))$(NOT RP_SGS(R,P)) = YES;
-* identify all TS at/above the PRC_TSL
   );
+* identify all TS at/above the PRC_TSL
   LOOP(TS_GROUP(R,TSL,S), RPS_PRCTS(R,P,TS)$(TS_MAP(R,TS,S)*PRC_TS(R,P,S)) = YES);
+  RP_PGFLO(TRACKP)$(PRC_YMAX(TRACKP)>1) = YES;
 
 *-----------------------------------------------------------------------------
 * Establish the main control set for generation or not of a VAR_FLO/IRE for
@@ -454,7 +455,7 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
   RPCS_VAR(RPC(TRACKP(R,P),C),S)$(RPS_S1(R,P,S)$(NOT RPC_PG(R,P,C)+RPC_SPG(R,P,C))) = YES;
 * Remove timeslices turned off by COM_TS
   RPCS_VAR(R,P,C,S)$RCS(R,C,S) = NO;
-  OPTION CLEAR=PRC_YMAX,CLEAR=RCS,CLEAR=PRC_ACT,CLEAR=TRACKC,CLEAR=TRACKP,CLEAR=TRACKPC;
+  OPTION CLEAR=PRC_YMAX,CLEAR=RCS,CLEAR=PRC_ACT,CLEAR=TRACKP,CLEAR=TRACKPC;
 
 *-----------------------------------------------------------------------------
 * adjustment of life and construction lead if below threshold
@@ -593,7 +594,7 @@ $IF DEFINED PRC_SIMV LOOP(T,NO_RVP(R,TT-1,P)$(RTP_CPTYR(R,TT,T,P)$PRC_SIMV(R,P))
    RPC_PG(RPC_STG) = YES;
    RP_STD(RP_FLO(RP))$(NOT RP_STG(RP)) = YES;
    OPTION RPC_ACT <= PRC_ACTFLO;
-   RPC_ACT(R,P,C)$(RPC_PG(R,P,C)+(NOT RPC(R,P,C))+RP_STG(R,P)) = NO;
+   RPC_ACT(R,P,C)$(RPC_PG(R,P,C)+(NOT RPC(R,P,C)$RP_STD(R,P))) = NO;
    CHP(RP(R,P)) $= PRC_MAP(R,'CHP',P);
 
 *-----------------------------------------------------------------------------
@@ -698,7 +699,7 @@ $   BATINCLUDE pp_lvlfc.mod COM_BPRICE C COM_TS ',CUR' ",'0','0','0'" ALL_TS DAT
 $   BATINCLUDE pp_lvlfc.mod COM_BQTY   C COM_TS '' ",'0','0','0','0','0'" ALL_TS '' RC(R,C) 1
 
 * Defaults for infrastructure efficiency and seasonal fraction
-    OPTION RCS < COM_IE;
+    OPTION RCS < COM_IE, CLEAR=RP_PGFLO;
     COM_IE(RTCS_VARC(R,T,C,S))$(NOT RCS(R,C,S)) = 1;
 *GG* 010406 - sum up COM_FRs below on a seasonal level so RTCS_TSFR set below
 * Get the timeslices where COM_FR has been given
@@ -972,15 +973,15 @@ $  IFI %MICRO%==YES COM_LIM(RC(DEM),BD)$(NOT COM_LIM(RC,'N')) = NOT BDNEQ(BD);
 * identify regions trading
     OPTION RREG <= TOP_IRE; OPTION CLEAR=RXX;
     LOOP(RREG(ALL_R,ALL_REG), Z=1;
-* if all regions working with same time-slices set to 1,
-*  assumption is if have one direction then have to other too
+* if all regions working with same time-slices, set to 1
+*  assumption is if have one direction then have the other too
        LOOP(TSLVL$Z,
          Z$Z = PROD(TS_GROUP(ALL_R,TSLVL,S),TS_GROUP(ALL_REG,TSLVL,S));
          Z$Z = PROD(TS_GROUP(ALL_REG,TSLVL,S),TS_GROUP(ALL_R,TSLVL,S));
          IF(Z, RXX(ALL_R,S,ALL_REG)$TS_GROUP(ALL_R,TSLVL,S) = YES)));
     RXX(ALL_R,S,ALL_REG)$RXX(ALL_REG,S,ALL_R) = YES;
     IRE_TSCVT(RXX(ALL_R,S,ALL_REG),S)$(NOT IRE_TSCVT(ALL_R,S,ALL_REG,S)) = 1;
-* if regions working with commodities in the same units set convert to 1,
+* for the conversion of traded commodities, set default to 1
 *  assumption is if have one direction then have the other too
     OPTION RC_RC < IRE_CCVT;
     IRE_CCVT(RC_RC(RC,R,C))$(NOT IRE_CCVT(RC_RC)) = 1/IRE_CCVT(R,C,RC);

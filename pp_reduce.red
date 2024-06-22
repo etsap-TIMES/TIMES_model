@@ -48,7 +48,7 @@ $IF '%ETL%'==YES PRC_CAP(R,P)$SEG(R,P) = YES;
   OPTION CLEAR=TRACKPC;
 * Get emission commodity candidates:
   TRACKPC(RP_STD(R,P),C)$(TOP(R,P,C,'OUT')$ENV(R,C)) = YES;
-  TRACKPC(RPC_PG) = NO;
+  TRACKPC(R,P,C)$(RPC_PG(R,P,C)+RPC_AFLO(R,P,C)) = NO;
 
 * Select only those emissions that have been modeled with FLO_SUM on input flows
   OPTION FSCK <= FLO_SUM;
@@ -83,6 +83,8 @@ $SETGLOBAL CAL_RED 'cal_red.red'
   PRC_ACT(NO_ACT) = NO;
 * Keep RTP_VARA even when no VAR_ACT is needed
 **RTP_VARA(R,T,P)$NO_ACT(R,P) = NO;
+  RP_XRED(RP_PGFLO) = NO;
+  RPC_ACT(RP_XRED(RP_STD(PRC_ACT)),ACTCG) = YES;
 
 *--------------------------------------------------------------------------------------------
 * If FLO_FUNC between two flow variables and one flow variable defines the activity,
@@ -91,7 +93,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
 * check whether commodity defining activity is involved in FLO_FUNC
 
 * Get all FLO_FUNCs between single-commodity groups
-  OPTION CG_GRP <= FLO_FUNC; CG_GRP(R,P,CG,CG) = NO;
+  OPTION CG_GRP <= FLO_FUNC, RP_XRED < CG_GRP; CG_GRP(R,P,CG,CG) = NO;
   CG_GRP(R,P,CG,CG2)$(SUM(RPC(R,P,C)$COM_GMAP(R,CG,C),1) NE 1) = NO;
   CG_GRP(R,P,CG1,CG)$(SUM(RPC(RP_PGACT(R,P),C)$COM_GMAP(R,CG,C),1) NE 1) = NO;
   RPCG_PTRAN(RPC(R,P,C),COM,CG1,CG2)$((COM_GMAP(R,CG1,C)*RPC(R,P,COM)*COM_GMAP(R,CG2,COM))$CG_GRP(R,P,CG1,CG2)) = YES;
@@ -104,6 +106,7 @@ $SETGLOBAL CAL_RED 'cal_red.red'
   OPTION RP_CGG < FSCK;
   RPCG_PTRAN(RP_CGG(RPC_ACT(R,P,COM),C,CG),C)$(RP_PG(R,P,CG)+RPC_ACT(R,P,CG)) = YES;
   RPCG_PTRAN(RP_CGG(RPC(R,P,COM),C,COM),C)$RPC_ACT(R,P,C) = YES;
+  RPCG_PTRAN(RPC_ACT(RP,%PGPRIM%),C,CG,C)$(RP_PG(RP,CG)$RPC_AFLO(RP,C)) = YES;
 * If shadow group has special level, don't substitute
   RPCG_PTRAN(RP_SGS,C,COM,CG,CG2) = NO;
   LOOP(RPCG_PTRAN(RP_FLO(R,P),C,COM,CG,CG2),
@@ -111,13 +114,13 @@ $SETGLOBAL CAL_RED 'cal_red.red'
   );
 * Remove activity flows and emission flows from RPC_FFUNC
   RPC_FFUNC(RPC)$(RPC_ACT(RPC)+RPC_EMIS(RPC)) = NO;
-  RPC_FFUNC(RPC_AFLO(TRACKPC)) = NO;
+  RPC_FFUNC(RPC_AFLO(RP_XRED(RP),C))$(RP_PGACT(RP)->TRACKPC(RP,C)) = NO;
 
 * Add to RPCC_FFUNC all the CG1-CG2 PTRANS equations that are to be eliminated:
-  RPCG_PTRAN(R,P,C,COM,CG,CG2)$(NOT (RPC_FFUNC(R,P,C)+RPC_FFUNC(R,P,COM))) = NO;
+  RPCG_PTRAN(R,P,C,COM,CG,CG2)$(NOT RPC_FFUNC(R,P,C)+RPC_FFUNC(R,P,COM)) = NO;
   LOOP(RPCG_PTRAN(R,P,C,COM,CG,CG2), RPCC_FFUNC(R,P,CG,CG2) = YES);
 
-  OPTION CLEAR=CG_GRP,CLEAR=RP_CGG;
+  OPTION CLEAR=CG_GRP,RP_XRED<RPC_ACT,CLEAR=RP_CGG;
 *--------------------------------------------------------------------------------------------
 * If upper/fixed ACT_BND of zero at a higher TS-level than PRC_TS,
 * do not generate EQL/E_ACTBND equation but add upper/fixed bound
@@ -177,7 +180,7 @@ $LABEL REDDONE
 * Mark emissions to be handled by substitution
   LOOP(FS_EMIS(R,P,CG,C,COM), RPCC_FFUNC(R,P,CG,COM) = YES);
   OPTION CLEAR=TRACKPC,CLEAR=FSCK;
-  PRC_TS2(PRC_TS(RP_PGACT(RP_STD),S)) = YES;
+  PRC_TS2(PRC_TS(RP_XRED(R,P),S)) = YES;
   RPC_PKC(RP,C)$(NOT PRC_CAP(RP)) = NO;
   RPC_PKF(RPC_PKC) = 0;
 

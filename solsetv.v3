@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2024 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
 * SOLSETV.VDA
 *
@@ -126,7 +126,6 @@ SETS
   AGR(REG,COM) 'Agriculature Sector Demands'
   OTHD(R,COM)  'Other Demands'
   IND(REG,COM) 'Industrial Demands'
-  NE(REG,COM)  'Non-energy Demands'
   NRGFOS(R,C)  'Fossil'
   NRGREN(R,C)  'Renewable'
   NRGSYN(R,C)  'Synthetic'
@@ -191,7 +190,7 @@ $ LABEL FINISHUP
   OPTION UC_DYNBD < PRC_DYNUC;
 $ BATINCLUDE solsysd.v3 REG_ACOST ! ,T, '' SOW,R S R
 $ BATINCLUDE solsysd.v3 REG_WOBJ ! , ,CUR SOW,R S R
-  OPTION CLEAR=AFS,CLEAR=PAR_OBJSAL,CLEAR=RTPC,CLEAR=RTTC,CLEAR=PAR_TOP;
+  OPTION CLEAR=AFS,CLEAR=PAR_OBJSAL,CLEAR=RTPC,CLEAR=RTTC,CLEAR=COEF_VNT,CLEAR=RVP_KMAP,CLEAR=PAR_TOP;
 $IFI %RPT_TOP%==YES SET ADESC / PAR_Top 'Process topology indicator' /; RPT_OPT('FLO','7')=1;
   IF(RPT_OPT('FLO','7'),
     PAR_TOP(R,T(MIYR_1),P,C,IO)$TOP(R,P,C,IO) = EPS;

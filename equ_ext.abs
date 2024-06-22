@@ -14,7 +14,7 @@ $IFI NOT %OBMAC%==YES $EXIT
   RP_UPL(BS_UPL)=NO;
   RP_UPC(BS_UPC)=NO;
 * Activate capacity equations
-  OPTION TRACKP<BS_BSC;
+  OPTION TRACKP<BS_BSC; RP_UPL(TRACKP,'N')=YES;
   RP_UPS(TRACKP(R,P),TSL,'FX')$SUM(RP_UPS(PRC_TSL(R,P,TSLVL),L),RLUP(R,TSLVL,TSL))=YES;
   RP_UPS(TRACKP(R,P),TSL,'LO')$SUM(PRC_TSL(R,P,TSLVL)$RLUP(R,TSLVL,TSL),NOT RP_UPS(R,P,TSL,'FX'))=YES;
   RP_UPS(PRC_TSL(TRACKP,TSL(S)),'LO')=YES;
@@ -41,7 +41,7 @@ $ macro var_bsupsr(r,v,t,p,s,bd) %var%_bsprs(r,v,t,p,%PGPRIM%,s,bd%SOW%)
 $ macro var_bslack(r,t,p,c,s) %var%_bsprs(r,t,t,p,c,s,'UP'%SOW%)
 * Capacity-CPT expression
 $IF %STAGES%==YES  $%SW_STVARS%
-$SET TMP SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%))
+$SET TMP SUM(MODLYEAR(K)$(COEF_VNT(R,T,P,K)$(PRC_VINT(R,P)->DIAG(V,K))),COEF_VNT(R,T,P,K)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%))
 
 *-----------------------------------------------------------------------------
 * ABS Equation Formulations - numbers refer to document (00=01)
@@ -196,7 +196,7 @@ $     BATINCLUDE %cal_red% C COM TS P T
     (VAR_OFF(R,V,T,P,TS)*RS_FR(R,TS,S)$(BS_MAINT(R,V,P,S)=0))$TS_CYCLE(R,TS))
   =G=
 * unavailable process capacity - vintaged or not
-  SUM(MODLYEAR(K)$(COEF_CPT(R,K,T,P)$(DIAG(V,K)>=1$PRC_VINT(R,P))),COEF_CPT(R,K,T,P)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%)*((1-COEF_AF%MX%(R,K,T,P,S,'UP'))$(ACT_UPS(R,T,P,S,'N')=0)+ACT_UPS(R,T,P,S,'N')));
+  SUM(MODLYEAR(K)$(COEF_VNT(R,T,P,K)$(PRC_VINT(R,P)->DIAG(V,K))),COEF_VNT(R,T,P,K)*(%VARM%_NCAP(R,K,P%SWS%)$T(K)+NCAP_PASTI(R,K,P)%RCAPSBM%)*((1-COEF_AF%MX%(R,K,T,P,S,'UP'))$(ACT_UPS(R,T,P,S,'N')=0)+ACT_UPS(R,T,P,S,'N')));
 *-----------------------------------------------------------------------------
 * ABSEQ28 : Maintenence 2 - continuous duration
   EQ_BS28(RTP_VINTYR(%R_V_T%,P),RTS(S)%SWX%)$(%SWTX%PRC_TS(R,P,S)$BS_MAINT(R,V,P,S))..

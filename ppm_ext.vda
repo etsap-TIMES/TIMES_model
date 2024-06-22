@@ -8,8 +8,8 @@
 *=============================================================================*
 * Questions/Comments:
 *-----------------------------------------------------------------------------
-  DISPLAY 'VEDA PPM_EXT Invoked';
-$IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
+  DISPLAY 'PPM_EXT Invoked';
+$ IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
   OPTION RP_UPL < ACT_UPS;
   RP_UPL(RP,L)$(NOT PRC_CAP(RP)*RP_STD(RP)) = NO;
   RP_PL(R,P,LNX) $= SUM(V$ACT_LOSPL(R,V,P,'FX'),1);
@@ -55,7 +55,7 @@ $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda COEF
 * Set default ACT_EFF for group to 1 if none specified
   LOOP(IO,ACT_EFF(RTP(R,V,P),CG,ANNUAL)$((ACT_EFF(RTP,CG,ANNUAL)=0)$RPG_ACE(R,P,CG,IO)) = 1);
 *---------------------------
-$ BATINCLUDE PP_ACTEF.%1 LVL
+$ BATINCLUDE pp_actef.%1 LVL
 *-----------------------------------------------------------------------------
 * Catch shape indexes for shadow group
   IF(CARD(FLO_FUNCX),
@@ -101,9 +101,9 @@ $IF NOT %REDUCE%==YES OPTION CLEAR=TRACKPC;
   OPTION CLEAR=RP_GRP,CLEAR=TRACKPC,CLEAR=TRACKPG;
 *-----------------------------------------------------------------------------
 * Prepare commodity-specific availability factors
-  SET RPG_AFCX(R,P,C,IE); OPTION RP_GRP<NCAP_AFC;
+  SET RPG_AFCX(R,P,C,IE); OPTION RP_GRP<NCAP_AFC, RP_XRED<RP_GRP;
   RP_GRP(RP_PG(R,P,CG))$(NOT C(CG)+COM_TYPE(CG)) = NO;
-  PRC_SC(RP_STG(RP))$SUM(RP_GRP(RP,CG),1)=SUM(PRC_TSL(RP,TSL),LOG(G_CYCLE(TSL)));
+  PRC_SC(RP_STG(RP_XRED(RP)))=SUM(PRC_TSL(RP,TSL),LOG(G_CYCLE(TSL)));
   LOOP(TSL(STL),NCAP_AFCS(R,LL,P,CG,S)$TS_GROUP(R,TSL,S) $= NCAP_AFC(R,LL,P,CG,STL)$RP_GRP(R,P,CG));
   NCAP_AFCS(R,LL,P,CG,S(STL))$RP_GRP(R,P,CG) $= NCAP_AFC(R,LL,P,CG,STL); OPTION CLEAR=NCAP_AFC;
   NCAP_AFCS(R,LL,P,CG,S)$(NOT PRC_CAP(R,P))=0;

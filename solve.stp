@@ -17,7 +17,6 @@ $IF NOT SET TIMESTEP $SET TIMESTEP '999' SET STEPPED NO
 *-----------------------------------------------------------------------------
   SCALAR PRESOL / 1 /;
   SET UC_RN(UC_N,ALL_R) //;
-  SET R_UCT(R,UC_N,T)   //;
   SET RTP_IRE(R,T,P,IE) 'IRE equations with fixed regions';
   SET IRE_RPR(R,P,R,IE) 'All regions REG linked to IRE process by equations in R';
   SET IRE_FXT(R,T,P) 'IRE with some linked regions fixed at T';

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -190,20 +190,18 @@ $IF %SOLANS%==YES RPT_OPT('FLO','5')=1;
   IF(RPT_OPT('FLO','5'),
   TRACKP(R,P)$SUM(TOP(RPC_SPG(R,P,C),'IN')$NRGELC(R,C),1) = YES;
   TRACKPC(RPC(RP_FLO(R,P),C))$(TOP(RPC,'OUT')$NRGELC(R,C)) = YES;
-  TRACKPC(TRACKP,C) = NO; OPTION TRACKP < TRACKPC;
-  OPTION CLEAR=F_VIO,CLEAR=KEEP_FLOF;
-  TRACKPG(TRACKP(R,P),C)$((NOT NRGELC(R,C))$NRG(R,C)$TOP(R,P,C,'IN'))=YES;
+  TRACKPC(TRACKP,C) = NO; OPTION TRACKP < TRACKPC, CLEAR=F_VIO, CLEAR=KEEP_FLOF;
+  TRACKPG(TRACKP(R,P),C)$((NOT NRGELC(R,C))$NRG(R,C)$TOP(R,P,C,'IN')) = YES;
   F_VIO(RTP_VINTYR(R,V,T,P),IO)$TRACKP(R,P) =
     SUM((TRACKPC(R,P,C),S)$(NOT IPS(IO)),%1F_OUT(%2R,V,T,P,C,S))+SUM((TRACKPG(R,P,C),IPS(IO),S),%1F_IN(%2R,V,T,P,C,S))+1-1;
   %1PAR_EOUT(%2RTP_VINTYR(R,V,T,P),C)$(F_VIO(R,V,T,P,'IN')$TRACKPG(R,P,C)) =
     F_VIO(R,V,T,P,'OUT') / F_VIO(R,V,T,P,'IN') * SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S));
-  OPTION CLEAR=UNCD7;UNCD7(TOP_IRE(ALL_R,C,ALL_REG,COM,P),'','')$(NRGELC(ALL_R,C)+NRGELC(ALL_REG,COM))=YES;
-  UNCD7(R,COM,R,C,P,'','')=NO;
-  LOOP(UNCD7(ALL_R,C,ALL_REG,COM,P,'',''),KEEP_FLOF(R(ALL_R),P,C)=YES;KEEP_FLOF(R(ALL_REG),P,COM)=YES);
+  OPTION CLEAR=TRACKPC; LOOP(TOP_IRE(R,C,NRGELC(R,COM),P),TRACKPC(R,P,C)=YES; TRACKPC(R,P,COM)=YES);
+  KEEP_FLOF(RPC(R,P,C))$(NOT TRACKPC(RPC)) $= SUM(RPC_IRE(RPC,IE),1)$NRGELC(R,C);
   %1PAR_EOUT(%2RTP_VINTYR(R,V,T,P),C)$(KEEP_FLOF(R,P,C)$RP_IRE(R,P)) =
-   SUM(S$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'IMP') -
-   SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'EXP');
-  KEEP_FLOF(RPC_SPG(TRACKP,C))=YES;
+    SUM(S$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'IMP') -
+    SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S))$RPC_IRE(R,P,C,'EXP');
+  KEEP_FLOF(RPC_SPG(TRACKP,C)) = YES;
   OPTION CLEAR=F_VIO,CLEAR=TRACKP,CLEAR=TRACKPC,CLEAR=TRACKPG);
 
 *-----------------------------------------------------------------------------
@@ -211,7 +209,7 @@ $IF %SOLANS%==YES RPT_OPT('FLO','5')=1;
 *-----------------------------------------------------------------------------
  F=RPT_OPT('NCAP','1');
  LOOP((SYSUC('%SYSPREFIX%LEVCOST'),ANNUAL(SL))$F, Z=F<0; F=1-Z+(F>1);
-  NCAP_YES(R,T,P)$(VAR_NCAP.L(R,T,P)*COEF_RTP(R,T,P)$RP_INOUT(R,P,'OUT')=0)=NO;
+  NCAP_YES(R,T,P)$(VAR_NCAP.L(R,T,P)*COEF_RTP(R,T,P)$(RP_INOUT(R,P,'OUT')+PRC_PKAF(R,P))=0)=NO;
   PASTSUM(R,T,P)$%1PAR_CAPL(%2R,T,P) = %1PAR_CAPL(%2R,T,P)+SUM(PASTCV,%1PAR_PASTI(%2R,T,P,PASTCV))+1-1;
 * Calculate ENV credit
   LOOP(COM_LIM(ENV(R,C),'LO')$Z,TRACKC(R,C)=YES;TRACKP(R,P)$(PRC_MAP(R,'PRE',P)$TOP(R,P,C,'OUT'))=YES);

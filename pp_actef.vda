@@ -56,10 +56,8 @@ $SET SHP1 "*(%SHFF%X(R,V,T%SHG%)$PRC_VINT(R,P))%SHP1%"
  %EQ%E_ACTEFF(RTP_VINTYR(%R_V_T%,P),CG,IO,RTS(S) %SWT%)$(RPS_S1(R,P,S)$RPG_ACE(R,P,CG,IO))..
 
 * Sum over input flows
-  SUM(RPC_ACE(R,P,C)$COM_GMAP(R,CG,C),
-    SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,S,TS),
-      (1+(ACT_EFF(R,V,P,C,TS)-1)$ACT_EFF(R,V,P,C,TS)) * %VAR%_FLO(R,V,T,P,C,TS %SOW%) *
-      (1+(RS_FR(R,S,TS)*(1+RTCS_FR(R,T,C,S,TS))-1)$RS_BELOW(R,TS,S)))) *
+  SUM((RPC_ACE(R,P,C),COM_GMAP(R,CG,C),TS_MAP(R,S,TS))$RTPCS_VARF(R,T,P,C,TS),
+    (1+(ACT_EFF(R,V,P,C,TS)-1)$ACT_EFF(R,V,P,C,TS)) * %VAR%_FLO(R,V,T,P,C,TS %SOW%)) *
 * Multiply with group efficiency
   SUM(TS_ANN(S,TS),ACT_EFF(R,V,P,CG,TS))%SHP1%
 

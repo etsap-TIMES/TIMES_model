@@ -26,6 +26,8 @@
  SET RPG_PACE(R,P,CG) //;
  SET RPG_1ACE(R,P,CG,C) //;
  SET RPC_ACE(REG,PRC,CG) //;
+ SET RVP_KMAP(R,YEAR,P,YEAR);
+ SET DUMIMP / IMPNRGZ,IMPMATZ,IMPDEMZ /;
 *-----------------------------------------------------------------------------
 * Internal PARAMATERs
   SCALAR MIYR_BOH / 0 /;
@@ -105,7 +107,7 @@ $IF NOT %OBMAC%==YES PARAMETER VAR_SIFT(LL,S,L) //;
   VDA_FLOP(R,LL,P,CG,S) $= ACT_FLO(R,LL,P,CG,S);
   KEEP_FLOF(R,P,C)$VDA_FLOP(R,'%DFLBL%',P,C,'ANNUAL') = YES;
 $IFI %SHELL%==ANSWER KEEP_FLOF(R,P,C)$PRC_ACTFLO(R,'%DFLBL%',P,C) = YES;
-  OPTION CLEAR=ACT_FLO;
+  OPTION RP_XRED<ACT_FLO, CLEAR=ACT_FLO;
 *-----------------------------------------------------------------------------
 * Handle Updatable OFF-ranges & REG_BDNCAP process-based bounds
   NCAP_START(R,P)$(NCAP_START(R,P)<=MIYR_BOH)=0;
