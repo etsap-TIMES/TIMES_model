@@ -2937,3 +2937,31 @@ eqactups.vda  : (1)
 eqcaflac.vda  : (1)
 equ_ext.abs   : (1)
 solsetv.v3    : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.2
+-----------------------------------------------------------------------------------------
+Date: 19-Aug-2024 [AL]: Minor release
+1) Small performance improvements inspired by the ETSAP code review project
+2) Added IE option -13 for flushing out time series (eg. UCs)
+3) Other subtle improvements
+
+initsys.mod   : Increased version number to 4.8.2
+initmty.mod   : (3)
+setglobs.gms  : (1)
+ppmain.mod    : (3)
+prepparm.gms  : (2)
+pp_lvlpk.mod  : (1)
+eqmain.mod    : (2)
+cal_stgn.mod  : (1)
+cal_ire.mod   : (1)
+cal_fflo.mod  : (1)
+eqflomrk.mod  : (1)
+eqire.mod     : (1)
+eqirebnd.mod  : (1)
+eqxbnd.mod    : (1)
+bnd_ucw.mod   : (2)
+pp_qack.mod   : (1)
+coef_ext.vda  : (2)
+solsetv.v3    : (1)
+prepret.dsc   : (3)

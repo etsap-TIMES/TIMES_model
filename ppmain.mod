@@ -850,16 +850,15 @@ $   BATINCLUDE pp_lvlif.mod %1
 * Preprocess market-based trade
 *-----------------------------------------------------------------------------
 * Set endogenous trade indicators
-  IF(CARD(RXX) GT 0, OPTION CLEAR=RXX);
+  OPTION CLEAR=RXX;
   LOOP(TOP_IRE(R,C,REG,COM,P),RXX(R,C,P) = YES; RPC_IREIO(REG,P,COM,'IMP','IN') = YES);
   RPC_IREIO(R,P,C,'EXP','IN')$RXX(R,C,P) = YES;
   RPC_IREIO(RPC_IRE(R,P,C,IE),'OUT')$(NOT RPC_IREIO(R,P,C,IE,'IN')) = YES;
   PRC_MAP(R,'DISTR',P)$PRC_MAP(R,'CORR',P) = YES;
   IRE_DIST(RP_IRE(R,P))$PRC_MAP(R,'DISTR',P) = YES;
 
-* Define a marketplace whenever there are several import regions
+* Define a marketplace whenever imports to several regions, or an intermediate region between two other regions
   LOOP(RXX(R,C,P)$(SUM(TOP_IRE(R,C,REG,COM,P),1) GT 1),RPC_MARKET(R,P,C,'EXP') = YES);
-* Define a marketplace whenever there is an intermediate region between two other regions
   RXX(R,C,P)$IRE_DIST(R,P) = NO;
   LOOP(TOP_IRE(REG,COM,RXX(R,C,P))$(NOT SUM(COM1$TOP_IRE(R,C,REG,COM1,P),1)),RPC_MARKET(R,P,C,'EXP') = YES);
 
@@ -927,14 +926,6 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Unsupported diverging trade topo
   LOOP(TOP_IRE(R,C,REG,COM,P),
     IF(NOT SUM((RTP(R,T,P),S)$IRE_FLO(R,T,P,C,REG,COM,S),1),
        IRE_FLO(RTP(R,V,P),C,REG,COM,S)$PRC_TS(REG,P,S) = 1));
-
-*-----------------------------------------------------------------------------
-* determination of vintaging for processes
-*-----------------------------------------------------------------------------
-* vintaging period control such that v=t if no vintaging, otherwise = CPT periods
-    RTP_VINTYR(RTP_CPTYR(R,V,T,P))$PRC_VINT(R,P)= YES;
-*V0.5a 980810 - always variables within availability of process
-    RTP_VINTYR(R,T,T,P)$((NOT PRC_VINT(R,P)) * RTP(R,T,P) * SUM(V,RTP_CPTYR(R,V,T,P))) = YES;
 
 *-----------------------------------------------------------------------------
 * initialize the commodity balance equation type
@@ -1194,16 +1185,15 @@ $ BATINCLUDE prepxtra.mod UCINT
   UC_ATTR(R,UCN,SIDE,UC_GRPTYPE,UC_DYNT)$UC_ATTR(R,UCN,SIDE,'COMCON',UC_DYNT)$=SUM(UC_GMAP_C(R,UCN,COM_VAR,C,'COMCON')$COV_MAP(COM_VAR,UC_GRPTYPE),1);
 
 * ACT / CAP / NCAP
-  OPTION CLEAR=UNCD7;
-  UNCD7('1',UCN,SIDE,R,'ACT',T--ORD(T),P)  $= SUM(S$UC_ACT(UCN,SIDE,R,T,P,S),1);
-  UNCD7('2',UCN,SIDE,R,'CAP',T--ORD(T),P)  $= UC_CAP(UCN,SIDE,R,T,P);
-  UNCD7('3',UCN,SIDE,R,'NCAP',T--ORD(T),P) $= UC_NCAP(UCN,SIDE,R,T,P);
-  LOOP(UNCD7(J,UCN,SIDE,R,UC_GRPTYPE,T,P),UC_GMAP_P(UC_ON(R,UCN),UC_GRPTYPE,P)=YES);
+  UC_JMAP('2',UCN,SIDE,R,T--ORD(T),P,'ACT')$UC_ON(R,UCN)  $= SUM(S$UC_ACT(UCN,SIDE,R,T,P,S),1);
+  UC_JMAP('3',UCN,SIDE,R,T--ORD(T),P,'CAP')$UC_ON(R,UCN)  $= UC_CAP(UCN,SIDE,R,T,P);
+  UC_JMAP('4',UCN,SIDE,R,T--ORD(T),P,'NCAP')$UC_ON(R,UCN) $= UC_NCAP(UCN,SIDE,R,T,P);
+  OPTION UC_GMAP_P < UC_JMAP;
 
 * Mark those processes that have UC_CAP / COMXXX to also have VAR_CAP / VAR_COMXXX
   LOOP(UC_GMAP_P(R,UCN,'CAP',P),TRACKP(R,P)=YES);
   RTP_VARP(RTP(R,T,P))$TRACKP(R,P) = YES;
-  OPTION CLEAR=TRACKP,CLEAR=RXX;
+  OPTION CLEAR=TRACKP,CLEAR=RXX,CLEAR=UC_JMAP;
   UC_ON(R,UCN) $= SUM(UC_DYNBND(UCN,L),1);
   LOOP(UC_GMAP_C(UC_ON(R,UC_N),COM_VAR,C,UC_GRPTYPE),RXX(R,COM_VAR,C)=YES);
   RHS_COMPRD(RTCS_VARC(R,T,C,S))$RXX(R,'PRD',C) = YES;
@@ -1329,16 +1319,25 @@ IF (REFUNIT(R) = 1,
                                 (1/CONVERT(OPR,'WCV'))$(BL_UNIT(R,BLE,SPE) = 2) +
                                 1$(BL_UNIT(R,BLE,SPE) = 1);
   RU_FEQ(R,OPR,T) = 1;
-);
-);
+));
 RU_FEQ(R,OPR,T)$(NOT RU_FEQ(R,OPR,T)) = 1;
 
+
 *----------------------------------------------------------------
-* Call reduction algorithm
+* Call reduction algorithm and determine vintaging for processes
 *----------------------------------------------------------------
-$ BATINCLUDE pp_reduce.red
-  RTPCS_VARF(RTPC(RTP_VARA(R,T,P),C),S)$((NOT RTPCS_OUT(R,T,P,C,S))$RPCS_VAR(R,P,C,S)) = YES;
-  OPTION CLEAR=R_UC,CLEAR=RTPCS_OUT;
+   OPTION RVP < RTP_CPTYR;
+   RTP_VARA(R,T,P)$(NOT RVP(R,T,P)) = NO;
+$  BATINCLUDE pp_reduce.red
+   RTPCS_VARF(RTPC(RTP_VARA(R,T,P),C),S)$((NOT RTPCS_OUT(R,T,P,C,S))$RPCS_VAR(R,P,C,S)) = YES;
+
+*  vintaging period control such that v=t if no vintaging, otherwise = CPT periods 
+*  always variables within availability of process (vintaging should imply capacity)
+*  PRC_VINT(PRC_VINT(RP)) = PRC_CAP(RP);
+   RTP_VINTYR(RTP_CPTYR(R,V,T,P))$PRC_VINT(R,P)= YES;
+   RTP_VINTYR(R,T,T,P)$((NOT PRC_VINT(R,P))*RTP(R,T,P)$RVP(R,T,P)) = YES;
+
+   OPTION CLEAR=R_UC,CLEAR=RVP,CLEAR=RTPCS_OUT;
 *----------------------------------------------------------------
 * MACRO
 *----------------------------------------------------------------

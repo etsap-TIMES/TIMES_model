@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *==============================================================================*
@@ -38,33 +38,33 @@ $LABEL INIT_EXT
 $GOTO FINISH
 *-------------------------------------------------------------------------------
 $LABEL PREP_EXT
- IF(CARD(PRC_DYNUC),
-* Set LHS default IE to 5 and RHS default to 10
-  PRC_DYNUC(UC_N,'LHS',R,LL--ORD(LL),P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD))=5;
-  PRC_DYNUC(UC_N,'RHS',R,LL--ORD(LL),P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD))=
-    PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD)+10$(NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD));
-  LOOP(BD, UC_GMAP_P(R,UC_N,UC_GRPTYPE,P)$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD) = YES);
-* If no RHS defined, set RHS to EPS for all LHS years except for the IE option according to LHS
-  PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD))=
-    EPS+PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD)$LASTLL(LL);
-* If no LHS defined, set LHS to 1 for all RHS years except for the IE option according to RHS
-  PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD))=
-    (1+(PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD)-1)$LASTLL(LL))$(NOT SAMEAS('NCAP',UC_GRPTYPE));
-* Inter-/extrapolate without reset
-$ SET RESET 1
-$ BATINCLUDE prepparm PRC_DYNUC 'UC_N,SIDE,R' 'P,UC_GRPTYPE,BD' "" MILESTONYR 1 1
-* Disable growth/decay equation in first period of availability if no constant specified
-  PRC_DYNUC(UC_N,'RHS',R,T(MIYR_1),P,UC_GRPTYPE,BD)$((NOT UC_GMAP_P(R,UC_N,UC_GRPTYPE,P))$PRC_DYNUC(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD)) = 0;
-  PRC_DYNUC(UC_N,'RHS',RTP(R,T+1,P),UC_GRPTYPE,BD)$((NOT RTP(R,T,P))$(NOT UC_GMAP_P(R,UC_N,UC_GRPTYPE,P))$PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD)) = 0;
-* Set final UC_GMAPs for REDUCE
-  LOOP(BD, UC_GMAP_P(R,UC_N,UC_GRPTYPE,P)$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD) = YES);
+  IF(CARD(PRC_DYNUC),
+*  Set LHS default IE to 5 and RHS default to 10
+   PRC_DYNUC(UC_N,'LHS',R,LL--ORD(LL),P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD))=5;
+   PRC_DYNUC(UC_N,'RHS',R,LL--ORD(LL),P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD))=
+     PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD)+10$(NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD));
+   LOOP(BD, UC_GMAP_P(R,UC_N,UC_GRPTYPE,P)$PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD) = YES);
+*  If no RHS defined, set RHS to EPS for all LHS years except for the IE option according to LHS
+   PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'RHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD))=
+     EPS+PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD)$LASTLL(LL);
+*  If no LHS defined, set LHS to 1 for all RHS years except for the IE option according to RHS
+   PRC_DYNUC(UC_N,'LHS',R,LL,P,UC_GRPTYPE,BD)$((NOT PRC_DYNUC(UC_N,'LHS',R,'0',P,UC_GRPTYPE,BD))$PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD))=
+     (1+(PRC_DYNUC(UC_N,'RHS',R,LL,P,UC_GRPTYPE,BD)-1)$LASTLL(LL))$(NOT SAMEAS('NCAP',UC_GRPTYPE));
+*  Inter-/extrapolate without reset
+$  SET RESET 1
+$  BATINCLUDE prepparm PRC_DYNUC 'UC_N,SIDE,R' 'P,UC_GRPTYPE,BD' "" T 1 1
+*  Disable growth/decay equation in first period of availability if no constant specified
+   PRC_DYNUC(UCN,RHS,RTP(R,TT(T+1),P),UC_GRPTYPE,BD)$((RTP(R,T,P)->MIYR_1(TT))$(NOT UC_GMAP_P(R,UCN,UC_GRPTYPE,P))$PRC_DYNUC(UCN,'LHS',R,'0',P,UC_GRPTYPE,BD)) = 0;
+*  Set final UC_GMAPs for REDUCE
+   LOOP(BD,UC_JMAP('1',UCN,RHS,R,T(MIYR_1),P,UC_GRPTYPE)$PRC_DYNUC(UCN,RHS,R,'0',P,UC_GRPTYPE,BD) = YES);
   );
   LOOP(UC_DYNBND(UCN,BD),UC_T_SUCC(R,UCN,'0') = YES);
 $GOTO FINISH
 *-------------------------------------------------------------------------------
 $LABEL PPM_EXT
-* Make sure that standard UCs are not being generated
+* Make sure that standard UCs are not generated
   LOOP(UC_DYNBND(UCN,BD),
+    UC_ON(R,UCN) = NO;
     UC_R_SUM(R,UCN) = NO;
     UC_R_EACH(R,UCN) = NO;
   );
@@ -96,7 +96,6 @@ $LABEL EQU_EXT
 
 * RHS constant term
   PRC_DYNUC(UC_N,'RHS',R,T,P,UC_GRPTYPE,BD)*LEAD(T)*(-1+2$BDUPX(BD))
-
   ;
 
 $IFI %2==E $GOTO FINISH

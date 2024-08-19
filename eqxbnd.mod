@@ -22,7 +22,7 @@
 * sum over all possible at process TS-level
        SUM((RPC_IRE(REG(ALL_REG),P,C,IE),RTPCS_VARF(REG,T,P,C,TS))$RS_TREE(REG,S,TS),
 * sum all the existing activities
-            SUM(RTP_VINTYR(REG,V,T,P),
+            SUM(RTP_VNTBYR(REG,T,P,V),
 * [UR] model reduction %REDUCE% is set in *.run
               (%VAR%_IRE(REG,V,T,P,C,TS,IE%SOW%)$(NOT RPC_AIRE(REG,P,C)) +
                (%VAR%_ACT(REG,V,T,P,TS%SOW%)*PRC_ACTFLO(REG,V,P,C))$RPC_AIRE(REG,P,C)) *
@@ -40,7 +40,7 @@
                                            (TOP_IRE(R,COM,ALL_REG,C,P)$IMP(IE))),
 * sum all the existing activities
             SUM(RS_TREE(R,ALL_TS,TS)$(RTPCS_VARF(R,T,P,COM,TS)*IRE_TSCVT(R,ALL_TS,ALL_REG,S)),
-                SUM(RTP_VINTYR(R,V,T,P),
+                SUM(RTP_VNTBYR(R,T,P,V),
 * [UR] model reduction %REDUCE% is set in *.run
                   (%VAR%_IRE(R,V,T,P,COM,TS,IMPEXP%SOW%)$(NOT RPC_AIRE(R,P,COM)) +
                    (%VAR%_ACT(R,V,T,P,TS%SOW%)*PRC_ACTFLO(R,V,P,COM))$RPC_AIRE(R,P,COM)) *

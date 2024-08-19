@@ -93,6 +93,7 @@ $ LABEL SYSD
   SET RTP_VARA(R,ALLYEAR,P)     'The VAR_ACT control set'                //;
   SET RTP_VARP(R,T,P)           'RTPs that have a VAR_CAP'               //;
   SET RTP_VINTYR(REG,ALLYEAR,ALLYEAR,PRC) 'v/t years according to vintaging'//;
+  SET RTP_VNTBYR(REG,ALLYEAR,PRC,ALLYEAR) 'RTP_VINTYR with years swapped'//;
   SET RTP_TT(R,YEAR,T,PRC)      'Retrofit control periods'               //;
   SET RVP(R,ALLYEAR,P)          'ALIAS(RTP) for Process/time'            //;
   SET RTP_CAPYR(R,YEAR,YEAR,P)  'Capacity vintage years'                 //;
@@ -120,10 +121,11 @@ $ LABEL SYSD
   SET UC_GMAP_C(REG,UC_N,COM_VAR,COM,UC_GRPTYPE) 'Assigning commodities to UC_GRP';
   SET UC_GMAP_P(REG,UC_N,UC_GRPTYPE,PRC)         'Assigning processes to UC_GRP';
   SET UC_GMAP_U(ALL_R,UC_N,UC_N)                 'Assigning constraints to UC_GRP'//;
+  SET UC_JMAP(J,UC_N,SIDE,REG,T,PRC,UC_GRPTYPE)  'Collecting all processes for GMAP';
   SET UC_DYNBND(UC_N,LIM)                        'Dynamic process-wise UC bounds' //;
   SET UC_DYNDIR(ALL_R,UC_N,SIDE)                 'Direction of dynamic constraint'//;
   SET UC_DS(ALL_R,UC_N,TSLVL)                    'Levels of TS-dynamic constraints';
-  SET UC_QAFLO(J,UC_N,SIDE,R,P,C)                'QA_checks for UC FLO/IRE tuples'
+  SET UC_QAFLO(J,UC_N,SIDE,R,P,C)                'QA_checks for UC FLO/IRE tuples'//;
   SET UC_RTSUC(ALL_R,ALLYEAR,UC_N)               'RT-map for T_SUCC';
   SET G_UDS(S,SIDE,S)                            'Timeslice-dynamic candidates';
   SET RC_CUMCOM(REG,COM_VAR,ALLYEAR,ALLYEAR,COM) 'Cumulative commodity PRD/NET';
@@ -137,8 +139,8 @@ $ LABEL SYSD
     RS_PREV(R,S,S)           'Previous timeslice in parent cycle'  //
     FINEST(R,ALL_TS)         'Set of the finest timeslices in use' //
     PASTMILE(ALLYEAR)        'PAST years that are not MILESYONYR'  //
-    EACHYEAR(ALLYEAR)        'Each year from 1st NCAP_PASTI-Y to last MILESTONYR + DUR_MAX' //
-    EOHYEARS(ALLYEAR)        'Each year from 1st NCAP_PASTI-Y to last MILESTONYR' //;
+    EACHYEAR(ALLYEAR)        'Each year from 1st PASTYEAR to last MILESTONYR + DUR_MAX' //
+    EOHYEARS(ALLYEAR)        'Each year from 1st PASTYEAR to last MILESTONYR' //;
   ALIAS(PASTYEAR,PYR);
   ALIAS(MODLYEAR,V);
 

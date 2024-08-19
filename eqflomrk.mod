@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *==================================================================================================*
@@ -69,7 +69,7 @@ $SETLOCAL SIGO "(PRC_MARK(R,T,P,ITEM,COM,'%2') GE 0)" SETLOCAL SIGI "(PRC_MARK(R
 
 * Sum over all flow variables related to balance timeslice
          (SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,SL,TS),
-              SUM(RTP_VINTYR(R,V,T,P),
+              SUM(RTP_VNTBYR(R,T,P,V),
 $               BATINCLUDE %cal_red% C COM1 TS P T
                  ) *
 * Balance coarser than variable or balance finer than variable
@@ -78,7 +78,7 @@ $               BATINCLUDE %cal_red% C COM1 TS P T
 
 * Inter-regional trade contribution
        + SUM(RTPCS_VARF(R,T,P,C,TS)$RS_FR(R,SL,TS),
-           SUM(RTP_VINTYR(R,V,T,P),
+           SUM(RTP_VNTBYR(R,T,P,V),
              ((%VAR%_IRE(R,V,T,P,C,TS,'IMP'%SOW%)%IRED%)*(1+IRE_FLOSUM(R,T,P,C,S,'IMP',C,'OUT'))*COM_IE(R,T,C,SL))$(%SIGO%$RPC_IRE(R,P,C,'IMP'))-
              ((%VAR%_IRE(R,V,T,P,C,TS,'EXP'%SOW%)%IRED%)*(1+IRE_FLOSUM(R,T,P,C,S,'EXP',C,'IN')))$(%SIGI%$RPC_IRE(R,P,C,'EXP'))) *
 * Balance coarser than variable or balance finer than variable
@@ -86,7 +86,7 @@ $               BATINCLUDE %cal_red% C COM1 TS P T
 
 * Storage contribution
        + SUM(RPCS_VAR(RPC_STG(R,P,C),TS)$RS_FR(R,SL,TS),
-             SUM(RTP_VINTYR(R,V,T,P),
+             SUM(RTP_VNTBYR(R,T,P,V),
                ((%VAR%_SOUT(R,V,T,P,C,TS %SOW%)*STG_EFF(R,V,P)*COM_IE(R,T,C,SL))$%SIGO%-%VAR%_SIN(R,V,T,P,C,TS %SOW%)$%SIGI%)) *
 * Balance coarser than variable or balance finer than variable
              RS_FR(R,SL,TS)*(1+RTCS_FR(R,T,C,SL,TS)))$PRC_MAP(R,'STG',P)

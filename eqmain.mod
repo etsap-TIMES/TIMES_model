@@ -43,7 +43,7 @@ $   BATINCLUDE eqactflo.%1
 *-----------------------------------------------------------------------------
 * Bound of vintage process activity or TS-level above PRC_TS
 *-----------------------------------------------------------------------------
-*V0.5b 980902 - avoid equations if LO=0/UP=INF
+*V0.5b avoid equations if LO=0/UP=INF
 $   BATINCLUDE eqactbnd.%1 G LO "(ACT_BND(R,T,P,S,'LO') NE 0)"
 $   BATINCLUDE eqactbnd.%1 E FX YES
 $   BATINCLUDE eqactbnd.%1 L UP "(ACT_BND(R,T,P,S,'UP') NE INF)"
@@ -148,7 +148,7 @@ $   BATINCLUDE eqire.%1
 *-----------------------------------------------------------------------------
 * Bound on exchange between internal regions
 *-----------------------------------------------------------------------------
-*V0.5b 980902 - avoid equations if LO=0/UP=INF
+*V0.5b avoid equations if LO=0/UP=INF
 $   BATINCLUDE eqirebnd.%1 G LO "(IRE_BND(R,T,C,S,ALL_REG,IE,'LO') NE 0)"
 $   BATINCLUDE eqirebnd.%1 E FX YES
 $   BATINCLUDE eqirebnd.%1 L UP "(IRE_BND(R,T,C,S,ALL_REG,IE,'UP') NE INF)"
@@ -194,6 +194,7 @@ $   BATINCLUDE eqbndcst.%1
 *-----------------------------------------------------------------------------
 * User-constraints
 *-----------------------------------------------------------------------------
+$ IFE CARD(UC_TIME)+CARD(UC_UCN)>0 $SETGLOBAL VAR_UC YES
 * Commissioning periods for UCs
   SET RVPT(R,ALLYEAR,P,T);
   LOOP(OBJ_2A(R,T,P)$(NOT RTP_OFF(R,T,P)),F=B(T)+NCAP_ILED(R,T,P); Z=SUM(VNT(T,TT)$(F>E(TT)+0.5),1);

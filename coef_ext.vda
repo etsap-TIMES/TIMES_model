@@ -50,6 +50,10 @@ $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
   RTCS_VARC(R,T,C,S)$((NOT RHS_COMPRD(R,T,C,S))$TRACKC(R,C)) = NO;
   TOP_IRE('IMPEXP',C,TRACKC,P) = NO;
   OPTION CLEAR=TRACKC,CLEAR=TRACKP,CLEAR=RCS;
+* Filter out UC constraints
+  IF(CARD(UC_TIME),OPTION R_UC<UC_TIME;
+    LOOP(R_UC(R,UCN)$(ROUND(UC_TIME(UCN,R,'0'))=-13),UC_ON(R_UC)=NO; IF(UC_R_SUM(R_UC),UC_ON(UC_R_SUM(REG,UCN))=NO));
+    UC_TIME(UCN,R,T)$((NOT UC_ON(R,UCN))$R_UC(R,UCN))=0; OPTION CLEAR=R_UC);
 *-----------------------------------------------------------------------------
 * Add singleton ACT_EFFs to COEF_PTRANS or ACT_FLO
   RP_CGC(RPG_1ACE) = YES; OPTION TRACKPC < RPG_1ACE, RP_GRP < RP_CGC;

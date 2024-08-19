@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -42,6 +42,7 @@ $IF %MIP% INTEGER
   VARIABLE %VAR%_DRCAP(R,ALLYEAR,LL,P%SWD%,J);
   EQUATION %EQ%_DSCRET(R,ALLYEAR,ALLYEAR,P%SWTD%);
 * Maps for refit vintages & types
+  PRC_RCAP(PRC_RCAP(RP)) = PRC_CAP(RP);
   LOOP(PRC_RCAP(R,PRC), F=0; MY_F=0; CNT=EPS;
    LOOP(P$PRC_REFIT(R,PRC,P),Z=PRC_REFIT(R,PRC,P); CNT$CNT=CNT+1;
     IF(ABS(Z)>2, F=F+1); IF(MOD(Z,2)=0,MY_F$(ABS(Z)-4)=3);

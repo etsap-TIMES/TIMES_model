@@ -16,12 +16,10 @@
 *   - HAVE THE USER *.DD files OMIT the declarations to ease maintenance changes
 *-----------------------------------------------------------------------------
 * Version control
-$IF NOT FUNTYPE rpower $ABORT TIMES Version 4.0 and above Requires GAMS 22.0 or above!
-$IF NOT FUNTYPE gamsversion $GOTO DECL
+$IF NOT FUNTYPE gamsversion $ABORT TIMES Version 4.8 and above Requires GAMS 23.0 or above!
 $IF gamsversion 149 $SETGLOBAL G2X6 Yes
 $IF gamsversion 230 $SETGLOBAL OBMAC YES
 $IF gamsversion 236 $SETGLOBAL G2X6 YES
-$LABEL DECL
 $ONEMPTY
 
 *-----------------------------------------------------------------------------
@@ -335,7 +333,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
     UC_CUMFLO(UC_N,ALL_REG,PRC,COM,ITEM,ITEM)       'Multiplier of cumulative process flow variable' //
     UC_CUMCOM(UC_N,ALL_REG,COM_VAR,COM,ITEM,ITEM)   'Multiplier of cumulative commodity variable' //
     UC_UCN(UC_N,SIDE,ALL_R,ALLYEAR,UC_N)            'Multiplier of user constraint variable' //
-    UC_TIME(UC_N,ALL_REG,ALLYEAR)                   'Multiplier of time in model periods (years)' //;
+    UC_TIME(UC_N,ALL_R,ALLYEAR)                     'Multiplier of time in model periods (years)' //;
 
 *-----------------------------------------------------------------------------
 * Extensions & System scalars
@@ -447,6 +445,7 @@ $IF SET FIXBOH $SETGLOBAL STEPPED -
 $IF SET TIMESTEP $SETGLOBAL STEPPED +
 $IF SET STEPPED $SETGLOBAL VAR_UC YES
 $IF %SYSTEM.LICENSELEVEL%==2 $SETGLOBAL VAR_UC YES
+
 *------------------------------------------------------------------------------
 * Other extensions to TIMES code
 *------------------------------------------------------------------------------
