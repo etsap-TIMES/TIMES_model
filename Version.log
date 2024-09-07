@@ -2965,3 +2965,19 @@ pp_qack.mod   : (1)
 coef_ext.vda  : (2)
 solsetv.v3    : (1)
 prepret.dsc   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.3
+-----------------------------------------------------------------------------------------
+Date: 7-Sep-2024 [AL]: Maintenance release
+1) Fixed bug in the ABS extension introduced in v469 related to EQ_BS24
+2) Fixed bug in the ABS extension related to past capacities in EQ_BS09
+3) Fixed issue with spaces in model folder names
+
+initsys.mod   : Increased version number to 4.8.3
+initmty.mod   : (3)
+main_ext.mod  : (3)
+init_ext.abs  : (2)
+prep_ext.abs  : (2)
+coef_ext.abs  : (2)
+equ_ext.abs   : (1),(2)

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -110,3 +110,5 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'BS_RMAX decreasing at slower reser
   OPTION CLEAR=PRC_YMAX,CLEAR=VDA_FLOP,CLEAR=NCAP_AFAC,CLEAR=RCS;
 * Build UC map
   BS_UCMAP(UC_MAP_FLO(UC_N,SIDE,R,P,C))$(BS_BSC(R,P,C)+BS_STGP(R,P)$BS_STIME(R,P,C,'UP'))$=BS_RTYPE(R,C);
+* Ensure existence of AF
+  COEF_AF(RTP_VINTYR(R,T,T,P),S,'UP')$(NOT RTP_CPTYR(R,T,T,P)) $= NCAP_AF(R,T,P,S,'UP')$BS_PRS(R,P,S);

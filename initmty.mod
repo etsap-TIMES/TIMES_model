@@ -445,7 +445,6 @@ $IF SET FIXBOH $SETGLOBAL STEPPED -
 $IF SET TIMESTEP $SETGLOBAL STEPPED +
 $IF SET STEPPED $SETGLOBAL VAR_UC YES
 $IF %SYSTEM.LICENSELEVEL%==2 $SETGLOBAL VAR_UC YES
-
 *------------------------------------------------------------------------------
 * Other extensions to TIMES code
 *------------------------------------------------------------------------------
@@ -488,7 +487,7 @@ $IF %MACRO%==YES $INCLUDE initmty.tm
 * Load data from GDX if DATAGDX set and %RUN_NAME%~DATA exists
 $ IF NOT SET DATAGDX $GOTO RUN
 $ IF NOT %G2X6%==YES $GOTO RUN
-$ IF NOT SET RUN_NAME $SETNAMES %SYSTEM.INCPARENT% . RUN_NAME .
+$ IF NOT SET RUN_NAME $SETNAMES "%SYSTEM.INCPARENT%" . RUN_NAME .
 $ IF NOT EXIST %RUN_NAME%~data.gdx $GOTO RUN
 $ hiddencall gdxdump %RUN_NAME%~data.gdx NODATA > _dd_.dmp
 $ hiddencall sed "/^\(Alias\|[^($]*(\*) Alias\|[^$].*empty *$\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /\$LOAD /I" _dd_.dmp > _dd_.dd
