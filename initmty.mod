@@ -67,7 +67,7 @@ $ONEMPTY
   SET PRC_CAPUNT(REG,PRC,CG,UNITS_CAP) 'Unit of capacity'                //;
   SET PRC_CG(R,PRC,COM_GRP)            'Commodity groups for a process'  //;
   SET PRC_DESC(R,P)                    'Process descriptions by region'  //;
-  SET PRC_FOFF(REG,PRC,COM,ALL_TS,*,*) 'Periods/timeslices for which flow is not possible' //;
+  SET PRC_FOFF(REG,PRC,COM,ALL_TS,*,*) 'Periods/timeslices for which flow is not possible'//;
   SET PRC_MAP(REG,PRC_GRP,PRC)         'Grouping of processes to nature' //;
   SET PRC_NOFF(REG,PRC,*,*)            'Periods for which new capacity can NOT be built' //;
   SET PRC_RMAP(REG,PRC_RSOURC,PRC)     'Grouping of XTRACT processes'    //;
@@ -75,7 +75,7 @@ $ONEMPTY
   SET PRC_TS(ALL_REG,PRC,ALL_TS)       'Timeslices for a process'        //;
   SET PRC_TSL(REG,PRC,TSLVL)           'Timeslice level for a process'   //;
   SET PRC_VINT(REG,PRC)                'Process is to be vintaged'       //;
-  SET PRC_DSCNCAP(R,P)                 'Processes with discrete capacity additions';
+  SET PRC_DSCNCAP(R,P)                 'Process with discrete capacity additions';
   SET PRC_RCAP(REG,PRC)                'Process with early retirement';
   SET PRC_SIMV(REG,PRC)                'Process is to be vintage-simulated';
 
@@ -213,7 +213,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
 
 * capacity installed
   PARAMETER NCAP_START(REG,PRC)                 'Start year for new investments' //;
-  PARAMETER NCAP_SEMI(R,ALLYEAR,P)              'Semi-continuous capacity, lower bound';
+  PARAMETER NCAP_SEMI(R,ALLYEAR,P)              'Semi-continuous capacity, lower bound' //;
   PARAMETER CAP_BND(REG,ALLYEAR,PRC,BD)         'Bound on total installed capacity in a period' //;
 
 * general commodities

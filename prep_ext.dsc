@@ -10,6 +10,7 @@
 * The default option for NCAP_DISC is 10 (no interpolation/extrapolation, 
 * but migrate to milestone years)
 *-----------------------------------------------------------------------------
+$IFI %DSC%%SOLMIP%==YESYES PRC_DSCNCAP(R,P) $= PRC_SEMI(R,P);
 $IF NOT DEFINED PRC_DSCNCAP $EXIT
 
 * Inter-/extrapolation

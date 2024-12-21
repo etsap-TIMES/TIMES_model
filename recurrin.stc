@@ -141,7 +141,7 @@ $macro Z_UPS VAS_UPS
 $macro Z_UPT VAS_UPT
 $macro Z_UDP VAS_UDP
 $macro Z_RLD VAS_RLD
-$macro Z_GRIDELC VAS_GRIDELC
+$macro Z_GRIDIO VAS_GRIDIO
 $macro Z_COMAUX VAS_COMAUX
 
 $macro Z_CAP(r,t,p,sow)     VAS_CAP(r,t,p,'1')
@@ -151,6 +151,7 @@ $macro Z_SCAP(r,v,t,p,sow)  VAS_SCAP(r,v,t,p,'1')
 $macro Z_DRCAP(r,v,t,p,w,j) VAS_DRCAP(r,v,t,p,'1',j)
 $macro Z_DNCAP(r,t,p,sow,j) VAS_DNCAP(r,t,p,'1',j)
 $macro Z_SNCAP(r,t,p,sow)   VAS_SNCAP(r,t,p,'1')
+$macro Z_XCAP(r,t,p,sow)    VAS_XCAP(r,t,p,'1')
 
 $macro Z_UC VAS_UC
 $macro Z_UCR VAS_UCR

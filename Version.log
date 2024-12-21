@@ -2981,3 +2981,29 @@ init_ext.abs  : (2)
 prep_ext.abs  : (2)
 coef_ext.abs  : (2)
 equ_ext.abs   : (1),(2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.4
+-----------------------------------------------------------------------------------------
+Date: 20-Dec-2024 [AL]: Minor release
+1) Added support for grid modeling with PTDF formulations
+2) Added support for gas grid modeling with Weymouth equations
+3) Other subtle improvements
+
+initsys.mod   : Increased version number to 4.8.4
+initmty.mod   : (1)
+maplists.def  : (2)
+ppmain.mod    : (2)
+pp_qack.mod   : (3)
+initmty.vda   : (1),(2)
+solve.stp     : (3)
+init_ext.vda  : (2)
+prep_ext.vda  : (1)
+coef_ext.vda  : (2)
+powerflo.vda  : (1),(2)
+mod_ext.vda   : (1),(2)
+init_ext.dsc  : (3)
+recurrin.stc  : (1)
+
+Added file:
+gasgrids.vda : (2)

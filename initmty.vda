@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -43,8 +43,9 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
 * Special: Risk parameters & reporting options
   PARAMETER UC_ACTBET(UC_N,ALL_REG,ALLYEAR,PRC);
   PARAMETER UC_FLOBET(UC_N,ALL_REG,ALLYEAR,PRC,CG);
-  PARAMETER PRC_REACT(R,ALLYEAR,P) 'Reactance of transmission line';
   PARAMETER COM_CSTBAL(R,ALLYEAR,C,S,ITEM,CUR) 'Cost on specific component of node balance';
+  PARAMETER PRC_REACT(R,ALLYEAR,P) 'Reactance of transmission line';
+  PARAMETER GR_PTDF(R,YEAR,P,C,ALL_R,C) 'PTDF of transmission line'//;
   PARAMETER GR_GENLEV(R,C) 'Grid connection category for electricity generation commodity'//;
   PARAMETER GR_DEMFR(R,ALLYEAR,C,S) 'Fraction of total electricity demand allocated to grid node' //;
   PARAMETER GR_ENDFR(R,ALLYEAR,C,CG) 'Fraction of sectoral electricity demand allocated to grid node' //;
@@ -53,6 +54,14 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
   PARAMETER GR_XBND(R,ALLYEAR) 'Maximum level of net imports to / exports from region' //;
   PARAMETER GR_THMIN(R,LL,P) 'Thermal minimum level' //;
   PARAMETER GR_VARGEN(R,S,ITEM,BD) 'Variance in type of generation';
+  PARAMETERS
+    GG_DENS(R,C)          'Density of gases'//
+    GG_GAMMA(R,YEAR,P,C)  'Comprossion factor'//
+    GG_KGF(R,YEAR,P,C)    'Weymouth constants'//
+    GG_KLP(R,YEAR,P,C)    'Linepack constants'//
+    GG_PRBD(R,YEAR,C,LIM) 'Nodal pressure bounds'//
+    GG_PP(R,YEAR,P,C,BD,J) //;
+
 *-----------------------------------------------------------------------------
 * Attributes for experimental ECB extension
   PARAMETER COM_MSHGV(R,YEAR,C)        'Choices heterogeneity parameter' //;
@@ -62,5 +71,6 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
   SET ALL_REG / IMPEXP /;
   SET COM_GRP / IMP, EXP /;
   SET ITEM / OBJ /, UC_NAME / ANNUAL %MX% /;
+  SET UNIT 'Numbers of different units' /0/;
   SET UC_N /%SYSPREFIX%SOLVE_STATUS 'Model solution status code'/;
 *-----------------------------------------------------------------------------

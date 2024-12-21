@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -34,7 +34,7 @@ $BATINCLUDE fillparm ACT_MAXNON R 'P,UPT' ",'0','0','0','0'" V 'RVP(R,V,P)' 'GE 
 $BATINCLUDE fillparm STG_MAXCYC R P ",'0','0','0','0','0'" V 'RTP(R,V,P)' 'GE 0'
 $IF DEFINED UC_FLOBET $BATINCLUDE fillparm UC_FLOBET 'UC_N,R' 'P,C' ",'0','0','0'" T 1 'GE 0'
 $IF DEFINED COM_CSTBAL $BATINCLUDE fillparm COM_CSTBAL R 'C,S,ITEM,CUR' ",'0','0'" T 1 'GE 0'
-$IF DEFINED PRC_REACT $BATINCLUDE powerflo.vda PREP
+$IFI %POWERFLO%==YES  $BATINCLUDE powerflo.vda PREP
 $IF DEFINED GR_VARGEN $BATINCLUDE resloadc.vda
 $BATINCLUDE equcrtp.vda PREP_EXT
 *------------------------------------------------------------------------------

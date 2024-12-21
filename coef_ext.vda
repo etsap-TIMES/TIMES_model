@@ -28,7 +28,7 @@ $ LABEL RESID
 *-----------------------------------------------------------------------------
 * Offline capacity terms & STS amendments
 $ SETGLOBAL UPSCAPS -SUM(TS_MAP(R,ALL_TS,S)$RPS_UPS(R,P,ALL_TS),%VAR%_UPS(R,V,T,P,ALL_TS,'N'%SOW%))
-$ IFI %OBMAC%==YES $macro var_sts(r,v,t,p,ts,bd) sum(rp_stl(r,p,tsl,bd)$ts_group(r,tsl,ts),%var%_udp(r,v,t,p,ts,bd%sow%))
+$ macro var_sts(r,v,t,p,ts,bd) sum(rp_stl(r,p,tsl,bd)$ts_group(r,tsl,ts),%var%_udp(r,v,t,p,ts,bd%sow%))
 $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
 *-----------------------------------------------------------------------------
 * Get AF-UPs for processes having storage level constrained
@@ -60,11 +60,11 @@ $ IFI NOT %STSFLX%==YES RP_STL(RP_STS,TSL,BD)=0;
 * Convert ACT_EFF factors for reduced flows
   TRACKPC(TRACKPC) = RPC_FFUNC(TRACKPC);
   ACT_FLO(RTP(R,V,P),C,S)$(RPCS_VAR(R,P,C,S)$TRACKPC(R,P,C)) = 1/SUM(RP_CGC(R,P,CG,C),MAX(MICRO,ACT_EFF(RTP,CG,S)*(1+(ACT_EFF(RTP,C,S)-1)$ACT_EFF(RTP,C,S))));
-* Convert FLO_FUNCX factors for reduced flows
+* Convert FLO_FUNCX factors for all reduced flows
   OPTION CG_GRP <= RTP_FFCX;
   LOOP(RPCG_PTRAN(RP,C,COM,CG,CG2)$CG_GRP(RP,CG,CG2),IF(RPC_FFUNC(RP,C),RP_DCGG(RP,C,CG,CG2,'UP')=YES; ELSE RP_DCGG(RP,COM,CG,CG2,'LO')=YES));
   RP_DCGG(TRACKPC(RP,COM),CG,C,'UP')$(RP_CGC(RP,CG,COM)$RPC_ACT(RP,C)) $= CG_GRP(RP,CG,C);
-  RTP_FFCX(RTP_CAPYR(R,V,T,P),ACTCG,C)$RPC_FFUNC(R,P,C) $= SUM(RP_DCGG(R,P,C,CG,CG2,L),(POWER(RTP_FFCX(R,V,T,P,CG,CG2)+1,BDSIG(L))-1)$(RTP_FFCX(R,V,T,P,CG,CG2)+1));
+  RTP_FFCX(RTP_CAPYR(R,V,T,P),ACTCG,C)$RPC_FFUNC(R,P,C) $= SUM(RP_DCGG(R,P,C,CG,CG2,L),(POWER(RTP_FFCX(R,V,T,P,CG,CG2)+1,BDSIG(L))-1)$(RTP_FFCX(R,V,T,P,CG,CG2)-MIN(0,BDSIG(L))));
   LOOP(RP_DCGG(R,P,C,CG,CG2,L),RTP_FFCX(R,V,T,P,CG,CG2)=0);
 * Default to COEF_PTRAN
   RP_CGC(R,P,CG,C)$TRACKPC(R,P,C) = NO;

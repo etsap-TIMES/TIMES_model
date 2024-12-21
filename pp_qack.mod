@@ -33,12 +33,11 @@
 *   - check that no 0/EPS for attributes that could turn-off a flow, or cause a 0 divide
 *-----------------------------------------------------------------------------
 *V0.5c 980904 - File opened in PPMAIN.MOD, setup to append in case any PP_MAIN messages output
-*  FILE QLOG / QA_CHECK.LOG /;
+* FILE QLOG / QA_CHECK.LOG /;
   ALIAS(U2,U3,U4,*);
   IF(YES, PUT QLOG; QLOG.AP$PUTOUT = 1;
 *...make 2 decimals points and allow for wider page
     QLOG.NW=10; QLOG.ND=2; QLOG.PW=150);
-
   PUTGRP = 0;
 *-----------------------------------------------------------------------------
 * Some important control sets are completed here
@@ -78,13 +77,16 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 99 'Year Fraction G_YRFR is ZERO!'
 $    BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 99 'Illegal system commodity in topology.'
      PUT QLOG ' FATAL ERROR   -     R=',%RL%,' P=',%PL%,' C=',C.TL;
   );
-  PUTGRP = 0; Z = 1;
+  PUTGRP = 0; 
 * see that components of any CG for a process in topology
   LOOP(PRC_CG(R,P,CG)$(NOT COM_TYPE(CG)),
-    IF(NOT SUM(COM_GMAP(R,CG,C)$RPC(R,P,C),1),
-      LOOP(COM_GMAP(R,CG,C)$(NOT RPC(R,P,C)),
+    IF(NOT SUM(COM_GMAP(R,CG,C)$RPC(R,P,C),1), Z = 1;
+      LOOP(COM_GMAP(R,CG,C)$(NOT RPC(R,P,C)), Z = 0;
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'Commodity in CG of process P but not in topology'
          PUT QLOG ' SEVERE WARNING  -   R=',%RL%,' P=',%PL%,' C=',%CL%,' CG=',CG.TL );
+      IF(Z,
+$        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 10 'No commodities in CG of process P'
+         PUT QLOG ' SEVERE WARNING  -   R=',%RL%,' P=',%PL%,' CG=',CG.TL );
       )
     );
   PUTGRP = 0;

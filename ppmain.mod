@@ -276,6 +276,7 @@ $       BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 09 'Commodity group found in topolo
         PUT QLOG ' SEVERE ERROR  - Group removed from topology:   R=',%RL%,' CG=',C.TL);
       OPTION DEM<=MI_DMAS; RC(DEM)=NO; RPC(R,P,C)$DEM(R,C)=NO; OPTION CLEAR=MI_DMAS,CLEAR=DEM);
     COM_GMAP(RC(R,C),C) = YES;
+    NRG_GMAP(R,NRG_GRID(NRG_TYPE),C) $= NRG_TMAP(R,NRG_TYPE,C);
 
 * UR 02/22/99 PRC_CG is now internally generated
     PRC_CG(RPC)   = YES;
@@ -941,8 +942,7 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Unsupported diverging trade topo
     FIN(RC(R,C))$COM_TMAP(R,'FIN',C) = YES;
 
 * free up if conservation or free energy type, unless provided by the user
-*GG* need to add code to INITSYS/MOD_EQUA/EQMAIN to handle =N= (e.g. what is bound),
-*    ignored at the moment with no equation created
+*GG* need to add code to handle =N= balances, ignored at the moment with no equation created
     TRACKC(RC) = YES;
     LOOP(LIM,TRACKC(R,C)$COM_LIM(R,C,LIM) = NO);
     COM_LIM(TRACKC(NRG(R,C)),'UP')$(NRG_TMAP(R,'CONSRV',C) + NRG_TMAP(R,'FRERENEW',C)) = YES;

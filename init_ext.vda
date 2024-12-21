@@ -28,6 +28,7 @@
  SET RPC_ACE(REG,PRC,CG) //;
  SET RVP_KMAP(R,YEAR,P,YEAR);
  SET DUMIMP / IMPNRGZ,IMPMATZ,IMPDEMZ /;
+ SET NRGELC(ALL_R,C) 'Electricity';
 *-----------------------------------------------------------------------------
 * Internal PARAMATERs
   SCALAR MIYR_BOH / 0 /;
@@ -126,8 +127,9 @@ $ IF %CLI%==YES LOOP((UC_N,SIDE,R,LL,CM_VAR)$UC_CLI(UC_N,SIDE,R,LL,CM_VAR),UC_AT
   LOOP(UC_ATTR(R,UC_N,SIDE,UC_GRPTYPE,UC_NAME(TSL)),UC_TSL(R,UC_N,SIDE,TSL)=YES);
 $ IF DEFINED UC_ACTBET
   UC_FLOBET(UC_N,ALL_R,YEAR,P,%PGPRIM%) $= UC_ACTBET(UC_N,ALL_R,YEAR,P); LOOP((UC_N,R,YEAR,P)$UC_ACTBET(UC_N,R,YEAR,P),UC_GMAP_P(R,UC_N,'ACT',P)=YES);
-$ IFI %POWERFLO%==YES LOOP(SAMEAS('REACTANCE',UC_N),PRC_REACT(R,T,P) $= UC_CAP(UC_N,'RHS',R,T,P));
-$ IF DEFINED PRC_REACT $SETGLOBAL POWERFLO YES
+$ IF %STAGES%==YES               $CLEAR GG_KGF
+$ IF DEFINED PRC_REACT           $SETGLOBAL POWERFLO YES
+$ IFE CARD(GR_PTDF)+CARD(GG_KGF) $SETGLOBAL POWERFLO YES
 *-----------------------------------------------------------------------------
 * Load bounds/prices for exogenous trade from previous run if requested
 SET PREMILE(ALLYEAR);
