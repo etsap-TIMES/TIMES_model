@@ -1,23 +1,22 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
-* EQ_EXT.EXT declarations & call for actual equations                         *
-*   %1 - mod or v# for the source code to be used                             *
+* EQ_EXT.dsc declarations & call for actual DSC equations
+*   %1 - mod or v# for the source code to be used
 *=============================================================================*
 * Questions/Comments:
 *-----------------------------------------------------------------------------
-$IF NOT DEFINED PRC_DSCNCAP $EXIT
-$SETGLOBAL SOLMIP YES
+$ IFI NOT %DSC%==YES $EXIT
 *-----------------------------------------------------------------------------
 * Discrete investments
 
   EQUATIONS
-  %EQ%_DSCNCAP(R,ALLYEAR,P%SWTD%)  'Discrete capacity extension (=E=)'
-  %EQ%_DSCONE(R,ALLYEAR,P%SWTD%)   'Discrete capacity extension unity condition (=E=)'
-;
-$IF '%STAGES%'==YES $%WITSPINE% %SW_STVARS%
+    %EQ%_DSCNCAP(R,ALLYEAR,P%SWTD%)  'Discrete capacity extension (=E=)'
+    %EQ%_DSCONE(R,ALLYEAR,P%SWTD%)   'Discrete capacity extension unity condition (=E=)'
+  ;
+$ IF '%STAGES%'==YES $%WITSPINE% %SW_STVARS%
 *-----------------------------------------------------------------------------
   %EQ%_DSCNCAP(RTP(%R_T%,P)%SWT%)$PRC_DSCNCAP(R,P)..
 

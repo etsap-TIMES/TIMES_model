@@ -216,7 +216,7 @@ $ SETGLOBAL IREAUXBAL $BATINCLUDE powerflo.vda IREAUX
   LOOP(J$SUM(GR_GRID(J,R,C)$GR_GID(R,C),1), Z = SMAX(GR_GRID(J,R,C),SUM(P$GR_FLOW(R,P,C),1));
     LOOP(GR_GRID(J,R,C)$Z,IF(SUM(P$GR_FLOW(R,P,C),1)=Z, Z=0; %VAR%_COMAUX.FX(R,T,C,S%SOW%)=EPS)));
   GR_GRID(J,R,'ACT') $= SUM(GR_GRID(J,NRGELC(R,C)),1);
-$ IF DECLARED EQ_OBJ $EXIT
+$ IF DEFINED VAR_GRVIRT $EXIT
 *------------------------------------------------------------------------
 $ SET TMP 0
 $ IFI %DSC%%SOLMIP%==YESYES $SET TMP SUM((VNT(TT(V),T),UNIT)$((NCAP_DISC(r,v,p,unit)>0)$RTP(r,v,p)),%VARV%_DNCAP(r,v,p%sws%,unit)*(1-MAX((1-COEF_CPT(r,v,t,p))/%BIGM%,(1-COEF_CPT(r,v,t,p))**4)))
@@ -245,9 +245,7 @@ $ LABEL POWFLO
   SUM((GR_TOP(R,C,REG,COM,P),RTP_VINTYR(REG,V,T,P))$RTPCS_VARF(REG,T,P,COM,S),
     SUM(RPC_IRE(REG,P,COM,IE)$PRC_REACT(R,T,P),%VAR%_IRE(REG,V,T,P,COM,S,IE%SOW%)*(1-2*XPT(IE))))
 
-  =E=
-
-  (%VAR%_COMAUX(R,T,C,S%SOW%)-%VAR%_COMAUX(REG,T,COM,S%SOW%)) * GR_ADMIT(R,T,C,REG,COM);
+  =E=  (%VAR%_COMAUX(R,T,C,S%SOW%)-%VAR%_COMAUX(REG,T,COM,S%SOW%)) * GR_ADMIT(R,T,C,REG,COM);
 
 *------------------------------------------------------------------------
 
@@ -261,7 +259,7 @@ $ LABEL POWFLO
 *...PTDF for net injections: Normal grid nodes
     SUM(RC_GRID(REG,T,COM)$(COM_TS(REG,COM,S)$GR_PTDF(R,T,P,C,REG,COM)), GR_PTDF(R,T,P,C,REG,COM) * %VAR%_COMAUX(REG,T,COM,S%SOW%))
 *...PTDF for virtual injections (redundant in this formulation)
-*  +SUM(GR_TOP(REG,COM1,ALL_R,COM2,PRC)$GR_CANDID(REG,T,PRC),
+*   +SUM(GR_TOP(REG,COM1,ALL_R,COM2,PRC)$GR_CANDID(REG,T,PRC),
 *     (GR_PTDF(R,T,P,C,REG,COM1)-GR_PTDF(R,T,P,C,ALL_R,COM2)) * SUM(RPS_S1(REG,PRC,TS)$RS_FR(REG,S,TS),RS_FR(REG,S,TS)*VAR_GRVIRT(REG,T,PRC,COM1,TS)));
   ;
 *------------------------------------------------------------------------

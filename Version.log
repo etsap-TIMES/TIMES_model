@@ -3007,4 +3007,20 @@ init_ext.dsc  : (3)
 recurrin.stc  : (1)
 
 Added file:
-gasgrids.vda : (2)
+gasgrids.vda  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.5
+-----------------------------------------------------------------------------------------
+Date: 31-Dec-2024 [AL]: Maintenance release
+1) Fixed runtime issues turned up in previous version
+2) Cosmetic MIP handling improvement
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.8.5
+powerflo.vda  : (1)
+prep_ext.dsc  : (2)
+equ_ext.dsc   : (2)
+mod_ext.dsc   : (2)
+ppm_ext.dsc   : (2)
+_times.g00    : (1)
