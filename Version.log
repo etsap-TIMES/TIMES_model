@@ -3024,3 +3024,18 @@ equ_ext.dsc   : (2)
 mod_ext.dsc   : (2)
 ppm_ext.dsc   : (2)
 _times.g00    : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.6
+-----------------------------------------------------------------------------------------
+Date: 25-Jan-2025 [AL]: Maintenance release
+1) Fixed bug related to zero SHAPE with NCAP_AFX
+2) Fixed bug related to retiring capacities with zero CAP_BND
+3) Added option for including PASTI within horizon in Cap_New reporting
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.8.6
+ppmain.mod    : (2)
+coef_cpt.mod  : (1)
+pp_shapr.mod  : (1)
+rpt_obj.rpt   : (3)

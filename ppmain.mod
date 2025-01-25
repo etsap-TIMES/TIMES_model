@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -533,7 +533,7 @@ $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP IFQ 'Inconsistent CAP_BND(UP/FX) defi
    RVP(RTP)$((CAP_BND(RTP,'UP')=0)$CAP_BND(RTP,'UP')) = YES;
    LOOP(T, NCAP_BND(R,TT,P,'UP')$(RTP_CPTYR(R,TT,T,P)$RVP(R,T,P)) = EPS);
    RVP(RTP_VARP)=NO; CAP_BND(RVP,BD) = 0;
-   CAP_BND(RTP,BD)$MAPVAL(CAP_BND(RTP,BD)) = 0;
+   CAP_BND(RTP,BDLOX)$MAPVAL(CAP_BND(RTP,BDLOX)) = 0;
 * Check whether both UP and LO bounds (then it pays to have VAR_CAP)
    RTP_VARP(RTP(R,T,P))$(CAP_BND(RTP,'UP')*CAP_BND(RTP,'LO')) = YES;
    PUTGRP=0;
@@ -601,7 +601,7 @@ $IF DEFINED PRC_SIMV LOOP(T,NO_RVP(R,TT-1,P)$(RTP_CPTYR(R,TT,T,P)$PRC_SIMV(R,P))
 *-----------------------------------------------------------------------------
 * establishment PRC_CAPACT/ACTFLO from PRC_CAPUNT/ACTUNT/COM_UNIT & determine INOUT(r,p)
 *-----------------------------------------------------------------------------
-   PRC_CAPACT(RP(R,P))$(NOT PRC_CAPACT(R,P)) = 1;
+   PRC_CAPACT(RP)$(NOT PRC_CAPACT(RP)) = 1;
 * Copy PRC_ACTFLO from PG to individual commodities in PG, allowing reserved word %PGPRIM%
    PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(RTP,C))$RPC_PG(R,P,C)) $= SUM(RP_PG(R,P,CG),PRC_ACTFLO(R,V,P,CG));
    PRC_ACTFLO(RTP(R,V,P),C)$((NOT PRC_ACTFLO(RTP,C))$RPC_PG(R,P,C)) $= PRC_ACTFLO(RTP,%PGPRIM%);

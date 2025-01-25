@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -34,7 +34,7 @@ $ IF %3=='' $SETLOCAL PASS YES
   LOOP(SAMEAS(AGE,'1'),
 * Calculate average SHAPE for plants still operating in each period:
     %4$((%PASS%)$RTP_ISHPR(R,V,P)) = %1%2 *
-       SUM(RTP_SHAPI(R,V,P,BD,J,JJ,LL,YEAR), MULTI(JJ,T) *
+       SUM(RTP_SHAPI(R,V,P,BD,J,JJ,LL,YEAR), EPS+MULTI(JJ,T) *
          SUM(PERIODYR(T,EOHYEARS)$(YEARVAL(EOHYEARS) LE MAX(B(T),YEARVAL(YEAR))),
              SHAPE(J,AGE+(MIN(YEARVAL(EOHYEARS),YEARVAL(YEAR))-YEARVAL(LL)))) /
          (MAX(1,MIN(E(T),YEARVAL(YEAR))-MAX(B(T),YEARVAL(LL))+1))));

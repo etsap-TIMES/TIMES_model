@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -45,7 +45,7 @@ $IF '%VALIDATE%'==YES COEF_CPT(RTP_CPTYR(R,T,T,P)) = 1;
   TRACKP(RP)$RP_UPL(RP,'FX') = NO;
   TRACKP(PRC_CAP(PRC_VINT)) = YES;
   NCAP_AFBX(RTP(R,V,P),BD)$(RP_AFB(R,P,BD)>0) $= NCAP_AFX(RTP);
-$ BATINCLUDE pp_shapr.%1 NCAP_AF (R,V,P,S,BD) "TRACKP(R,P)*PRC_TS(R,P,S)" COEF_AF(RTP_CPTYR(R,V,T,P),S,BD) NCAP_AFM(R,V,P) B
+$ BATINCLUDE pp_shapr.%1 NCAP_AF (R,V,P,S,BD) "TRACKP(R,P)*RP_AFB(R,P,BD)*PRC_TS(R,P,S)" COEF_AF(RTP_CPTYR(R,V,T,P),S,BD) NCAP_AFM(R,V,P) B
 
   TRACKP(PRC_CAP(R,P)) = (NOT TRACKP(R,P));
   COEF_AF(RTP_CPTYR(R,V,T,P),S,BD)$(PRC_TS(R,P,S)$TRACKP(R,P)) $= NCAP_AF(R,T,P,S,BD);

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -24,19 +24,22 @@ $IFI '%STAGES%'==YES PASTSUM(NCAP_YES(R,T,P)) = SUM(SW_TSW(SOW,T,WW),OBJ_SIC(R,T
 * Lump-sum investment costs
 *------------------------------------------------------------------------------
 $SET P1 "'%SYSPREFIX%INSTCAP'"
-  %1CAP_NEW(%2RVPT(NCAP_YES(R,T,P),TT),%P1%) = VAR_NCAP.L(R,T,P);
-  %1CAP_NEW(%2NCAP_YES(R,T,P),T,%P1%)$(NOT OBJ_2A(R,T,P)) = COEF_RPTI(R,T,P)*VAR_NCAP.L(R,T,P);
+  F = RPT_OPT('NCAP','7')>0;
+  COEF_RTP(RTP(R,T,P))$PRC_CAP(R,P) = VAR_NCAP.L(RTP)$NCAP_YES(RTP) +
+    SUM(PERIODYR(T,Y_EOH)$NCAP_PASTI(R,Y_EOH,P),NCAP_PASTI(R,Y_EOH,P)*POWER(COEF_RPTI(RTP),1$T(Y_EOH)-1))$F;
+  %1CAP_NEW(%2RVPT(R,T,P,TT),%P1%) $= COEF_RTP(R,T,P);
+  %1CAP_NEW(%2RTP(R,T,P),T,%P1%)$((NOT OBJ_2A(RTP))$COEF_RTP(RTP)) = COEF_RPTI(RTP)*COEF_RTP(RTP);
   OPTION CLEAR=UNCD1; UNCD1(J)$(ORD(J)<3)=YES;
   RTP_OBJ(JJ(UNCD1(J)),OBJ_ICUR(NCAP_YES(R,T(V),P),CUR))=
 $IF '%ETL%'==YES (VAR_IC.L(R,T,P)*COR_SALVI(R,T,P,CUR))$SEG(R,P) +
     SUM((OBJ_SUMII(R,T,P,LIFE,K_EOH,JOT),INVSPRED(K_EOH,JOT,Y,K)),
         (OBJ_ICOST(R,K,P,CUR)%SIC%$(ORD(J)=2)+(OBJ_ITAX(R,K,P,CUR)-OBJ_ISUB(R,K,P,CUR))$(ORD(J)=1))) *
-    VAR_NCAP.L(R,T,P) * COR_SALVI(R,T,P,CUR) / OBJ_DIVI(R,T,P) /
+    COEF_RTP(R,T,P) * COR_SALVI(R,T,P,CUR) / OBJ_DIVI(R,T,P) /
     (1+G_DRATE(R,T,CUR))**(%DISCSHIFT%$(NOT NCAP_ILED(R,T,P)));
   SYSPLIT(SYSUC)=1-SUM(SYSUCMAP(SYSUC,ITEM),1);
   LOOP(UNCD1(J),%1CAP_NEW(%2R,T,P,TT,SYSUC)$(%1CAP_NEW(%2R,T,P,TT,%P1%)$SUCMAP(J,SYSUC))=SUM(RDCUR(R,CUR),RTP_OBJ(J,R,T,P,CUR)*ABS(SYSPLIT(SYSUC)-COEF_CRF(R,T,P,CUR)))
     IF(NOT MY_F,OPTION CLEAR=COEF_CRF));
-  OPTION CLEAR=RTP_OBJ;
+  OPTION CLEAR=COEF_RTP,CLEAR=RTP_OBJ;
 *-----------------------------------------------------------------------------
 * Objective function by component
 *-----------------------------------------------------------------------------
