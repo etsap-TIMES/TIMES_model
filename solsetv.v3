@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2024 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2025 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
 * SOLSETV.VDA
 *
@@ -7,7 +7,7 @@
 *
 *-----------------------------------------------------------------------------
 $IF NOT '%1'=='' $GOTO %1
-* Scenario index not supported in current version
+* Scenario index defaulting to 1
 $IF NOT %STAGES%==YES  SOW('1') = YES;
 *-----------------------------------------------------------------------------
 * Make sure CLI attributes are defined
@@ -46,10 +46,10 @@ EQ_CumfloM 'Cumulative flow constraint - Marginals'
 EQ_IreM    'Inter-regional trade equations - Marginals'
 
 * calculated parameters
-PAR_capLO 'Capacity Lower Limit'
-PAR_capUP 'Capacity Upper Limit'
-PAR_Top   'Process topology (Opted out - SET RPT_TOP YES to activate)'
-Cap_New   'Newly installed capacity and lumpsum investment by vintage and commissioning period'
+PAR_capLO  'Capacity Lower Limit'
+PAR_capUP  'Capacity Upper Limit'
+PAR_Top    'Process topology (Opted out - SET RPT_TOP YES to activate)'
+Cap_New    'Newly installed capacity and lumpsum investment by vintage and commissioning period'
 
 * calculated costs
 COST_inv   'Annual investment costs'
@@ -76,23 +76,29 @@ Reg_obj    'Regional total discounted system cost'
 Reg_irec   'Regional total discounted implied trade cost'
 Reg_ACost  'Regional total annualized costs by period'
 User_Con   'Level of user constraint'
-User_ConFXM  'Marginal cost of user constraint (or group-wise market share)'
-User_ConLOM  'Marginal cost of lower bound user constraint'
-User_ConUPM  'Marginal cost of upper bound user constraint'
+User_ConFXM 'Marginal cost of user constraint (or group-wise market share)'
+User_ConLOM 'Marginal cost of lower bound user constraint'
+User_ConUPM 'Marginal cost of upper bound user constraint'
 User_DynbM  'Marginal cost of dynamic process bound constraint'
 User_Maxbet 'Level of MaxBet constraint'
 
 * Climate module and MACRO
-VAR_climate   'Climate result variables'
-Dual_Clic     'Shadow price of climate constraint'
-VAR_Macro     'MACRO result variables'
+VAR_climate 'Climate result variables'
+Dual_Clic   'Shadow price of climate constraint'
+VAR_Macro   'MACRO result variables'
 /;
 
 $LABEL REST
 
 $IF DECLARED IRE $ABORT Illegal Declaration of Internal TIMES Identifier: IRE - Run Aborted
-SCALAR IRE "Inter-regional Exchange (Exports & Imports)";
-SCALAR STG "Storage Processes (genuine)";
+SETS
+  IRE(IRE)   'Inter-regional Exchange (Exports & Imports)',
+  IRELX(IRE) 'Electricity Exchange Processes',
+  IRENX(IRE) 'Enodogenous Trade Exchange',
+  STG(IRE)   'Storage Processes (genuine)',
+  STS(IRE)   'General Multilevel Storage',
+  RCAP(IRE)  'Processes with Retirements',
+  NST(IRE)   'Night Storage';
 SETS
   DMD(R,P)   'Demand Devices'
   PRE(R,P)   'Energy Processes'
@@ -187,7 +193,10 @@ $ EXIT
 *---------------------------------------------------------------------
 $ LABEL FINISHUP
 * Finally, do some cleanup and set optional TOP indicators
-  OPTION UC_DYNBD < PRC_DYNUC;
+  OPTION CLEAR=RP_UX, UC_DYNBD < PRC_DYNUC;
+  RP_SGS(R,P) $= PRC_MAP(R,'NST',P);
+  IRE_DIST(RP_IRE(R,P)) $= SUM(RPC_IREIO(R,P,C,IE,'IN'),1);
+  RP_UX(RP_IRE(R,P)) $= SUM(RPC_IRE(R,P,C,IE),NRGELC(R,C));
 $ BATINCLUDE solsysd.v3 REG_ACOST ! ,T, '' SOW,R S R
 $ BATINCLUDE solsysd.v3 REG_WOBJ ! , ,CUR SOW,R S R
   OPTION CLEAR=AFS,CLEAR=PAR_OBJSAL,CLEAR=RTPC,CLEAR=RTTC,CLEAR=COEF_VNT,CLEAR=RVP_KMAP,CLEAR=RTP_VNTBYR,CLEAR=PAR_TOP;
@@ -195,6 +204,6 @@ $IFI %RPT_TOP%==YES SET ADESC / PAR_Top 'Process topology indicator' /; RPT_OPT(
   IF(RPT_OPT('FLO','7'),
     PAR_TOP(R,T(MIYR_1),P,C,IO)$TOP(R,P,C,IO) = EPS;
     PAR_TOP(R,T(MIYR_1),P,C,'OUT')$RPC_IRE(R,P,C,'IMP') = EPS;
-    PAR_TOP(R,T(MIYR_1),P,C,'IN')$RPC_IRE(R,P,C,'EXP') = EPS;
+    PAR_TOP(R,T(MIYR_1),P,C,'IN')$RPC_IRE(R,P,C,'EXP')  = EPS;
     PAR_TOP(R,T-(ORD(T)-1),P,C,IO)$NCAP_COM(R,T,P,C,IO) = EPS;
   );

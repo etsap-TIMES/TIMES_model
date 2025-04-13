@@ -3039,3 +3039,20 @@ ppmain.mod    : (2)
 coef_cpt.mod  : (1)
 pp_shapr.mod  : (1)
 rpt_obj.rpt   : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.7
+-----------------------------------------------------------------------------------------
+Date: 11-Apr-2025 [AL]: Maintenance release
+1) Improved CHP outshare handling in special cases
+2) For Macro MLF, added support for FIXBOH and improved HDF
+3) Added a few process sets for reporting
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.8.7
+pp_chp.mod    : (1)
+clearsol.stp  : (2)
+calibase.mlf  : (2)
+rpt_ext.mlf   : (2)
+solsetv.v3    : (3)
+times2veda.vdd: (3)

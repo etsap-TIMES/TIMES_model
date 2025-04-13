@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *==============================================================================*
@@ -45,9 +45,10 @@
 *-----------------------------------------------------------------------------
 * EQ_OUTSHR controls: Set bound for the electricity output
 * Define the share over PG if there is more than just ELC, otherwise NRG
-  RP_GRP(TRACKPG)=NO; TRACKP(RP_PRC)=NO; RP_GRP(TRACKP,C)=NO;
+  RP_GRP(TRACKPG)=NO; TRACKP(RP_PRC)=NO;
   OPTION CLEAR=TRACKPG; TRACKPG(RP_PG(TRACKP,CG))=YES;
-  TRACKPG(RP_PGACT(RP),'NRG') $= SUM(CHP_ELC(RP,C),1);
+  TRACKPG(RP_PGACT(CHP(R,P)),CG('NRG')) $= SUM(RP_GRP(R,P,C)$COM_GMAP(R,CG,C),1);
+  RP_GRP(RP_GRP(RP,C))$SUM(TRACKPG(RP,CG),1) = NO;
   LOOP((CHP_ELC(R,P,C),TRACKPG(R,P,CG)),
    FLO_SHAR(RTP(R,V,P),C,CG,S,'LO')$(PRC_TS(R,P,S) * NCAP_CHPR(RTP,'UP')) = 1 / (1+NCAP_CHPR(RTP,'UP'));
    FLO_SHAR(RTP(R,V,P),C,CG,S,'FX')$(PRC_TS(R,P,S) * NCAP_CHPR(RTP,'FX')) = 1 / (1+NCAP_CHPR(RTP,'FX'));

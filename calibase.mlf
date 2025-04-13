@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -80,7 +80,7 @@ $   INCLUDE ddfupd.msa
     TM_UDF(R,T)=TM_HDF(R,T); TM_HDF(R,T)=COEF_PVT(R,T);
     LOOP(PP(T-1),TM_HDF(MR(R),T) = TM_HDF(R,PP)*EQ_ESCOST.M(R,T)/EQ_ESCOST.M(R,PP));
     Z=ROUND(TM_DEFVAL('USEHDF'));
-    TM_HDF(R,T)=TM_UDF(R,T)*(TM_HDF(R,T)/COEF_PVT(R,T))**.9$Z;
+    TM_HDF(R,T)=TM_UDF(R,T)*(TM_HDF(R,T)/COEF_PVT(R,T))**.5$Z;
 
     TM_GDP(MR(R),PP) = VAR_C.L(R,PP)+VAR_INV.L(R,PP) + VAR_NTX.L(R,PP);
     PAR_GRGDP(MR(R),tp(T-1)) = 100 * ((TM_GDP(R,T)/TM_GDP(R,TP))**(1/NYPER(TP))-1);
@@ -106,6 +106,7 @@ $   INCLUDE ddfupd.msa
     IF(DOITER,
 *-- Recalibrate DDF factors
 $   INCLUDE ddfupd.msa
+    TM_DFACT(R,PP) = TM_DFACT(R,PP)/TM_HDF(R,PP)
     ));
 
   GDPLOSS(MR,TP)= 100*(TM_GDPGOAL(MR,TP)-TM_GDP(MR,TP))/TM_GDPGOAL(MR,TP);

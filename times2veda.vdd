@@ -131,8 +131,13 @@ reg_act    r c
   CHP CHP     r p
   HPL HPL     r p
   STG RP_STG  r p
+  STS RP_STS  r p
+  NST RP_SGS  r p
   DISTR DISTR r p
   IRE RP_IRE  r p
+  IRELX RP_UX r p
+  IRENX IRE_DIST r p
+  RCAP PRC_RCAP r p
   XTRACT XTRACT r p
   RENEW RENEW r p
 * commodities

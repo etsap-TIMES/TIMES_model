@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
@@ -30,9 +30,10 @@ $   BATINCLUDE cost_ann.rpt
 *   Calculate new Negishi weights
     IF(CARD(MR)-MIN(0,DOITER),
       TM_NWTIT(NITER,MR) = TM_NWT(MR);
-      LOOP(TB(T-1), MY_ARRAY(PP) = ABS(EQ_TRDBAL.M(PP)/EQ_TRDBAL.M(T)));
+      MY_ARRAY(PP) = ABS(EQ_TRDBAL.M(PP));
       TM_NWT(MR(R)) = SUM(PP, MY_ARRAY(PP)*(VAR_C.L(R,PP)+VAR_NTX.L(R,PP)));
-      TM_NWT(MR) = TM_NWT(MR) / SUM(REG, TM_NWT(REG));
+      Z = SUM(MR(R), TM_NWT(R));
+      IF(Z>0, TM_NWT(MR) = TM_NWT(MR) / Z);
       IF(CARD(MR)=1, Z=0; ELSE Z = SUM(MR, ABS(TM_NWTIT(NITER,MR)-TM_NWT(MR))));
       F=TM_DEFVAL('NEGTOL'); IF(ORD(NITER)=1, F=F*(1+LOG(10**.1)) ELSE F=ABS(F));
 *     Calculate rebate of tax revenues
@@ -49,6 +50,7 @@ $   BATINCLUDE cost_ann.rpt
 *-----------------------------------------------------------------------
   PARAMETER VDA_DISC(R,ALLYEAR) //;
   VDA_DISC(MR,T) = ABS(-EQ_ENSCST.M(MR,T) * TM_SCALE_CST);
+  VDA_DISC(MR,T)$(NOT RT_PP(MR,T)) = COEF_PVT(MR,T);
   LOOP(MIYR_1(TT(T-1)),VDA_DISC(R,TT)$(VDA_DISC(R,TT) LE 0) = COEF_PVT(R,TT)/COEF_PVT(R,T)*VDA_DISC(R,T));
   VAR_OBJ.L(R,OBV(OBVANN),CUR)=0;
 * Trade prices and implied costs/revenues
@@ -61,7 +63,7 @@ $   BATINCLUDE cost_ann.rpt
 * Miscellaneous reportings
 $ BATINCLUDE sol_flo.red PAR_FLO M .M
   TM_UDF(R,T)=COEF_PVT(R,T);
-  COEF_PVT(MR,T) = -VDA_DISC(MR,T);
+  COEF_PVT(RT_PP(MR,T)) = -VDA_DISC(MR,T);
 $ BATINCLUDE rptmisc.rpt '' ''
   VAR_UTIL.UP = INF;
   PAR_NCAPM(RTP(R,T,P))$(VAR_NCAP.M(RTP)*COEF_OBJINV(RTP)) = VAR_NCAP.M(RTP)*TM_UDF(R,T)/COEF_PVT(R,T)/COEF_OBJINV(RTP);
@@ -92,7 +94,7 @@ $ BATINCLUDE par_uc.rpt SM EQG
 $ BATINCLUDE par_uc.rpt SM EQL
 $ LABEL UC_DONE
 
-OPTION CLEAR=F_INOUT, CLEAR=F_INOUTS, CLEAR=F_IOSET;
+  OPTION CLEAR=F_INOUT, CLEAR=F_INOUTS, CLEAR=F_IOSET;
 
 *---------------------------------------------------------------------
 * Report parameters for TIMES-MACRO
