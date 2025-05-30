@@ -3056,3 +3056,26 @@ calibase.mlf  : (2)
 rpt_ext.mlf   : (2)
 solsetv.v3    : (3)
 times2veda.vdd: (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.8.8
+-----------------------------------------------------------------------------------------
+Date: 31-May-2025 [AL]: Maintenance release
+1) Small refinements into the new grid features
+2) Added write-out of IE processed input data GDX with DATAGDXI
+3) Added use of cache in IE processing for performance improvement
+4) Small improvement for MLF
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.8.8
+initmty.mod   : (1)
+curex.gms     : (2)
+setglobs.gms  : (2)
+preppm.mod    : (3)
+prepxtra.mod  : (2)
+prepparm.gms  : (3)
+fillparm.gms  : (3)
+powerflo.vda  : (1)
+gasgrids.vda  : (1)
+prep_ext.vda  : (3)
+equ_ext.mlf   : (4)

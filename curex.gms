@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2025 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
 * CUREX.GMS oversees the currency conversions
 *   %1 - name of cost attribute
@@ -8,7 +8,7 @@
 *   %4 - constant indexes before CUR (optional, for temp attribute)
 *   %5 - indexes after CUR
 *=============================================================================*
-$IFI %INTEXT_ONLY% == YES $EXIT
+$IF %INTEXT_ONLY% == YES $EXIT
 $IF NOT '%1'=='' $GOTO SUBR
 *--------------------------------------------------------------------------
 SET CURMAP(REG,CUR,CUR);

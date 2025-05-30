@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2024 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2025 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *******************************************************************************
 * PREPPAR : Prepare parameters for preprocessing
 * Description: Non-default interpolation/extrapolation according to user option
@@ -20,13 +20,14 @@ $EOLCOM !
 $SETLOCAL DATA 'MY_FIL2(%5)' SETLOCAL OPT '*' SETLOCAL LL
 $IF NOT %7 == 0 $SETLOCAL LL ",'%DFLBL%'" SETLOCAL OPT
 $IF NOT %8.== . $SETLOCAL DEF_IEBD %8
+$IF NOT %9.==. PARAMETER %9(%2,%3,ALLYEAR);
 * conditional interpolation flag
 IF(G_NOINTERP, INT_DEFAULT('%1')=NO;
   ELSE OPTION CLEAR=UNCD7; CNT = (%DEF_IEBD%+(3-%DEF_IEBD%)$IE_DEFAULT('%1'))$%7;
    IF(CNT=0, UNCD7(%2%LL%,%3%4)$(%1(%2,'%DFLBL%',%3)>0) = YES;
 %OPT%  ELSE UNCD7(%2,%5,%3%4)$(%1(%2,'%DFLBL%',%3)=-13) $= %1(%2,%5,%3);
 %OPT%    IF(CARD(UNCD7),%1(%2,%5,%3)$UNCD7(%2,%5,%3%4)=0; OPTION CLEAR=UNCD7);
-%OPT%    UNCD7(%2,LL--ORD(LL),%3%4)$(%9(%1(%2,'%DFLBL%',%3))>-.5) $= %1(%2,LL,%3);
+%OPT%    UNCD7(%2,LL--ORD(LL),%3%4)$((%10(%1(%2,'%DFLBL%',%3))>-.5)$%1(%2,LL,%3))=YES;
    );
    LOOP(UNCD7(%2%LL%,%3%4), DFUNC = CNT; DFUNC $= ROUND(%1(%2,'%DFLBL%',%3));
       MY_ARRAY(DM_YEAR) = %1(%2,DM_YEAR,%3); OPTION CLEAR=MY_FIL2;
@@ -65,8 +66,12 @@ IF(G_NOINTERP, INT_DEFAULT('%1')=NO;
          IF(DFUNC EQ 4, Z = INF; ELSEIF DFUNC EQ 5, F = 0);
          %DATA%$(%6) $= FIRST_VAL$(YEARVAL(%5)<F) + LAST_VAL$(YEARVAL(%5)>Z);
          IF((NOT %7)$LAST_VAL, %DATA%$(%6$(NOT %DATA%+MY_ARRAY(%5)))=EPS);
-      )); %1(%2,%5,%3) $= %DATA%;
-  ));
+      ));
+$IF %9.==.     %1(%2,%5,%3)   $= %DATA%;
+$IF NOT %9.==. %9(%2,%3,%5)$(%6) $= %DATA%;
+   );
 * and reset OPT
-$IF NOT %9==+  %1(%2,'0',%3)$(MAX(0,%1(%2,'0',%3)-MAX(%7,%RESET%))$%1(%2,'0',%3)) = %RESET%;
+$IF NOT %10==+  %1(%2,'0',%3)$(MAX(0,%1(%2,'0',%3)-MAX(%7,%RESET%))$%1(%2,'0',%3)) = %RESET%;
+$IF NOT %9.==.  %1(%2,%5,%3) $= %9(%2,%3,%5); OPTION KILL=%9;
+  ); %1(%2,'EMPTY',%3)=0;
 $OFFLISTING

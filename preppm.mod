@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -28,8 +28,8 @@ $IF DEFINED G_CUREX R_CUREX(R,CURR,CUR)$NO=0; R_CUREX(R,CURR,CUR)$(NOT R_CUREX(R
 $IF DEFINED R_CUREX $INCLUDE curex
 *-----------------------------------------------------------------------------
 * Merge special case user attributes to generic case
- LOOP(DATAYEAR,PRC_MARK(R,'%DFLBL%',P,P,C,BD)$FLO_MARK(R,DATAYEAR,P,C,BD) = 3);
- PRC_MARK(R,DATAYEAR,P,P,C,BD) $= FLO_MARK(R,DATAYEAR,P,C,BD);
+  FLO_MARK(R,LL,P,C,BD)$((NOT RPC(R,P,C))$RC(R,C)$FLO_MARK(R,LL,P,C,BD)) = 0;
+  PRC_MARK(R,LL,P,P,C,BD)$((RPC(R,P,C)->(FLO_MARK(R,'0',P,C,BD)>1))$RC(R,C)$PRC_MARK(R,LL,P,P,C,BD)) = 0;
 * Integration of COM costs
  OBJ_COMNT(R,DATAYEAR,C,S,'COST',CUR) $= COM_CSTNET(R,DATAYEAR,C,S,CUR);
  OBJ_COMNT(R,DATAYEAR,C,S,'TAX',CUR)  $= COM_TAXNET(R,DATAYEAR,C,S,CUR);
@@ -151,7 +151,8 @@ $BATINCLUDE fillparm FLO_FUNC R 'P,CG1,CG2,TS' ",'0','0'" V 'RVP(R,V,P)' 'GE 0' 
 $BATINCLUDE fillparm FLO_PKCOI R 'P,C,TS' ",'0','0','0'" V 'RVP(R,V,P)' 'GE 0'
 $BATINCLUDE fillparm FLO_SUM R 'P,CG1,C,CG2,TS' ",'0'" V 'RVP(R,V,P)' 'GE 0' X_RPGCGS
 $BATINCLUDE fillparm PRC_ACTFLO R 'P,CG' ",'0','0','0','0'" V 'RTP(R,V,P)' 'GE 0' X_RPG
-$BATINCLUDE prepparm PRC_MARK R 'P,ITEM,C,BD' ",'0'" T 1 1 11
+$BATINCLUDE prepparm FLO_MARK R 'P,C,BD' ",'0','0'"  T 1 1  3 X_RPCL
+$BATINCLUDE prepparm PRC_MARK R 'P,ITEM,C,BD' ",'0'" T 1 1 11 X_MARK
 $BATINCLUDE fillparm IRE_FLO R 'P,C,REG,COM,TS' ",'0'" V '(RVP(R,V,P) OR RTP(REG,V,P))' 'GE 0'
 $BATINCLUDE fillparm IRE_FLOSUM R 'P,C,TS,IE,COM,IO' "" V 'RVP(R,V,P)' 'GE 0'
 *-----------------------------------------------------------------------------
@@ -177,17 +178,17 @@ $BATINCLUDE filparam UC_TIME 'UC_N,R,' '' ",'0','0','0'" DATAYEAR T '' '' '' "YE
 *-----------------------------------------------------------------------------
 * Capacity and commodity related attributes
 *-----------------------------------------------------------------------------
-$BATINCLUDE prepparm CAP_BND R 'P,BD' ",'0','0','0'" T 'RTP(R,T,P)' 1
-$BATINCLUDE prepparm NCAP_BND R 'P,LIM' ",'0','0','0'" T 'RTP(R,T,P)' 1
+$BATINCLUDE prepparm CAP_BND R 'P,BD' ",'0','0','0'" T 'RTP(R,T,P)' 1 '' X_RPB
+$BATINCLUDE prepparm NCAP_BND R 'P,BD' ",'0','0','0'" T 'RTP(R,T,P)' 1 '' X_RPB
 $BATINCLUDE prepparm COM_BNDNET R 'C,TS,BD' ",'0','0'" T 1 1
 $BATINCLUDE prepparm COM_BNDPRD R 'C,TS,BD' ",'0','0'" T 1 1
 *-----------------------------------------------------------------------------
 * Flow related attributes & inter-regional exchange
 *-----------------------------------------------------------------------------
-$BATINCLUDE prepparm ACT_BND R 'P,TS,BD' ",'0','0'" T 'RTP(R,T,P)' 1
-$BATINCLUDE prepparm FLO_BND R 'P,CG,TS,BD' ",'0'" T 'RTP(R,T,P)' 1
+$BATINCLUDE prepparm ACT_BND R 'P,TS,BD' ",'0','0'" T 'RTP(R,T,P)' 1 '' X_RPSB
+$BATINCLUDE prepparm FLO_BND R 'P,CG,TS,BD' ",'0'" T 'RTP(R,T,P)' 1 '' X_RPGSB
 $BATINCLUDE prepparm FLO_FR R 'P,C,TS,LIM' ",'0'" T 'RTP(R,T,P)' 1
-$BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" V 'RVP(R,V,P)' 1 '' +
+$BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" V 'RVP(R,V,P)' 1 '' X_RPCGSB +
 $BATINCLUDE prepparm IRE_BND R 'C,TS,ALL_REG,IE,BD' "" T 1 1
 $BATINCLUDE prepparm IRE_XBND ALL_REG 'C,TS,IE,BD' ",'0'" T 1 1
 *-----------------------------------------------------------------------------
@@ -198,15 +199,15 @@ $BATINCLUDE prepparm STGOUT_BND R 'P,C,S,BD' ",'0'" T 'RTP(R,T,P)' 1
 *-----------------------------------------------------------------------------
 * User constraints
 *-----------------------------------------------------------------------------
-$BATINCLUDE prepparm UC_RHSRT 'ALL_R,UC_N' LIM ",'0','0','0'" T 1 1
-$BATINCLUDE prepparm UC_RHSRTS 'ALL_R,UC_N' 'TS,LIM' ",'0','0'" T 1 1
+$BATINCLUDE prepparm UC_RHSRT 'ALL_R,UC_N' LIM ",'0','0','0'" T 1 1 '' X_RUL
+$BATINCLUDE prepparm UC_RHSRTS 'ALL_R,UC_N' 'TS,L' ",'0','0'" T 1 1 '' X_RUSL
 $BATINCLUDE prepparm UC_RHST UC_N LIM ",'0','0','0','0'" T 1 1
 $BATINCLUDE prepparm UC_RHSTS UC_N 'TS,LIM' ",'0','0','0'" T 1 1
 $BATINCLUDE prepparm REG_BNDCST R 'COSTAGG,CUR,BD' ",'0','0'" T 1 1
 *-----------------------------------------------------------------------------
 * Parameters that are by default inter/extrapolated over PASTYEARS
 *-----------------------------------------------------------------------------
-$ BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" PASTMILE 'RVP(R,PASTMILE,P)' 1 3 -ABS
+$ BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" PASTMILE 'RVP(R,PASTMILE,P)' 1 3 X_RPCGSB -ABS
 *-----------------------------------------------------------------------------
 *=============================================================================
 * Additions through extensions:
@@ -230,9 +231,10 @@ $BATINCLUDE preshape NCAP_FSUBM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_FTAXM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_CPX R P "" V RXX RTP(R,V,P)
 *-----------------------------------------------------------------------------
-* All non-cost parameters have now been interpolated / extrapolated and user-defined options processed.
+* All non-cost parameters have been interpolated / extrapolated with user-defined options.
 * Second interpolation pass is still needed for cost parameters (dense interpolation).
   OPTION CLEAR = UNCD7;
+  PRC_MARK(R,T,P,P,C,BD) $= FLO_MARK(R,T,P,C,BD);
 *-----------------------------------------------------------------------------
 * Augment datayear with MILESTONYR, as any MODLYEAR may now contain user data.
 * Remove the special year from DATAYEAR, as the controls are processed.

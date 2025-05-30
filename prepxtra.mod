@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -8,7 +8,7 @@
 $ GOTO %1
 $ LABEL XTIE
 *=============================================================================
-* COST PARAMETERS: Interpolated by COEF_OBJ, only special options processed here
+* COST PARAMETERS: Interpolated over T
 *-----------------------------------------------------------------------------
 $ BATINCLUDE prepparm NCAP_COST R 'P,CUR' ",'0','0','0'" T 'RTP(R,T,P)' EPS 3
 $ BATINCLUDE prepparm NCAP_DCOST R 'P,CUR' ",'0','0','0'" T 'RTP(R,T,P)' EPS 3
@@ -19,6 +19,7 @@ $ BATINCLUDE prepparm NCAP_FTAX R 'P,CUR' ",'0','0','0'" T 'RTP(R,T,P)' EPS 3
 $ BATINCLUDE prepparm NCAP_ISUB R 'P,CUR' ",'0','0','0'" T 'RTP(R,T,P)' EPS 3
 $ BATINCLUDE prepparm NCAP_ITAX R 'P,CUR' ",'0','0','0'" T 'RTP(R,T,P)' EPS 3
 $ BATINCLUDE prepparm NCAP_VALU R 'P,C,CUR' ",'0','0'" T 'RTP(R,T,P)' EPS 3
+$ BATINCLUDE prepparm NCAP_ISPCT R P ",'0','0','0','0'" T 'RTP(R,T,P)' EPS 3
 *-----------------------------------------------------------------------------
 * Commodity related attributes (6)
 *-----------------------------------------------------------------------------
@@ -44,7 +45,7 @@ $ BATINCLUDE fillparm UC_COMCON 'UC_N,SIDE,ALL_R' 'C,S' ",'0','0'" T 1 'GE 0'
 $ BATINCLUDE fillparm UC_COMNET 'UC_N,SIDE,ALL_R' 'C,S' ",'0','0'" T 1 'GE 0'
 $ BATINCLUDE fillparm UC_COMPRD 'UC_N,SIDE,ALL_R' 'C,S' ",'0','0'" T 1 'GE 0'
 *-----------------------------------------------------------------------------
-* General attribs:
+* General attribs
 $ BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL MILESTONYR 'NO$' ''
 $ BATINCLUDE filparam.gms G_DRATE 'R,' 'CUR'  ",'','','','',''" YEAR T '' ''
 *-----------------------------------------------------------------------------

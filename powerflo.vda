@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -57,7 +57,8 @@ $IF NOT '%1'=='' $GOTO %1%2%3
       PRC_REACT(R,T,P) = MAX(PRC_REACT(R,T,P),PRC_REACT(REG,T,P)));
     IF(NOT SAMEAS(C,COM)$F,
       GR_PTDF(R,T,P,C,ALL_R,COM2)$GR_PTDF(REG,T,P,COM,ALL_R,COM2) =
-        MAX(ABS(GR_PTDF(R,T,P,C,ALL_R,COM2)),ABS(GR_PTDF(REG,T,P,COM,ALL_R,COM2)))*SIGN(2*SIGN(GR_PTDF(R,T,P,C,ALL_R,COM2)-SIGN(GR_PTDF(REG,T,P,COM,ALL_R,COM2))))));
+        MAX(ABS(GR_PTDF(R,T,P,C,ALL_R,COM2)),ABS(GR_PTDF(REG,T,P,COM,ALL_R,COM2)))*SIGN(2*SIGN(GR_PTDF(R,T,P,C,ALL_R,COM2)-SIGN(GR_PTDF(REG,T,P,COM,ALL_R,COM2))));
+      GR_PTDF(REG,T,P,COM,ALL_R,COM2) = -GR_PTDF(R,T,P,C,ALL_R,COM2)));
   PRC_REACT(R,T,P)$((PRC_REACT(R,T,P) LE 0)$PRC_REACT(R,T,P)) = 0;
   LOOP(GR_TOP(R,C,REG,COM,P), GR_ARC(R,C,REG,COM) = YES);
   OPTION TRACKC < GR_FLOW;
@@ -82,10 +83,10 @@ $IF NOT '%1'=='' $GOTO %1%2%3
 
 * QA checks - for reactance nodes only
   TRACKPC(RP_GRID(R,P),C)$GR_FLOW(R,P,C) $= GR_GID(R,C);
-  LOOP((R,TSLVL('DAYNITE')), Z=0;
-   IF(SUM(TRACKPC(R,P,C)$(NOT PRC_TSL(R,P,TSLVL)$COM_TSL(R,C,TSLVL)),1),Z=1);
+  LOOP((R,TSL('DAYNITE')), Z=0;
+   IF(SUM(TRACKPC(R,P,C)$(NOT PRC_TSL(R,P,TSL)$COM_TSL(R,C,TSL)),1),Z=1);
    LOOP(RREG(R,REG),
-     IF(SUM(S$(TS_GROUP(R,TSLVL,S) XOR TS_GROUP(REG,TSLVL,S)),1),
+     IF(SUM(S$(TS_GROUP(R,TSL,S) XOR TS_GROUP(REG,TSL,S)),1),
         TRACKC(NRGELC(REG,C))$GR_GID(REG,C)=NO; Z = 1));
    IF(Z,TRACKC(NRGELC(R,C))$GR_GID(R,C)=NO));
   RC_GRID(RTC(R,T,C))$TRACKC(R,C) = YES;
@@ -165,7 +166,7 @@ $ IF NOT %TMP%==0 $SET TMP 1;%TMP%$PRC_YMAX(R,P) = NO;
     OPTION TRACKP < GR_PTDF, PRC_YMAX < NCAP_PASTI, TRACKC < GR_PTDF;
 *...No new capacity allowed for existing lines
     RVP(RTP(R,T,P)) $= RP_GRID(R,P);
-    NCAP_BND(RVP(R,T,P),'UP')$(PRC_YMAX(R,P)$TRACKP(R,P)) = EPS;
+    NCAP_BND(RVP(R,T,P),'UP')$(PRC_YMAX(R,P)$TRACKP(R,P)) = MAX(EPS,NCAP_BND(RVP,'UP'));
 *...First set all lines with non-zero PTDF as candidates
     GR_CANDID(R,T,P)$(RP_GRID(R,P)$TRACKP(R,P)) = YES;
     GR_CAPUP(RVP(R,T,P)) = SUM(PYR(V)$COEF_CPT(R,V,T,P),NCAP_PASTI(RVP)*ROUND(COEF_CPT(R,V,T,P)));
@@ -175,7 +176,7 @@ $ IF NOT %TMP%==0 $SET TMP 1;%TMP%$PRC_YMAX(R,P) = NO;
   ELSE OPTION CLEAR=RP_GRID);
 * Check nodal commodity balances
 *  COM_BNDNET(RTCS_VARC(RC_GRID,S),'LO') = EPS;
-  COM_LIM(TRACKC(R,C),'FX')$(NOT SUM(COM_LIM(R,C,L),1)) = YES;
+  COM_LIM(TRACKC(RC),'FX')$((NOT SUM(COM_LIM(RC,L),1))$GR_GID(RC)) = YES;
   OPTION CLEAR=TRACKC,CLEAR=RP_PRC,CLEAR=TRACKPC;
 $ BATINCLUDE gasgrids.vda
 $ EXIT
@@ -194,23 +195,23 @@ $ BATINCLUDE fillparm GG_KGF   R 'P,C' ",'0','0','0','0'" T 'RTP(R,T,P)' 'GE 0'
 $ BATINCLUDE fillparm GG_KLP   R 'P,C' ",'0','0','0','0'" T 'RTP(R,T,P)' 'GE 0'
 $ BATINCLUDE fillparm GG_PP    R 'P,C,BD,J'    ",'0','0'" T 'RTP(R,T,P)' 'GE 0'
 $ BATINCLUDE fillparm GG_PRBD  R 'C,L' ",'0','0','0','0'" T  1 'GE 0'
-$EXIT
+$ EXIT
 *------------------------------------------------------------------------
-$LABEL DECL
+$ LABEL DECL
 * Declare variables and equations
- POSITIVE VARIABLES
+  POSITIVE VARIABLES
    %VAR%_GRIDIO(R,YEAR,C,C,S,IO%SWD%)
    %VAR%_XCAP(R,YEAR,ITEM%SWD%) //;
- VARIABLES %VAR%_COMAUX(R,T,C,S%SWD%);
- EQUATIONS
-  %EQ%_GR_POWFLO(R,T,C,S,REG,COM%SWTD%)
-  %EQ%_GR_PTDFLO(R,T,P,C,S %SWTD%)
-  %EQ%_GR_GENALL(R,T,C,S,CG %SWTD%)
-  %EQ%_GR_DEMALL(R,T,C,S %SWTD%)
-  %EQ%_GR_XBND(R,T,J,IE,S %SWTD%)
-  %EQ%_GR_VIRTCAP(R,T,P,C,S,BD%SWTD%)
-  %EQ%_GR_VIRTBND(R,T,P%SWTD%)
- ;
+  VARIABLES %VAR%_COMAUX(R,T,C,S%SWD%);
+  EQUATIONS
+   %EQ%_GR_POWFLO(R,T,C,S,R,C%SWTD%)   Phase-angle formulation
+   %EQ%_GR_PTDFLO(R,T,P,C,S %SWTD%)    Generalized PTDF formulation
+   %EQ%_GR_GENALL(R,T,C,S,CG %SWTD%)   Allocation of supply to Add-on nodes
+   %EQ%_GR_DEMALL(R,T,C,S %SWTD%)      Allocation of demand to Add-on nodes
+   %EQ%_GR_XBND(R,T,J,IE,S %SWTD%)     Simplified N-1 security constraint
+   %EQ%_GR_VIRTCAP(R,T,P,C,S,BD%SWTD%) Candidate line virtual capacity
+   %EQ%_GR_VIRTBND(R,T,P%SWTD%)        Bound on virtual capacity;
+*---------------------------------
 $ SETGLOBAL IREAUXBAL $BATINCLUDE powerflo.vda IREAUX
 * For each disjoint grid, set phase angle to zero for the node with most connected lines
   LOOP(J$SUM(GR_GRID(J,R,C)$GR_GID(R,C),1), Z = SMAX(GR_GRID(J,R,C),SUM(P$GR_FLOW(R,P,C),1));

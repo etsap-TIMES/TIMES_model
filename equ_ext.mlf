@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -34,7 +34,7 @@
 
 *-----------------------------------------------------------------------------
 * Terminal Condition for investment in last period
-  EQ_TMC(MR(R),TLAST(T))..  VAR_K(R,T) * (TM_GROWV(R,T) + TM_DEPR(R))/100  =L=  VAR_INV(R,T);
+  EQ_TMC(MR(R),TLAST(T))..  VAR_K(R,T) * (TM_GROWV(R,T) + TM_DEPR(R))/100  =L= VAR_INV(R,T);
 
 *-----------------------------------------------------------------------------
 * Bound on Sum of Investment and Energy
@@ -179,4 +179,5 @@ $LABEL NLP
 $ IFI NOT %NONLP%==NL $EXIT
 $ IFI %X1%%X2%==NLP OPTION NLP=KESTREL;
   TM_CIE(R,T,C)$TM_DM(R,C) = TM_DEM(R,T,C)*TM_DMC(R,T,C) / (TM_DEM(R,T,'ACT')*TM_DMC(R,T,'ACT'));
+  VAR_DEM.UP(MR(R),PP(T),C)$((NOT TM_PP(R,T))$TM_DM(R,C)) = TM_DEM(R,T,C);
   VAR_DEM.LO(R,PP,C)$TM_DM(R,C) = TM_DEM(R,PP,C)*0.5;

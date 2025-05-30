@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2025 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *******************************************************************************
 * FILLPARM : Interpolation/extrapolation of user data
 * Description: Default interpolation/extrapolation if no control option given
@@ -37,8 +37,8 @@ $IF NOT '%8'=='%9' PARAMETER %8(%2,%3,ALLYEAR);
 			= LAST_VAL + (MY_F-LAST_VAL)/(Z-MY_FYEAR)*(YEARVAL(%5)-MY_FYEAR); ! not the first one
              ELSE                                ! exponential function
                 %ITEM%$((Z GT YEARVAL(%5))$(YEARVAL(%5) GT MY_FYEAR))
-			= LAST_VAL*POWER(1+MY_F,YEARVAL(%5)-MY_FYEAR);
-                MY_F = LAST_VAL*POWER(1+MY_F,Z-MY_FYEAR);
+			= LAST_VAL*POWER(1+MY_F,YEARVAL(%5)-MY_FYEAR)+EPS;
+                MY_F = LAST_VAL*POWER(1+MY_F,Z-MY_FYEAR)+EPS;
                 %1(%2,DM_YEAR,%3) = MY_F;);      ! overwrite old data
            ELSE F = Z; FIRST_VAL = MY_F;);
            LAST_VAL = MY_F; MY_FYEAR=Z;);        ! remember the value and year

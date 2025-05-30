@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -421,7 +421,7 @@ $IFI %OBJ%==STD ALTOBJ=0;
 $IFI %OBJ%==ALT ALTOBJ=2;
 $IFI %OBJ%==LIN ALTOBJ=3;
 $IFI %MACRO%==YES IF(ALTOBJ>1,ABORT 'MACRO Cannot be used with Alternative Objective');
-$IFI %VALIDATE%==YES IF(ALTOBJ>1,ABORT 'VALIDATE cannot be used with Alternative Objective'); ALTOBJ=0;
+$IFI %VALIDATE%==YES IF(ALTOBJ>1,ABORT 'VALIDATE Cancels Alternative Objective'); ALTOBJ=0;
 $SETGLOBAL CTST
 $IFI %OBJ%==MOD $SETGLOBAL OBLONG YES
 $IFI %OBJ%==ALT $SETGLOBAL CTST **EPS
@@ -474,8 +474,9 @@ $SETGLOBAL EXTEND %EXTEND% %1 %2 %3 %4 %5 %6
 * Load all extension declarations
 $BATINCLUDE main_ext.mod initmty %EXTEND%
 
-$IF ERRORFREE
-$BATINCLUDE err_stat.mod '$IF NOT ERRORFREE' ABORT 'Errors in Compile' 'VARIABLE OBJz' ': Required _TIMES.g00 Restart File Missing'
+$SET VAR VARIABLE OBJZ
+$IF %DATAGDXI%%INTEXT_ONLY%==YESyes $SET VAR *
+$IF ERRORFREE $BATINCLUDE err_stat.mod '$IF NOT ERRORFREE' ABORT 'Errors in Compile' '%VAR%' ': Required _TIMES.g00 Restart File Missing'
 
 *------------------------------------------------------------------------------
 * Call MACRO initmty.tm
@@ -484,15 +485,23 @@ $IF NOT SET MACRO $SETGLOBAL MACRO N
 $IF %MACRO%==YES $INCLUDE initmty.tm
 
 *------------------------------------------------------------------------------
+$ IF %DATAGDXI%==YES $SETGLOBAL DATAGDX YES
+$ IFI %DATAGDXI%%INTEXT_ONLY%==YESYES $SET DATAGDX NO
 * Load data from GDX if DATAGDX set and %RUN_NAME%~DATA exists
 $ IF NOT SET DATAGDX $GOTO RUN
 $ IF NOT %G2X6%==YES $GOTO RUN
 $ IF NOT SET RUN_NAME $SETNAMES "%SYSTEM.INCPARENT%" . RUN_NAME .
-$ IF NOT EXIST %RUN_NAME%~data.gdx $GOTO RUN
-$ hiddencall gdxdump %RUN_NAME%~data.gdx NODATA > _dd_.dmp
+$ SET TMP 0
+$ IF EXIST %RUN_NAME%~data.gdx $SET TMP %RUN_NAME%~data
+$ IFI %DATAGDXI%%DATAGDX%==YESNO
+$ IF EXIST _dd_.gdx $SET TMP _dd_
+$ IF %TMP%==0 $GOTO RUN
+$ hiddencall gdxdump %TMP%.gdx NODATA > _dd_.dmp
 $ hiddencall sed "/^\(Alias\|[^($]*(\*) Alias\|[^$].*empty *$\)/{N;d;}; /^\([^$].*$\|$\)/d; s/\$LOAD.. /\$LOAD /I" _dd_.dmp > _dd_.dd
 $ INCLUDE _dd_.dd
 $ hiddencall rm -f _dd_.dmp
 $ TITLE %SYSTEM.TITLE%#
 $ GDXIN
+$ IF %VAR%==* $BATINCLUDE maindrv.mod mod
+$ IF %VAR%==* $STOP
 $ LABEL RUN

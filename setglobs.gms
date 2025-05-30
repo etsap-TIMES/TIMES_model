@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=========================================================================
@@ -17,6 +17,8 @@ $ IF %G2X6%==YES
 $ IF gamsversion 342 $UNLOAD XPT
 $ UNLOAD
 $ GDXOUT
+$ IF ERRORFREE
+$ IF %DATAGDXI%==YES $hiddencall gams %system.ifile% idir1=%gams.idir1%/ idir2=%gams.idir2%/ --INTEXT_ONLY=yes gdx=%RUN_NAME%_iedata.gdx LO=0 O=nul
 $ IF NOT warnings $GOTO SYSD
 $ IF NOT ERRORFREE $ABORT GAMS cannot filter domain violations
 $ IF %G2X6%==YES $BATINCLUDE gdxfilter MAIN
