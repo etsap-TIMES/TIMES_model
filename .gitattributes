@@ -17,6 +17,7 @@
 *.etl linguist-language=GAMS
 *.ier linguist-language=GAMS
 *.lin linguist-language=GAMS
+*.mlf linguist-language=GAMS
 *.msa linguist-language=GAMS
 *.red linguist-language=GAMS
 *.rpt linguist-language=GAMS
@@ -28,10 +29,10 @@
 # These files are binary and should be left untouched
 # (binary is a macro for -text -diff)
 *.g00 binary
+*.zip binary
+*.rar binary
 *.gz  filter=lfs merge=lfs -text -diff
-*.zip filter=lfs merge=lfs -text -diff
 *.7z  filter=lfs merge=lfs -text -diff
-*.rar filter=lfs merge=lfs -text -diff
 *.exe filter=lfs merge=lfs -text -diff 
 
 # Documents
