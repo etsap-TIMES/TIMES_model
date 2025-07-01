@@ -231,8 +231,8 @@ $BATINCLUDE preshape NCAP_FSUBM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_FTAXM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_CPX R P "" V RXX RTP(R,V,P)
 *-----------------------------------------------------------------------------
-* All non-cost parameters have been interpolated / extrapolated with user-defined options.
-* Second interpolation pass is still needed for cost parameters (dense interpolation).
+* All non-cost parameters now interpolated / extrapolated with user-defined options
+* Second interpolation pass still needed for cost parameters (dense interpolation)
   OPTION CLEAR = UNCD7;
   PRC_MARK(R,T,P,P,C,BD) $= FLO_MARK(R,T,P,C,BD);
 *-----------------------------------------------------------------------------
