@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -101,9 +101,15 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 01 'FLO_EMIS with no members of source
 $ BATINCLUDE pp_lvlfc.mod FLO_FR 'P,C' RPCS_VAR ',BD' ",'0','0'" ALL_TS T RPC_CONLY(R,T,P,C)
   FLO_FR(RPC_CONLY(R,T,P,C),S,'N')=MIN(1,SUM(RS_BELOW1(R,S,TS)$RPCS_VAR(R,P,C,TS),G_YRFR(R,TS)))$TS_CYCLE(R,S);
   FLO_FR(RPC_CONLY(R,T,P,C),S,BD)$FLO_FR(R,T,P,C,S,BD)=FLO_FR(R,T,P,C,S,BD)*G_YRFR(R,S)$RPCS_VAR(R,P,C,S);
+* Support using aggregated ANNUAL variable for FLO_FR fractions
+  IF(CARD(FLO_FR),
+    RVPCSL(RTPC(R,T,P,C),TS(S+STOA(S)),BD)$(FLO_FR(R,'0',P,C,TS,BD)$FLO_FR(RTPC,S,BD)) = YES;
+    RVPCSL(RTPC(R,T,P,C),S+STOA(S),BD)$FLO_FR(RTPC,S,'N') = NO;
+    RVPCSL(RTPC(R,T,P,C),S,'N')$TS_CYCLE(R,S) $= SUM(RVPCSL(RTPC,TS,BD),1));
+  FLO_FR(RVPCSL(R,T,P,C,S,'N'))$(NOT RPCS_VAR(R,P,C,S)) = EPS+1$ANNUAL(S);
 * Cleanup some dummies
   TOP_IRE('IMPEXP',C,R,C,P(DUMIMP))$(NOT NE(R,C)) = NO;
-  OPTION CLEAR=NE,CLEAR=RPC_CONLY;
+  OPTION CLEAR=NE,CLEAR=RVPCSL,CLEAR=RPC_CONLY;
 * Call the powerflo extension
 $IFI %POWERFLO%==YES $include powerflo.vda
 *-----------------------------------------------------------------------------

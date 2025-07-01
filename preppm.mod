@@ -187,7 +187,7 @@ $BATINCLUDE prepparm COM_BNDPRD R 'C,TS,BD' ",'0','0'" T 1 1
 *-----------------------------------------------------------------------------
 $BATINCLUDE prepparm ACT_BND R 'P,TS,BD' ",'0','0'" T 'RTP(R,T,P)' 1 '' X_RPSB
 $BATINCLUDE prepparm FLO_BND R 'P,CG,TS,BD' ",'0'" T 'RTP(R,T,P)' 1 '' X_RPGSB
-$BATINCLUDE prepparm FLO_FR R 'P,C,TS,LIM' ",'0'" T 'RTP(R,T,P)' 1
+$BATINCLUDE prepparm FLO_FR R 'P,C,TS,LIM' ",'0'" T 'RTP(R,T,P)' 1 '' X_RPCSL
 $BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" V 'RVP(R,V,P)' 1 '' X_RPCGSB +
 $BATINCLUDE prepparm IRE_BND R 'C,TS,ALL_REG,IE,BD' "" T 1 1
 $BATINCLUDE prepparm IRE_XBND ALL_REG 'C,TS,IE,BD' ",'0'" T 1 1

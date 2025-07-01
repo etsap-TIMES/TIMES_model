@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -299,6 +299,7 @@ $IF DEFINED RPG_ACE LOOP(RPG_ACE(R,P,CG,IO),TRACKPC(RPC_ACE(R,P,C)) = YES);
   TRACKPC(RPC_SPG(RPC_STG)) = YES;
   TRACKPC(RPC_NOFLO) = YES;
   TRACKPC(RPC_FFUNC) = YES;
+  TRACKPC(RMKC(R,P,C))$=SUM(OBJ_VFLO(R,P,C,CUR,UC_COST),1);
   LOOP(T, TRACKP(RP_STD(R,P))$RTP_VARA(R,T,P) = YES);
   LOOP(TOP(RPC(TRACKP(R,P),C),IO)$(NOT TRACKPC(R,P,C)),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'RPC in TOP not found in any ACTFLO/FLO_SHAR/FLO_FUNC/FLO_SUM'
@@ -314,13 +315,13 @@ $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Empty Group in FLO_SUM/FLO_FUN
          PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' CG=',CG.TL;
   );
   PUTGRP = 0;
-  OPTION CLEAR=RXX,CLEAR=RP_GRP;
 * Simultaneous NCAP_AF/NCAP_AFA availability check
-  LOOP((R,V,P,BD)$(PRC_TS(R,P,'ANNUAL')*NCAP_AFA(R,V,P,BD)), RXX(R,V,P) = YES;);
-  LOOP((RXX(R,V,P),BD)$((NCAP_AF(R,V,P,'ANNUAL',BD) NE 1)$NCAP_AF(R,V,P,'ANNUAL',BD)),
+  RVP(RTP(R,V,P))$(SUM(BD$NCAP_AFA(RTP,BD),1)$PRC_TSL(R,P,'ANNUAL')) = YES;
+  LOOP((RVP(R,V,P),BD)$((NCAP_AF(R,V,P,'ANNUAL',BD) NE 1)$NCAP_AF(R,V,P,'ANNUAL',BD)),
 $        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Both NCAP_AF and NCAP_AFA specified for same process'
          PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' V=',V.TL;
   );
+  OPTION CLEAR=RVP,CLEAR=RP_GRP;
   PUTGRP = 0;
 * Commodity fraction check
   LOOP(RTC(R,T,C)$(ABS(SUM(COM_TS(R,C,S),COM_FR(R,T,C,S))-1) GT 3E-3),

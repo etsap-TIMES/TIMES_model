@@ -154,9 +154,8 @@ $ IFI NOT %SOLMIP%==YES SUM((J,JJ)$GG_PPW(r,t,p,c,j,reg,com,jj),VAR_GG_STEP(r,t,
     EQ_GG_WEYMTX(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S),OMG)$(GG_PP(R,T,P,C,'UP',OMG)$PRC_TS(R,P,S)$GG_LINK(R,P,C,REG,COM)$GG_WTX(R,P,C))..
       VAR_GG_MF(r,t,p,c,reg,com,S)
       =L=
-      GG_KGF(r,t,p,c) * (GG_PP(r,t,P,c,'UP',omg)    /SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * VAR_GG_PRIO(r,t,p,c,s) -
-                         GG_PP(REG,t,P,COM,'LO',omg)/SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * VAR_GG_PRIO(reg,t,p,com,s) +
-                         GG_PP(r,t,P,c,'UP',omg) * VAR_GG_PDIF(reg,t,p,com,r,c,s)$GG_LINK(reg,p,com,r,c))
+      GG_KGF(r,t,p,c) * (GG_PP(r,t,P,c,'UP',omg)    /SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * (VAR_GG_PRIO(r,t,p,c,s) + VAR_GG_PDIF(reg,t,p,com,r,c,s)$GG_LINK(reg,p,com,r,c)) -
+                         GG_PP(REG,t,P,COM,'LO',omg)/SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * VAR_GG_PRIO(reg,t,p,com,s))
     ;
     EQ_GG_HLIP(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S))$(PRC_TS(R,P,S)$GG_KLP(r,t,p,c)$GG_LINK(R,P,C,REG,COM)$GG_ARC(R,C,REG,COM))..
       VAR_GG_HLIP(R,T,P,S)  =E=  VAR_GG_HLIP(R,T,P,S--RS_STG(R,S)) +

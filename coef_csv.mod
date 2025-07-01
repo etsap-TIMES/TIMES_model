@@ -9,7 +9,7 @@
 * Load after all COEF*.mod
 *-----------------------------------------------------------------------------
   SET VTV(LL,LL,T), AFSV(R,T,P,S,BD);
-  SET RPS_CAFLAC(R,P,S,L) //;
+* SET RPS_CAFLAC(R,P,S,L) //;
   PARAMETER COEF_CSV(R,ALLYEAR,LL,P,ALLYEAR);
   PARAMETER NCAP_AFCS(R,LL,P,CG,S) //;
 *-----------------------------------------------------------------------------

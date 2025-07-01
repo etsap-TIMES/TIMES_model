@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -14,6 +14,7 @@ $IF DEFINED OBJSCC $GOTO PREPRO
   PARAMETER OBJSCC(REG,ALLYEAR,PRC,CUR)   //;
   PARAMETER OBJSIC(REG,ALLYEAR,PRC)       //;
   PARAMETER OBJ_DCEOH(REG,CUR)            //;
+  SET OBJ_SALI(R,ALLYEAR,P,AGE,YEAR,AGE,ALLYEAR,YEAR) //;
 
 $LABEL PREPRO
 $SET PFT ''
@@ -25,12 +26,10 @@ $IFI %1==mod $GOTO EQUA
 $IF NOT DEFINED VNRET
 $IF NOT '%CTST%'=='' $SET PFT (T)
 *===============================================================================
-* Salvaging of Investments
-* LL is investment year; K is commissioning year
+* Salvaging of Investments; LL is investment year, K is commissioning year
 *[UR] 19.12.2003 added -1 in line below, since lifetime starts at the beginning of year K
-  LOOP(OBJ_SUMII(R,V%PFT%,P,AGE,K_EOH,JOT), Z=NCAP_TLIFE(R,V,P)-1;
-    IF(YEARVAL(K_EOH)+ORD(JOT)+Z GT MIYR_VL,
-       LOOP(INVSPRED(K_EOH,JOT,LL,K)$(YEARVAL(LL)+Z GT MIYR_VL),OBJ_SUMSI(R,V,P,LL) = YES)));
+  OBJ_SALI(OBJ_SUMII(R,V%PFT%,P,AGE,K_EOH,JOT),K,LL--ORD(LL))$((YEARVAL(K)+NCAP_TLIFE(R,V,P)-1>MIYR_VL)$INVSPRED(K_EOH,JOT,K,LL))=YES;
+  OPTION OBJ_SUMSI <= OBJ_SALI, CLEAR=OBJ_SALI;
 
 * No retrofit salvage
   LOOP((RP(R,PRC),P)$PRC_REFIT(RP,P),IF(PRC_REFIT(RP,P)<0, OBJ_SUMSI(R,T,P,K)=NO));

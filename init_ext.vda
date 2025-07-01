@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -19,8 +19,9 @@
  SET RP_CGC(REG,PRC,CG,COM);
  SET RPC_IREIN(R,P,C,IE,IO) //;
 * Sets for commodity specific availabilities
- SET RVPS_LIM(R,LL,P,S,L);
- SET RPS_CAFLAC(R,P,S,L);
+ SET RVPS(REG,ALLYEAR,PRC,TS);
+ SET RPS_CAFLAC(R,P,S,BD);
+ SET RVPCSL(R,YEAR,P,C,S,L);
 * Sets for ACT_EFF processing
  SET RPG_ACE(R,P,CG,IO) //;
  SET RPG_PACE(R,P,CG) //;

@@ -426,14 +426,14 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
     Z = MAX(1,SMAX(RLUP(R,TSLVL,TSL),TSLVLNUM(TSL)));
 * identify all S at shadow level
     RPS_S2(RP_SGS(R,P),S)$(TS_ARRAY(S) = PRC_YMAX(R,P)) = YES;
-    PRC_SGL(RP_FLO(RP)) = MIN(PRC_YMAX(RP)-1$RP_STG(RP),Z)-1;
+    PRC_SGL(RP_FLO(R,P)) = MIN(PRC_YMAX(R,P)-1$RP_STG(R,P),Z)-1;
     PRC_YMAX(RP_SGS(R,P)) = PRC_SGL(R,P)+1;
 * save the finer of the PRC_TS and the finest commodity in the shadow primary
     RPS_S1(RP(R,P),S)$(TS_ARRAY(S) = PRC_YMAX(R,P)) = YES;
     RPS_S2(RPS_S1(R,P,S))$(NOT RP_SGS(R,P)) = YES;
   );
 * identify all TS at/above the PRC_TSL
-  LOOP(TS_GROUP(R,TSL,S), RPS_PRCTS(R,P,TS)$(TS_MAP(R,TS,S)*PRC_TS(R,P,S)) = YES);
+  LOOP((TSLVL,TSL)$(ORD(TSL)>ORD(TSLVL)),IF(ORD(TSL)=2,RPS_PRCTS(PRC_TS(RP,S))=1); RPS_PRCTS(RP(R,P),S)$(TS_GROUP(R,TSLVL,S)$PRC_TSL(RP,TSL))=YES);
   RP_PGFLO(TRACKP)$(PRC_YMAX(TRACKP)>1) = YES;
 
 *-----------------------------------------------------------------------------
@@ -465,13 +465,13 @@ $     BATINCLUDE pp_off.%1 COM_OFF C "" "RTC(R,T,C)$(" NO
   LOOP(SAMEAS(AGE,'1'), OPTION CLEAR=RXX; PUTGRP = 0;
    LOOP(RTP(R,T,P)$((NOT LIFE(AGE+(NCAP_TLIFE(RTP)-.999)))$NCAP_TLIFE(RTP)),
 $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'NCAP_TLIFE out of feasible range'
-       IF(NCAP_TLIFE(RTP) LT 1, RXX(RTP) = YES;
+       IF(NCAP_TLIFE(RTP) < 1, RXX(RTP) = YES;
          PUT QLOG ' WARNING       - Too short, set to 1,   R=',%RL%,' P=',%PL%,' V=',T.TL;
        ELSE
          PUT QLOG ' WARNING       - No FOM beyond year ',CARD(AGE):<3:0,',  R=',%RL%,' P=',%PL%,' V=',T.TL;
-       );
-   ));
-   NCAP_TLIFE(RXX(R,V,P)) = 1;
+       ));
+   NCAP_TLIFE(RXX(R,V,P)) = 1);
+   
 * set the technical lifetime if none set
    NCAP_TLIFE(RTP)$(NOT NCAP_TLIFE(RTP)) = G_TLIFE;
 *-----------------------------------------------------------------------------
@@ -690,8 +690,9 @@ $   BATINCLUDE filparam MULTI 'J,' '' ",'','','','',''" LL EOHYEARS 'NO$' ''
 * commodity based costs, subsidies and taxes
 * elastic demands base price, quantity, elasticity and steps
 
+    RTC_NET(RTC(R,T,C))$(NOT COM_TSL(R,C,'ANNUAL')) = YES;
 $   BATINCLUDE pp_lvlfc.mod COM_IE     C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C)
-$   BATINCLUDE pp_lvlfc.mod COM_FR     C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C) 1
+$   BATINCLUDE pp_lvlfc.mod COM_FR     C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC_NET(R,T,C) 1
 $   BATINCLUDE pp_lvlfc.mod COM_PKFLX  C COM_TS '' ",'0','0','0','0'" ALL_TS T YES
 $   BATINCLUDE pp_lvlfc.mod OBJ_COMNT  C COM_TS ',COSTYPE,CUR' ",'0','0'" ALL_TS DATAYEAR RC(R,C)
 $   BATINCLUDE pp_lvlfc.mod OBJ_COMPD  C COM_TS ',COSTYPE,CUR' ",'0','0'" ALL_TS DATAYEAR RC(R,C)
@@ -700,7 +701,7 @@ $   BATINCLUDE pp_lvlfc.mod COM_BPRICE C COM_TS ',CUR' ",'0','0','0'" ALL_TS DAT
 $   BATINCLUDE pp_lvlfc.mod COM_BQTY   C COM_TS '' ",'0','0','0','0','0'" ALL_TS '' RC(R,C) 1
 
 * Defaults for infrastructure efficiency and seasonal fraction
-    OPTION RCS < COM_IE, CLEAR=RP_PGFLO;
+    OPTION RCS < COM_IE, CLEAR=RTC_NET,CLEAR=RP_PGFLO;
     COM_IE(RTCS_VARC(R,T,C,S))$(NOT RCS(R,C,S)) = 1;
 *GG* 010406 - sum up COM_FRs below on a seasonal level so RTCS_TSFR set below
 * Get the timeslices where COM_FR has been given
@@ -772,11 +773,12 @@ $ BATINCLUDE pp_lvlbr.%1 NCAP_AF '' PRC_TS ",'0','0'" 0 1
   OPTION TRACKP < RTPS_BD; RXX(PRC_TS(TRACKP(R,P),S))$=SUM(RTPS_BD(R,LASTLL,P,S,BDUPX),1);
 * Set default if no PRC_TS has NCAP_AFs :
   NCAP_AF(RTP(R,V,P),S,'UP')$(PRC_TS(R,P,S)$(NOT TRACKP(R,P))) = 1.0;
-  RXX(PRC_TS(R,P,S)) = (NOT RXX(R,P,S))$TRACKP(R,P);
-  NCAP_AF(RTP(R,V,P),S,'UP')$(RXX(R,P,S)$RP_STG(R,P)) = EPS; RXX(RP_STG,S) = NO;
+  PRC_TS2(PRC_TS(TRACKP(R,P),S)) = (NOT RXX(R,P,S));
+  NCAP_AF(RTP(R,V,P),S,'UP')$(PRC_TS2(R,P,S)$RP_STG(R,P)) = EPS;
+  PRC_TS2(RP_STG,S) = NO;
 
 * Make sure to get rid of any remaining PRC_TS for which no NCAP_AF
-  LOOP(PRC_TS(RXX(R,P,TS)),PRC_TS2(R,P,S)$TS_MAP(R,TS,S) = YES);
+  PRC_TS2(RP(R,P),S) $= SUM(RS_BELOW(R,TS,S)$PRC_TS2(RP,TS),1);
   PRC_TS(PRC_TS2) = NO;
   RPCS_VAR(RPCS_VAR(R,P,C,S))$PRC_TS2(R,P,S) = NO;
   RTPCS_OUT(RTPC(R,T,P,C),S)$PRC_TS2(R,P,S) = YES;
@@ -837,6 +839,7 @@ $   BATINCLUDE pp_lvlfs.mod
 $ BATINCLUDE pp_lvlbr.%1 FLO_SHAR ',C,CG' RPCS_VAR "" 1 0 C,
 * preprocessing of FLO_MARK/PRC_MARK
 $ BATINCLUDE eqflomrk.%1
+  RPC_NOFLO(RMKC(RPC)) = NO;
 
 *-----------------------------------------------------------------------------
 * inter-regional exchange related attributes
@@ -932,7 +935,8 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Unsupported diverging trade topo
 * initialize the commodity balance equation type
 *   - equality (MAT,ENV,FIN)
 *   - prodution >= consumption (NRG,DEM)
-*GG* questions about conservation and renewables being =N=?
+*GG* questions about conservation and renewables being =N= balances?
+*   - ignored for now (with no equations created)
 *-----------------------------------------------------------------------------
 * set the sub-sets of commodities
     NRG(RC(R,C))$COM_TMAP(R,'NRG',C) = YES;
@@ -942,7 +946,6 @@ $      BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Unsupported diverging trade topo
     FIN(RC(R,C))$COM_TMAP(R,'FIN',C) = YES;
 
 * free up if conservation or free energy type, unless provided by the user
-*GG* need to add code to handle =N= balances, ignored at the moment with no equation created
     TRACKC(RC) = YES;
     LOOP(LIM,TRACKC(R,C)$COM_LIM(R,C,LIM) = NO);
     COM_LIM(TRACKC(NRG(R,C)),'UP')$(NRG_TMAP(R,'CONSRV',C) + NRG_TMAP(R,'FRERENEW',C)) = YES;

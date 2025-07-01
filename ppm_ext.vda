@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -116,27 +116,28 @@ $IF NOT %REDUCE%==YES OPTION CLEAR=TRACKPC;
   NCAP_AFCS(R,V,P,CG,S)$(NCAP_AFCS(R,'0',P,%PGPRIM%,S)$RP_FLO(R,P)) = 0;
   NCAP_AFCS(R,V,P,CG,S)$((NOT RP_STG(R,P))$RP_PGTYPE(R,P,CG)) $= NCAP_AFCS(R,V,P,%PGPRIM%,S);
 * Set into RTPS_BD tuples to be searched
-  LOOP((RTP(R,V,P),CG,RPS_PRCTS(R,P,S))$NCAP_AFCS(RTP,CG,S),RTPS_BD(RTP,S,BDUPX)=YES);
+  OPTION RVPS < NCAP_AFCS;
 * Processes with no ACTFLO are not supported:
-  RTPS_BD(R,V,P,S,BD)$(RP_STD(R,P)$RP_PGACT(R,P)) = NO;
-* Set into RVPS_LIM availability tuples found
-  RVPS_LIM(RTPS_BD(R,V,P,S,BD))$(PRC_TS(R,P,S)*NCAP_AF(R,V,P,S,BD)) = YES;
-  RVPS_LIM(RTPS_BD(R,V,P,S,BD))$NCAP_AFS(R,V,P,S,BD) = YES;
-  RVPS_LIM(RTPS_BD(R,V,P,ANNUAL,BD))$NCAP_AFA(R,V,P,BD) = YES;
+  RVPS(R,V,P,S)$(RTP(R,V,P)->RP_STD(R,P)$RP_PGACT(R,P)) = NO;
+* Set into RTPS_BD availability tuples found
+  RTPS_BD(RVPS(R,V,P,S),BDUPX(BD))$(PRC_TS(R,P,S)*NCAP_AF(R,V,P,S,BD)) = YES;
+  RTPS_BD(RVPS(R,V,P,S),BDUPX(BD))$NCAP_AFS(R,V,P,S,BD) = YES;
+  RTPS_BD(RVPS(R,V,P,ANNUAL),BDUPX(BD))$NCAP_AFA(R,V,P,BD) = YES;
 * Clear tuples to be searched according to found ones
-  LOOP(BDUPX,RTPS_BD(R,V,P,S,BD)$RVPS_LIM(R,V,P,S,BDUPX) = NO);
+  LOOP(BDUPX,RVPS(R,V,P,S)$RTPS_BD(R,V,P,S,BDUPX) = NO);
 * Accept remaining tuples of type UP/LO only, and set missing AFS
-  RVPS_LIM(RTPS_BD(R,V,P,S,'UP'))=YES; OPTION RPS_CAFLAC<RVPS_LIM;
-  NCAP_AFS(RTPS_BD(R,V,P,S,'UP')) = 1;
+  RTPS_BD(RVPS,'UP') = YES;
+  NCAP_AFS(RVPS,'UP') = 1;
+  OPTION RPS_CAFLAC < RTPS_BD;
   NCAP_AFC(RTP,C,STL(S))$(NCAP_AFCS(RTP,C,S)=0) $= NCAP_AFCS(RTP,C,S);
   NCAP_AFCS(R,V,P,CG,S)$((NCAP_AFCS(R,V,P,CG,S)<=0)$NCAP_AFCS(R,V,P,CG,S)) = 1+INF$(RP_STD(R,P) OR (NOT C(CG)));
 * Prepare IRE/STG with both sides
   RPG_AFCX(RPC_IRE(RP,C,IE('EXP')))$(RPC_IRE(RP,C,'IMP')+(NOT RP_AIRE(RP,IE)))=YES;
   RPG_AFCX(RPC_STG,IE(XPT)) $= TOP(RPC_STG,'OUT');
 * Enable flexible STS only where AF on activity
-  TRACKP(RP_STS(RP)) $= SUM(RPS_CAFLAC(RPS_STG(RP,S),L),1); OPTION RP_GRP<NCAP_AFC;
+  TRACKP(RP_STS(RP)) $= SUM(RPS_CAFLAC(RPS_STG(RP,S),BD),1); OPTION RP_GRP<NCAP_AFC;
   RP_STL(PRC_CAP(RP_STS(RP)),TSL,'UP')$(TRACKP(RP)->RP_GRP(RP,%PGPRIM%)) $= RP_STL(RP,TSL,'N');
-  OPTION CLEAR=TRACKP,CLEAR=RP_GRP,CLEAR=TRACKPG,CLEAR=RTPS_BD,CLEAR=RVPS_LIM;
+  OPTION CLEAR=TRACKP,CLEAR=RP_GRP,CLEAR=TRACKPG,CLEAR=RVPS,CLEAR=RTPS_BD;
 *-----------------------------------------------------------------------------
 * Automatic generation of NCAP_AFC for ECT CHP
   RVP(RTP(R,V,P))$((NOT RPS_CAFLAC(R,P,'ANNUAL','UP'))$(NCAP_CHPR(RTP,'UP')*NCAP_AFA(RTP,'UP')>0)$CHP(R,P))=YES;

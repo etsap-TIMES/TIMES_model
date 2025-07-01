@@ -3,7 +3,7 @@
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
-* Powerflo - define powerflo equations and nodal balance costs
+* Powerflo - define powerflow equations and nodal balance costs
 *=============================================================================*
 $SET MX %3
 $SET PDTOL 1E-5
@@ -47,7 +47,7 @@ $IF NOT '%1'=='' $GOTO %1%2%3
   GR_TOP(TOP_IRE(TRACKC(REG,COM),R,C,P))$(TRACKC(R,C)$TRACKP(R,P)) = YES;
   LOOP(GR_TOP(R,C,REG,COM,P),GR_FLOW(R,P,C)=GR_FLOW(R,P,C)*2+1; GR_FLOW(REG,P,COM)=GR_FLOW(REG,P,COM)*2-1);
   OPTION CLEAR=TRACKP, CLEAR=RP_PRC, RP_GRID < GR_FLOW;
-  GR_TOP(R,C,REG,COM,P)$(GR_FLOW(R,P,C) LT 0) = NO;
+  GR_TOP(R,C,REG,COM,P)$(GR_FLOW(R,P,C) < 0) = NO;
   GR_TOP(R,C,R,C,P) = NO;
   LOOP(GR_TOP(R,C,R,COM,P)$SUM(RPC_IRE(RPC_PG(R,P,C),IE),RPC_PG(R,P,COM)),PRC_MAP(R,'DISTR',P)=YES);
 * Synchronize and check for zero line reactances
