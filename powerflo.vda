@@ -164,15 +164,11 @@ $ IF NOT %TMP%==0 $SET TMP 1;%TMP%$PRC_YMAX(R,P) = NO;
     GR_PTDF(R,T,P,C,ALL_R,COM)$((ABS(GR_PTDF(R,T,P,C,ALL_R,COM))<%PDTOL%)$GR_PTDF(R,T,P,C,ALL_R,COM)) = 0;
     GR_PTDF(R,T,P,C,ALL_R,COM)$((NOT GR_ALGMAP(R,'NRG','NRG'))$GR_PTDF(R,T,P,C,ALL_R,COM)) = ROUND(GR_PTDF(R,T,P,C,ALL_R,COM)/POWER(2,-32))*POWER(2,-32);
     OPTION TRACKP < GR_PTDF, PRC_YMAX < NCAP_PASTI, TRACKC < GR_PTDF;
-*...No new capacity allowed for existing lines
-    RVP(RTP(R,T,P)) $= RP_GRID(R,P);
-    NCAP_BND(RVP(R,T,P),'UP')$(PRC_YMAX(R,P)$TRACKP(R,P)) = MAX(EPS,NCAP_BND(RVP,'UP'));
 *...First set all lines with non-zero PTDF as candidates
     GR_CANDID(R,T,P)$(RP_GRID(R,P)$TRACKP(R,P)) = YES;
-    GR_CAPUP(RVP(R,T,P)) = SUM(PYR(V)$COEF_CPT(R,V,T,P),NCAP_PASTI(RVP)*ROUND(COEF_CPT(R,V,T,P)));
-*...Remove existing lines from candidate lines for their full lifespan
-    GR_CANDID(R,T,P)$SUM(RP_GRID(REG,P)$GR_CAPUP(REG,T,P),1) = NO;
-    DFUNC = %TMP%; OPTION CLEAR=RVP,CLEAR=PRC_YMAX,CLEAR=TRACKP;
+*...No new capacity allowed for existing lines
+    NCAP_BND(GR_CANDID(R,T,P),'UP')$PRC_YMAX(R,P) = MAX(EPS,NCAP_BND(R,T,P,'UP'));
+    DFUNC = %TMP%; OPTION CLEAR=PRC_YMAX, CLEAR=TRACKP;
   ELSE OPTION CLEAR=RP_GRID);
 * Check nodal commodity balances
 *  COM_BNDNET(RTCS_VARC(RC_GRID,S),'LO') = EPS;
@@ -224,15 +220,19 @@ $ IFI %DSC%%SOLMIP%==YESYES $SET TMP SUM((VNT(TT(V),T),UNIT)$((NCAP_DISC(r,v,p,u
 $ MACRO VAR_PTDNCAP(r,t,p) %TMP%
 $ MACRO VAR_GRVIRT(r,t,p,n,s) SUM(IE(XPT),%VAR%_IRE(r,t,t,p,%PGPRIM%,s,ie%sow%))
   IF(CARD(GR_CANDID),
-*...Complete virtual CAP bounds for candidate/removed lines
+*...Remove existing lines from candidate lines for their full lifespan
+    GR_CAPUP(GR_CANDID(R,T,P)) = SUM(PYR(V)$COEF_CPT(R,V,T,P),NCAP_PASTI(R,V,P)*ROUND(COEF_CPT(R,V,T,P)));
+    GR_CANDID(R,T,P)$SUM(RP_GRID(REG,P)$GR_CAPUP(REG,T,P),1) = NO;
     RVP(GR_CANDID) = YES;
+*...Complete virtual CAP bounds for candidate/removed lines
     GR_CAPUP(RVP(R,T,P))$GR_DNCAP(R,P) = MAX(0,SMAX((VNT(V,T),UNIT)$COEF_CPT(R,V,T,P),GR_DUNIT(R,V,P,UNIT)*(COEF_CPT(R,V,T,P)>0)));
     LOOP(T,GR_CAPUP(RVP(R,TT(MIYR_1),P))$(NOT GR_CAPUP(RVP)) = CAP_BND(R,T,P,'UP')+1-1);
-    GR_CAPUP(RVP(R,T(TT+1),P))$(NOT GR_CAPUP(RVP)) = GR_CAPUP(R,TT,P)+(CAP_BND(RVP,'UP')-GR_CAPUP(R,TT,P))$(CAP_BND(RVP,'UP')>0);
+    LOOP(T(TT+1),GR_CAPUP(RVP(R,T,P))$(NOT GR_CAPUP(RVP)) = GR_CAPUP(R,TT,P)+(CAP_BND(RVP,'UP')-GR_CAPUP(R,TT,P))$(CAP_BND(RVP,'UP')>0));
 *...Copy CAP bounds from import side if needed
     LOOP(GR_TOP(R,C,REG,COM,P),GR_CAPUP(R,T,P)$GR_CAPUP(REG,T,P)=MIN(GR_CAPUP(REG,T,P),GR_CAPUP(R,T,P)+INF$(NOT GR_CAPUP(R,T,P)));
          IF(NOT SAMEAS(R,REG),GR_CAPUP(REG,T,P) = 0));
     GR_CANDID(RVP)$(NOT GR_CAPUP(RVP)) = NO;
+    CAP_BND(GR_CANDID(R,T,P),'UP')$((NOT CAP_BND(R,T,P,'UP'))$(NOT GR_DNCAP(R,P))) = GR_CAPUP(R,T,P);
     RTP_VARP(GR_CANDID(R,T,P))$(NOT GR_DNCAP(R,P)) = YES;
     %VAR%_IRE.LO(R,T,T,P,C(ACTCG),S,'EXP'%SOW%)$(PRC_TS(R,P,S)$RVP(R,T,P)) = -INF;
     OPTION CLEAR=RVP);
@@ -260,8 +260,8 @@ $ LABEL POWFLO
 *...PTDF for net injections: Normal grid nodes
     SUM(RC_GRID(REG,T,COM)$(COM_TS(REG,COM,S)$GR_PTDF(R,T,P,C,REG,COM)), GR_PTDF(R,T,P,C,REG,COM) * %VAR%_COMAUX(REG,T,COM,S%SOW%))
 *...PTDF for virtual injections (redundant in this formulation)
-*   +SUM(GR_TOP(REG,COM1,ALL_R,COM2,PRC)$GR_CANDID(REG,T,PRC),
-*     (GR_PTDF(R,T,P,C,REG,COM1)-GR_PTDF(R,T,P,C,ALL_R,COM2)) * SUM(RPS_S1(REG,PRC,TS)$RS_FR(REG,S,TS),RS_FR(REG,S,TS)*VAR_GRVIRT(REG,T,PRC,COM1,TS)));
+*   +SUM(GR_TOP(REG,COM1,RC,PRC)$GR_CANDID(REG,T,PRC),
+*     (GR_PTDF(R,T,P,C,REG,COM1)-GR_PTDF(R,T,P,C,RC)) * SUM(RPS_S1(REG,PRC,TS)$RS_FR(REG,S,TS),RS_FR(REG,S,TS)*VAR_GRVIRT(REG,T,PRC,COM1,TS)));
   ;
 *------------------------------------------------------------------------
 * Implied capacity of virtual powerflow

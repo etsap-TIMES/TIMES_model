@@ -3101,3 +3101,13 @@ pp_prelv.vda  : (2)
 ppm_ext.vda   : (3)
 gasgrids.vda  : (1)
 powerflo.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.0
+-----------------------------------------------------------------------------------------
+Date: 25-Jul-2025 [AL]: Major release
+1) Finalizing and announcing the new grid features
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.0
+powerflo.vda  : (1)
