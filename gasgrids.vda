@@ -7,7 +7,7 @@
 *=============================================================================*
 $ IFE NOT CARD(GG_KGF) $EXIT
 $ IF NOT '%1'=='' $GOTO %1%2
-$ SETGLOBAL GG_WN  6
+$ SETGLOBAL GG_WN  19
 *-----------------------------------------------------------------------------
 * Internal SETs and Parameters
   SETS
@@ -17,23 +17,22 @@ $ SETGLOBAL GG_WN  6
     GG_EDGE(ALL_R,P,ALL_R)      Undirected grid pipeline topology
     GG_WINK(ALL_R,P,C,ALL_R,C)  Alternate Weymouth topology
     GG_RTC(R,YEAR,C)            Grid nodes by period
-    GG_RTPC(R,YEAR,P,C)         Grid pipelines by period
+    GG_RTPC(R,MILESTONYR,P,C)   Grid pipelines by period
     GG_WTX(R,P,C)               Pipelines with Taylor expansion
-    OMG(J), GG_O(J) / 1*%GG_WN% /;
+    OMG(J) /1*51/, GG_O(J) / 1*%GG_WN% /, GG_VI(J) /1,2,99/;
 
   SCALARS GG_M1 /0/;
   PARAMETERS
     GG_MM(R,T,P,C)              Big-M estimates
     GG_PPM(R,YEAR,P,C,R,C,J)    Alternate pressure points
-    GG_PPW(R,YEAR,P,C,J,R,C,J)  Alternate Weymouth points
+    GG_PPW(R,YEAR,P,C,R,C,J)    Alternate Weymouth points
   ;
 $ IFE CARD(GG_PP) $SETGLOBAL SOLMIP YES
 *-------------------------------------------------------------------------------
   OPTION GG_WTX < GG_PP;
   TRACKC(R,C) $= SUM(NRG_GMAP(R,'GAS',C),GG_DENS(R,C));
 * Collect gas grid nodes according to GG_DEMS
-  LOOP(GR_GRID(J,TRACKC(R,C)),
-    GG_DENS(REG,COM)$((NOT GG_DENS(REG,COM))$GR_GRID(J,REG,COM)) = GG_DENS(R,C));
+  LOOP(GR_GRID(J,TRACKC), GG_DENS(R,C)$((NOT GG_DENS(R,C))$GR_GRID(J,R,C)) = GG_DENS(TRACKC));
   OPTION TRACKC < GG_DENS;
 * Prepare control sets
   GG_RTC(RC_GRID(R,T,C)) $= TRACKC(R,C);
@@ -59,18 +58,30 @@ $ IFE CARD(GG_PP) $SETGLOBAL SOLMIP YES
 * Get bidirectional links
   LOOP(GG_LINK(R,P,C,REG,COM)$GG_LINK(REG,P,COM,R,C),TRACKPC(R,P,C)=YES);
 * Reset WTX if not MIP when Bi-directional
-$ IFI NOT %SOLMIP%==YES GG_WTX(TRACKPC)=NO;
+$ IFI NOT %SOLMIP%==YES GG_WTX(TRACKPC) = NO;
+$ IFI %SOLMIP%==YES  GG_M1 = 1;
 
-* Generate pairs of pressure points
-  Z = CARD(GG_O)-1;
-  GG_PPM(GG_RTPC(R,T,P,C),REG,COM,GG_O)$(GG_ARC(R,C,REG,COM)$GG_LINK(R,P,C,REG,COM)) = (GG_PRBD(R,T,C,'LO')*(Z-ORD(GG_O)+1)+GG_PRBD(R,T,C,'UP')*GG_GAMMA(R,T,P,C)*(ORD(GG_O)-1))/Z;
-  GG_PPM(GG_RTPC(R,T,P,C),REG,COM,GG_O)$(GG_ARC(REG,COM,R,C)$GG_LINK(REG,P,COM,R,C)) = (GG_PRBD(R,T,C,'LO')*(Z-ORD(GG_O)+1)+GG_PRBD(R,T,C,'UP')*GG_GAMMA(R,T,P,C)*(ORD(GG_O)-1))/Z;
-  GG_PPW(GG_RTPC(R,T,P,C),GG_O,REG,COM,J)$(GG_O(J)$(GG_PPM(R,T,P,C,REG,COM,GG_O)>GG_PPM(REG,T,P,COM,R,C,J))$GG_LINK(R,P,C,REG,COM)) = SQRT(POWER(GG_PPM(R,T,P,C,REG,COM,GG_O),2)-POWER(GG_PPM(REG,T,P,COM,R,C,J),2));
-  GG_PPM(R,T,P,C,RC,J)$GG_WTX(R,P,C) = 0;
+* Autogenerate pressure points when needed
+  GG_WTX(TRACKPC(R,P,C))$SUM(GG_LINK(R,P,C,REG,COM)$GG_WTX(REG,P,COM),1)=YES;
+  LOOP((GG_RTPC(R,T,P,C),GG_LINK(R,P,C,REG,COM)),
+    CNT=ROUND(MAX(0,GG_PP(R,'0',P,C,'N','1'),GG_PP(REG,'0',P,COM,'N','1')));
+    F=Z; DFUNC=GG_WTX(R,P,C)$CNT;
+    IF(DFUNC->CNT, CNT=MIN(50,CNT);
+      F = GG_PRBD(R,T,C,'UP')*MAX(1,GG_GAMMA(R,T,P,C));
+      Z = MAX(F*.1,GG_PRBD(REG,T,COM,'LO')));
+    IF(F>Z,
+      IF(DFUNC,IF(CNT<9, MY_F=1.25; ELSE MY_F=((1-Z/F)/0.001)**(1/CNT)); CNT=CEIL(LOG((1-Z/F)/0.001)/LOG(MY_F)-.001)+1;
+         GG_PP(R,T,P,C,'UP',OMG(J))$(ORD(J)<=CNT) = F;
+         GG_PP(REG,T,P,COM,'LO',OMG(J))$(ORD(J)<=CNT) = F*(1-.001*POWER(MY_F,ORD(J)-1));
+      ELSE CNT=CARD(GG_O); MY_F=1.283; DFUNC=.233; DONE=(1-Z/F)*DFUNC/(CNT/2*(CNT-1));
+         CNT=CNT-1+GG_M1/2; Z=(1-Z/F)*(1-DFUNC)/(MY_F**CNT);
+         GG_PPM(R,T,P,C,REG,COM,GG_O(J)) = F*(1-Z*POWER(MY_F,ORD(J)-1)-ORD(J)/2*(ORD(J)-1)*DONE))));
+  GG_PP(R,LL,P,C,'N',OMG) = 0; OPTION GG_WTX < GG_PP, OMG < GG_PP;
+  GG_PPM(GG_RTPC(R,T,P,C),R,C,GG_O(J))$(NOT GG_WTX(R,P,C)) = GG_PRBD(R,T,C,'UP')*MAX(1,GG_GAMMA(R,T,P,C));
+  GG_PPW(GG_RTPC(R,T,P,C),RC,GG_O(J))$((NOT GG_WTX(R,P,C))$GG_PPM(R,T,P,C,RC,J)) = SQRT(POWER(GG_PPM(R,T,P,C,R,C,J),2)-POWER(GG_PPM(R,T,P,C,RC,J),2));
 
-* Reset GAMMA for non-compressor links (omitting bidirectional reset)
+* Reset GAMMA for non-compressor links (no bidirectional reset)
   GG_GAMMA(GG_RTPC(R,T,P,C))$(GG_GAMMA(R,T,P,C)<1+1/128) = 0;
-  OPTION OMG < GG_PP;
 * Finalise some controls
   GG_RTPC(R,T,P,C)$(NOT GG_KGF(R,T,P,C)) = NO;
   GG_KLP(RTPC(R,T,P,C))$(NOT GG_RTPC(RTPC)) = 0;
@@ -78,9 +89,9 @@ $ IFI NOT %SOLMIP%==YES GG_WTX(TRACKPC)=NO;
   IRE_FLOSUM(GG_RTPC(R,T,P,C),ANNUAL,IE,C,'IN')$(NOT RPC_IRE(R,P,C,IE)) $= RPC_IRE(R,P,C,'IMP');
   GG_WINK(GG_LINK(R,P,C,RC))$(NOT GG_WTX(R,P,C)) = YES;
 * Estimates for Big-M
-  GG_MM(GG_RTPC(R,T,P,C)) = GG_PRBD(R,T,C,'UP')*MAX(1,GG_GAMMA(R,T,P,C))*GG_KGF(R,T,P,C);
-$IF %SOLMIP%==YES  GG_M1 = SMAX(GG_RTC,GG_PRBD(GG_RTC,'UP'));
-  GG_KGF(GG_RTPC)$(NOT SUM((J,RC,JJ)$GG_PPW(GG_RTPC,J,RC,JJ),1)) = 0;
+  GG_MM(GG_RTPC(R,T,P,C)) = MAX(60,GG_PRBD(R,T,C,'UP'))*MAX(1,GG_GAMMA(R,T,P,C))*GG_KGF(R,T,P,C);
+  GG_PPW(GG_RTPC(R,T,P,C),R,C,'1')$GG_WTX(R,P,C) = SUM(OMG$GG_PP(R,T,P,C,'UP',OMG),1);
+  GG_KGF(GG_RTPC)$(NOT SUM((RC,J)$GG_PPW(GG_RTPC,RC,J),1)) = 0;
   OPTION CLEAR=TRACKC, CLEAR=TRACKPC, CLEAR=TRACKP;
 $ EXIT
 *-------------------------------------------------------------------------------
@@ -90,9 +101,11 @@ $ LABEL DECL
     VAR_GG_MF(R,T,P,C,R,C,S)      Mass flows of gases
     VAR_GG_PDIF(R,T,P,C,R,C,S)    Pressure differences over pipeline
     VAR_GG_PADD(R,T,P,C,S)        Pressure boost due to compressor at input node
-    VAR_GG_STEP(R,T,P,C,S,J,J)    Alternate step variables
+    VAR_GG_STEP(R,T,P,C,S,J)      Alternate step variables
   ;
-  BINARY VARIABLES VAR_GG_Y(R,T,P,C,S);
+$IFI %SOLMIP%==YES     BINARY
+$IFI NOT %SOLMIP%==YES POSITIVE
+   VARIABLES VAR_GG_Y(R,T,P,C,S);
 
 * Delete EQ_IRE for all with gg_klp defined
   OPTION TRACKPC < GG_KLP;
@@ -109,32 +122,33 @@ $ LABEL DECL
 
 * Fix reverse pressure difference to zero for unidirectional case
   VAR_GG_PDIF.FX(GG_RTPC(REG,T,P,COM),R,C,S)$((NOT GG_LINK(REG,P,COM,R,C))$GG_LINK(R,P,C,REG,COM)$PRC_TS(REG,P,S)) = 0;
-  VAR_GG_STEP.UP(RTPCS_VARF(GG_RTPC(R,T,P,C),S),GG_O,J)$SUM(GG_LINK(R,P,C,RC)$GG_PPW(R,T,P,C,GG_O,RC,J),1) = EXP(1);
+  VAR_GG_STEP.UP(RTPCS_VARF(GG_RTPC(R,T,P,C),S),GG_O)$SUM(GG_LINK(R,P,C,RC)$GG_PPW(R,T,P,C,RC,GG_O),1) = EXP(1);
+  VAR_GG_Y.UP(RTPCS_VARF(GG_RTPC,S)) = 1;
   OPTION CLEAR=TRACKPC;
 *-------------------------------------------------------------------------------
   EQUATIONS
     EQ_GG_GAMA(R,T,P,C,R,C,TS)     'Maximum pressure increase due to compressor'
     EQ_GG_MFLO(R,T,P,C,R,C,TS)     'Standard IRE flows to mass flows (2-way)'
-    EQ_GG_MBND(R,T,P,C,R,C,TS)     'Mass flow bound by pressure difference (2-way)'
+    EQ_GG_MBND(R,T,P,C,R,C,L,TS)   'Mass flow bound by pressure difference (2-way)'
     EQ_GG_HLIP(R,T,P,C,R,C,TS)     'Linepack storage balance (1-way)'
     EQ_GG_HLEV(R,T,P,C,R,C,TS)     'Linepack as a funtion of average pressure (1-way)'
     EQ_GG_STEP(R,T,P,C,R,C,TS)     'Stepped linearization (1-way)'
     EQ_GG_PRIO(R,T,P,C,R,C,L,TS)   'Pressures at input and output node (2-way)'
-    EQ_GG_PDIF1(R,T,P,C,R,C,TS)    'Maximum pressure differences (2-way)'
+    EQ_GG_PDIF1(R,T,P,C,R,C,J,TS)  'Maximum pressure differences (2-way)'
     EQ_GG_PDIF2(R,T,P,C,R,C,TS)    'Unsigned pressure differences'
-    EQ_GG_WEYMST(R,T,P,C,R,C,TS)   'Weymouth stepped linearization (2-way)'
+    EQ_GG_WEYMST(R,T,P,C,R,C,L,TS) 'Weymouth stepped linearization (2-way)'
     EQ_GG_WEYMTX(R,T,P,C,R,C,S,J)  'Weymouth Taylor expansion formulation (2-way)'
   ;
 $ EXIT
 $ LABEL MODEL
 *-------------------------------------------------------------------------------
+$ MACRO VAR_GG_PRU(r,t,p,c,s) sum(actcg(com2),VAR_GG_PDIF(r,t,p,c,r,com2,s))
+$ MACRO VAR_GG_Y2(r,t,p,c,reg,com,s) (VAR_GG_Y(R,T,P,C,S)$GG_TOP(R,C,REG,COM,P)+(1-VAR_GG_Y(REG,T,P,COM,S))$GG_TOP(REG,COM,R,C,P))
 $ MACRO VAR_GG_PRIO(r,t,p,c,s) (VAR_GG_PR(r,t,c,s)+VAR_GG_PADD(r,t,p,c,s)$GG_GAMMA(r,t,p,c))
 $ MACRO VAR_GG_HLIP(r,t,p,s) VAR_GG_PADD(r,t,p,%PGPRIM%,s)
-$ MACRO VAR_GG_WSLAC(r,t,p,c,reg,com,s) sum(com2(actcg)$GG_KGF(r,t,p,c),(var_gg_pdif(r,t,p,com2,r,com2,s)+var_gg_pdif(reg,t,p,com2,reg,com2,s)$gg_wink(reg,p,com,r,c))$(GG_M1->0) + var_gg_pdif(r,t,p,c,r,com2,s)$GG_M1)
+$ MACRO VAR_GG_WSLAC(r,t,p,c,reg,com,s) sum(com2(actcg)$GG_KGF(r,t,p,c),var_gg_pdif(r,t,p,com2,r,c,s)+2/3*var_gg_pdif(reg,t,p,com2,reg,com,s)$gg_wink(reg,p,com,r,c)$(GG_M1->0))
 * Max pr-diffs in LP vs. MIP CASE
-$ MACRO VAR_GG_PDMAX(r,t,p,c,reg,com,ts) \
-$ IFI %SOLMIP%==YES     (VAR_GG_Y(r,t,p,c,ts)$GG_TOP(r,c,reg,com,p) + (1-VAR_GG_Y(reg,t,p,com,ts))$GG_TOP(reg,com,r,c,p))*GG_PRBD(R,T,C,'UP')*1.2
-$ IFI NOT %SOLMIP%==YES SUM((J,JJ)$GG_PPW(r,t,p,c,j,reg,com,jj),VAR_GG_STEP(r,t,p,c,ts,j,jj)*(GG_PPM(r,t,p,c,reg,com,j)-GG_PPM(reg,t,p,com,r,c,jj)))
+$ MACRO VAR_GG_PDMAX(r,t,p,c,reg,com,ts,z) MAX(POWER(GG_PRBD(R,T,C,'UP')*max(1,GG_GAMMA(r,t,p,c)),Z)-POWER(GG_PRBD(REG,T,COM,'LO'),Z),0))*((VAR_GG_Y(r,t,p,c,ts)$GG_TOP(r,c,reg,com,p) + (1-VAR_GG_Y(reg,t,p,com,ts))$GG_TOP(reg,com,r,c,p))
 *-------------------------------------------------------------------------------
 * Gas grid equation formulations
     EQ_GG_MFLO(GG_RTPC(%R_T%,P,C),RC(REG,COM1),RTS(S))$(PRC_TS(R,P,S)$GG_LINK(R,P,C,RC))..
@@ -146,16 +160,17 @@ $ IFI NOT %SOLMIP%==YES SUM((J,JJ)$GG_PPW(r,t,p,c,j,reg,com,jj),VAR_GG_STEP(r,t,
     EQ_GG_GAMA(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S))$(PRC_TS(R,P,S)$GG_LINK(R,P,C,REG,COM)$GG_GAMMA(R,T,P,C))..
       VAR_GG_PADD(R,T,P,C,S) =L= (GG_GAMMA(R,T,P,C)-1) * VAR_GG_PR(R,T,C,S)
     ;
-    EQ_GG_MBND(GG_RTPC(%R_T%,P,C),RC(REG,COM),RTS(S))$(PRC_TS(R,P,S)$GG_LINK(R,P,C,RC))..
-      VAR_GG_MF(R,T,P,C,REG,COM,S) + VAR_GG_WSLAC(REG,T,P,COM,R,C,S)$(GG_M1->0) =L=
-      (GG_MM(R,T,P,C) * (VAR_GG_PRIO(R,T,P,C,S) - VAR_GG_PRIO(REG,T,P,COM,S) + VAR_GG_PDIF(REG,T,P,COM,R,C,S)$GG_LINK(REG,P,COM,R,C)))$GG_TOP(R,C,RC,P) +
-      (GG_MM(R,T,P,C) * VAR_GG_PDIF(R,T,P,C,REG,COM,S))$GG_TOP(RC,R,C,P)
+    EQ_GG_MBND(GG_RTPC(%R_T%,P,C),RC(REG,COM),LNX(L),RTS(S))$(PRC_TS(R,P,S)$(GG_LINK(REG,P,COM,R,C)$BD(L)+IPS(L)$(GG_M1->GG_WTX(R,P,C)))$GG_LINK(R,P,C,RC))..
+      VAR_GG_MF(R,T,P,C,REG,COM,S) + VAR_GG_WSLAC(R,T,P,C,REG,COM,S)$GG_WINK(REG,P,COM,R,C) =L=
+      ((GG_MM(R,T,P,C) * (VAR_GG_PRIO(R,T,P,C,S) - VAR_GG_PRIO(REG,T,P,COM,S) + VAR_GG_PDIF(REG,T,P,COM,R,C,S)$GG_LINK(REG,P,COM,R,C)))$GG_TOP(R,C,RC,P) +
+       (GG_MM(R,T,P,C) * VAR_GG_PDIF(R,T,P,C,REG,COM,S))$GG_TOP(RC,R,C,P))$IPS(L) +
+      (GG_KGF(r,t,p,c) * SQRT(VAR_GG_PDMAX(R,T,P,C,REG,COM,S,2)))$BD(L)
     ;
     EQ_GG_WEYMTX(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S),OMG)$(GG_PP(R,T,P,C,'UP',OMG)$PRC_TS(R,P,S)$GG_LINK(R,P,C,REG,COM)$GG_WTX(R,P,C))..
       VAR_GG_MF(r,t,p,c,reg,com,S)
       =L=
-      GG_KGF(r,t,p,c) * (GG_PP(r,t,P,c,'UP',omg)    /SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * (VAR_GG_PRIO(r,t,p,c,s) + VAR_GG_PDIF(reg,t,p,com,r,c,s)$GG_LINK(reg,p,com,r,c)) -
-                         GG_PP(REG,t,P,COM,'LO',omg)/SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * VAR_GG_PRIO(reg,t,p,com,s))
+      GG_KGF(r,t,p,c) * (GG_PP(r,t,P,c,'UP',omg)    /SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * VAR_GG_PRIO(r,t,p,c,s) -
+                         GG_PP(REG,t,P,COM,'LO',omg)/SQRT(POWER(GG_PP(r,t,P,c,'UP',omg),2)-POWER(GG_PP(reg,t,p,com,'LO',omg),2)) * (VAR_GG_PRIO(reg,t,p,com,s) - VAR_GG_PDIF(reg,t,p,com,r,c,s)$GG_LINK(reg,p,com,r,c)))
     ;
     EQ_GG_HLIP(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S))$(PRC_TS(R,P,S)$GG_KLP(r,t,p,c)$GG_LINK(R,P,C,REG,COM)$GG_ARC(R,C,REG,COM))..
       VAR_GG_HLIP(R,T,P,S)  =E=  VAR_GG_HLIP(R,T,P,S--RS_STG(R,S)) +
@@ -165,24 +180,27 @@ $ IFI NOT %SOLMIP%==YES SUM((J,JJ)$GG_PPW(r,t,p,c,j,reg,com,jj),VAR_GG_STEP(r,t,
     EQ_GG_HLEV(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S))$(PRC_TS(R,P,S)$GG_LINK(R,P,C,REG,COM)$GG_ARC(R,C,REG,COM))..
       VAR_GG_HLIP(R,T,P,S)  =E= GG_KLP(R,T,P,C) * GG_DENS(R,C) * RS_STGPRD(R,S) * (VAR_GG_PRIO(R,T,P,C,S) + VAR_GG_PRIO(REG,T,P,COM,S))/2
     ;
-    EQ_GG_PDIF1(GG_RTPC(%R_T%,P,C),RC(REG,COM),RTS(S))$(GG_LINK(REG,P,COM,R,C)$PRC_TS(R,P,S)$GG_LINK(R,P,C,RC))..
-      VAR_GG_PDIF(R,T,P,C,REG,COM,S) + (VAR_GG_WSLAC(R,T,P,C,R,C,S)/GG_KGF(R,T,P,C)/8)$((GG_KGF(R,T,P,C)>0)$GG_WINK(R,P,C,RC)$GG_M1)
-      =L= VAR_GG_PDMAX(R,T,P,C,REG,COM,S)
+    EQ_GG_PDIF1(GG_RTPC(%R_T%,P,C),RC(REG,COM),GG_VI(J),RTS(S))$((NOT GG_WTX(R,P,C)$GG_O(J))$GG_LINK(REG,P,COM,R,C)$PRC_TS(R,P,S)$GG_LINK(R,P,C,RC))..
+      (VAR_GG_PDIF(R,T,P,C,REG,COM,S) - (VAR_GG_PDMAX(R,T,P,C,REG,COM,S,1)))$(NOT GG_O(J)) +
+      SUM(GG_O(J)$(ORD(J)=1),VAR_GG_PRU(R,T,P,C,S) - GG_PRBD(R,T,C,'UP')*VAR_GG_Y2(R,T,P,C,REG,COM,S))  +
+      SUM(GG_O(J)$(ORD(J)=2),VAR_GG_PRU(R,T,P,C,S) - (VAR_GG_PRIO(R,T,P,C,S)-GG_PRBD(R,T,C,'LO')*(1-VAR_GG_Y2(R,T,P,C,REG,COM,S))))
+      =L= 0
     ;
     EQ_GG_PDIF2(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S))$(GG_LINK(REG,P,COM,R,C)$PRC_TS(R,P,S)$GG_TOP(R,C,REG,COM,P))..
       VAR_GG_PDIF(REG,T,P,COM,R,C,S) =E= VAR_GG_PRIO(REG,T,P,COM,S) - VAR_GG_PRIO(R,T,P,C,S) + VAR_GG_PDIF(R,T,P,C,REG,COM,S)
     ;
     EQ_GG_STEP(GG_RTPC(%R_T%,P,C),RC(REG,COM),RTS(S))$((GG_M1->0)$PRC_TS(R,P,S)$GG_WINK(REG,P,COM,R,C)$GG_WINK(R,P,C,RC)$GG_ARC(R,C,RC))..
-      SUM((J,JJ)$GG_PPW(R,T,P,C,J,RC,JJ),VAR_GG_STEP(R,T,P,C,S,J,JJ)) + SUM((J,JJ)$GG_PPW(REG,T,P,COM,J,R,C,JJ),VAR_GG_STEP(REG,T,P,COM,S,J,JJ))
+      SUM((J)$GG_PPW(r,t,p,c,RC,j),VAR_GG_STEP(r,t,p,c,s,j)) + SUM((J)$GG_PPW(reg,t,p,com,r,c,j),VAR_GG_STEP(reg,t,p,com,s,j))
       =L= 1
     ;
-    EQ_GG_PRIO(GG_RTPC(%R_T%,P,C),REG,COM,LNX(L),RTS(S))$(PRC_TS(R,P,S)$GG_WINK(R,P,C,REG,COM)$GG_ARC(R,C,REG,COM))..
-      SUM((J,JJ)$GG_PPW(R,T,P,C,J,REG,COM,JJ),VAR_GG_STEP(R,T,P,C,S,J,JJ)*(GG_PPM(R,T,P,C,REG,COM,J)$IPS(L)+GG_PPM(REG,T,P,COM,R,C,JJ)$BD(L))) +
-      SUM((J,JJ)$GG_PPW(REG,T,P,COM,J,R,C,JJ),VAR_GG_STEP(REG,T,P,COM,S,J,JJ)*(GG_PPM(R,T,P,C,REG,COM,JJ)$IPS(L)+GG_PPM(REG,T,P,COM,R,C,J)$BD(L)))$GG_LINK(REG,P,COM,R,C)
+    EQ_GG_PRIO(GG_RTPC(%R_T%,P,C),RC(REG,COM),LNX(L),RTS(S))$(PRC_TS(R,P,S)$GG_WINK(R,P,C,RC)$GG_ARC(R,C,RC))..
+      (VAR_GG_PRU(R,T,P,C,S) + VAR_GG_PRU(REG,T,P,COM,S) - VAR_GG_PDIF(REG,T,P,COM,R,C,S)$IPS(L) - VAR_GG_PDIF(R,T,P,C,REG,COM,S)$BD(L))
       =E= VAR_GG_PRIO(R,T,P,C,S)$IPS(L) + VAR_GG_PRIO(REG,T,P,COM,S)$BD(L) - VAR_GG_PDIF(R,T,P,C,R,C,S)
     ;
-    EQ_GG_WEYMST(GG_RTPC(%R_T%,P,C),REG,COM,RTS(S))$(PRC_TS(R,P,S)$GG_WINK(R,P,C,REG,COM))..
-      VAR_GG_MF(R,T,P,C,REG,COM,S) + VAR_GG_WSLAC(R,T,P,C,REG,COM,S)
+    EQ_GG_WEYMST(GG_RTPC(%R_T%,P,C),RC(REG,COM),BD(L),RTS(S))$(PRC_TS(R,P,S)$GG_WINK(R,P,C,RC))..
+      (VAR_GG_MF(R,T,P,C,REG,COM,S) + VAR_GG_WSLAC(R,T,P,C,REG,COM,S))$LNX(L) + (VAR_GG_PDIF(R,T,P,C,REG,COM,S)$BDLOX(BD) + VAR_GG_PRU(R,T,P,C,S)$BDUPX(BD))$BDNEQ(BD)
       =E=
-      GG_KGF(R,T,P,C)*SUM((J,JJ)$GG_PPW(R,T,P,C,J,REG,COM,JJ),VAR_GG_STEP(R,T,P,C,S,J,JJ)*GG_PPW(R,T,P,C,J,REG,COM,JJ))
+      (GG_KGF(R,T,P,C)*SUM((J)$GG_PPW(R,T,P,C,RC,J),VAR_GG_STEP(R,T,P,C,S,J)*GG_PPW(R,T,P,C,RC,J)))$LNX(L) +
+      (SUM((J)$GG_PPW(R,T,P,C,RC,J),VAR_GG_STEP(R,T,P,C,S,J)*(GG_PPM(r,t,p,c,r,c,j)-GG_PPM(r,t,p,c,RC,j)))$BDLOX(BD) +
+       SUM((J)$GG_PPW(R,T,P,C,RC,J),VAR_GG_STEP(R,T,P,C,S,J)*GG_PPM(r,t,p,c,r,c,j))$BDUPX(BD))$BDNEQ(BD)
     ;

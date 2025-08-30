@@ -1,0 +1,34 @@
+*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* This file is part of the IEA-ETSAP TIMES model generator, licensed
+* under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
+*=============================================================================*
+* PPM_ext.abs oversees preliminary preprocessing activities needed by CLI
+*   %1 - mod or v# for the source code to be used
+*=============================================================================*
+* Additional declarations
+  SET CM_USUBS(CM_ITEM);
+  SET CM_COUPMAP(CM_ITEM,CM_ITEM,CM_Q);
+  SET CM_REBOX(CM_Q,CM_Q) / CM-ATM.ATM, CM-UP.UP, CM-LO.LO /;
+
+* Add user-defined emissions
+  CM_GHGMAP(R,COM,C)$(NOT CM_GHGMAP(R,COM,C)) $= IRE_CCVT(R,COM,R,C);
+  CM_USUBS(CM_ITEM)$SUM(RC(R,COM)$CM_GHGMAP(R,COM,CM_ITEM),1) = CM_PPM(CM_ITEM);
+  UNCD1(CM_USUBS) = CM_HISTS(CM_USUBS);
+  CM_HISTS(CM_USUBS) = YES;
+  CM_EMIS(CM_USUBS) = YES;
+
+* Statistics mappings
+  CM_STATS(CM_HISTS,LL,'ATM')    $= CM_STATS(CM_HISTS,LL,'N');
+  CM_STATS('FORCING',LL,CM_BOX)  $= CM_STATS('DELTA',LL,CM_BOX);
+  CM_STAT0(CM_VAR,'LIFE')$((CM_DECAY(CM_VAR,'UP')>0)$CM_DECAY(CM_VAR,'UP'))=1/CM_DECAY(CM_VAR,'UP');
+
+* Add missing forcings if functions defined
+  OPTION CLEAR=UNCD1, CM_USUBS < CM_LINFOR;
+  UNCD1(CM_USUBS) = YES;
+  OPTION CM_USUBS < CM_FORCMAP;
+  CM_USUBS(CM_EMIS) = NOT CM_USUBS(CM_EMIS);
+  CM_USUBS(CM_USUBS) = UNCD1(CM_USUBS);
+  CM_USUBS('CO2-GTC') = NO;
+  CM_FORCMAP(CM_USUBS,CM_USUBS) = YES;
+  CM_OFOR(CM_USUBS) = YES;

@@ -3111,3 +3111,33 @@ Date: 25-Jul-2025 [AL]: Major release
 Modified files: (reason)
 initsys.mod   : Increased version number to 4.9.0
 powerflo.vda  : (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.1
+-----------------------------------------------------------------------------------------
+Date: 29-Aug-2025 [AL]: Maintenance release
+1) Preparations for the pending climate module update
+2) Improved auto-generation & MIP performance for the new grid features
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.1
+initmty.mod   : (1)   
+uc_cli.mod    : (1)
+spoint.mod    : (1)
+eqdamage.mod  : (1)
+rpt_dam.mod   : (1)
+initmty.vda   : (2)
+gasgrids.vda  : (2)
+mod_ext.vda   : (2)
+powerflo.vda  : (2)
+initmty.cli   : (1)
+coef_ext.cli  : (1)
+equ_ext.cli   : (1)
+mod_vars.cli  : (1)
+forcupd.cli   : (1)
+rpt_ext.cli   : (1)
+rpt_par.cli   : (1)
+clearsol.stp  : (1)
+initmty.stc   : (1)
+equ_ext.msa   : (1)
+times2veda.vdd: (1)

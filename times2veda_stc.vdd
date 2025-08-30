@@ -82,7 +82,7 @@ not-0 var_fin var_fout var_act var_actm var_cap var_capm cost_flo cost_act eq_co
   User_DynbM    spar_ucrtp        w uc_n r t p c
   User_MaxBet   spar_ucmax        w uc_n r p c
 *** Climate module
-  VAR_Climate   CM_SRESULT        w c t
+  VAR_Climate   CM_SRESULT        w c uc_n t
   Dual_clic     CM_SMAXC_M        w c t
 
 [DimensionTextAll]

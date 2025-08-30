@@ -351,7 +351,7 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
 * Parameters used in report routine
   PARAMETER RPT_OPT(ITEM,J)               'Reporting options'                    //;
   PARAMETER CST_DAM(REG,T,COM)            'Damage costs'                         //;
-  PARAMETER CM_RESULT(ITEM,ALLYEAR)       'Climate module results'               //;
+  PARAMETER CM_RESULT(ITEM,ITEM,ALLYEAR)  'Climate module results'               //;
   PARAMETER CM_MAXC_M(ITEM,ALLYEAR)       'Shadow price of climate constraint'   //;
   PARAMETER TM_RESULT(ITEM,R,ALLYEAR)     'MACRO results'                        //;
 

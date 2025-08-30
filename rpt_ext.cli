@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
@@ -15,30 +15,29 @@ $IFI %SENSIS%==YES $EXIT
 $%SW_NOTAGS%
 *-----------------------------------------------------------------------------
 EQUATIONS
-  %EQ%_CLITOT(CM_VAR,T,LL %SWD%) 'Balances for the total emissions or forcing'
-  %EQ%_CLIMAX(ALLYEAR,CM_VAR %SWD%) 'Constraint for maximum climate quantities'
+  %EQ%_CLITOT(CM_ITEM,T,LL %SWD%) 'Balances for the total emissions or forcing'
+  %EQ%_CLIMAX(ALLYEAR,CM_ITEM %SWD%) 'Constraint for maximum climate quantities'
 ;
 
 VARIABLES
-  %VAR%_CLITOT(CM_VAR,LL %SWD%) 'Total emissions or forcing by milestone year'
+  %VAR%_CLITOT(CM_ITEM,LL %SWD%) 'Total emissions or forcing by milestone year'
 POSITIVE VARIABLES
-  %VAR%_CLIBOX(CM_VAR,LL %SWD%) 'Quantities in the climate reservoirs'
-;
+  %VAR%_CLIBOX(CM_ITEM,CM_BOX,LL%SWD%) 'Quantities in the climate reservoirs';
 *-----------------------------------------------------------------------------
 $IF %STAGES%==YES $%SW_TAGS% SET SWSW SW_TSW(SOW,T,WW),
 $IF %SCUM%==1 $SET SWSW 'SW_T(T,WW),' SET SCUM *SW_TPROB(T,WW)
 
 * Results for each SOW
 $IF NOT %STAGES%==YES LOOP(SOW,
-$IF %STAGES%==YES     LOOP(AUXSOW(SOW)$SW_PROB(SOW), 
+$IF %STAGES%==YES     LOOP(AUXSOW(SOW)$SW_PROB(SOW),
 * Clear results from previous SOW
 $IF NOT %STAGES%==YES $GOTO REPORT
    OPTION CLEAR=VAR_CLITOT,CLEAR=VAR_CLIBOX;
    OPTION CLEAR=EQ_CLITOT, CLEAR=EQ_CLIMAX;
    LOOP(SUPERYR(T,LL)$CM_LED(LL),
     VAR_CLITOT.L(CM_VAR,LL) $= SUM(%SWSW% %VAR%_CLITOT.L(CM_VAR,LL%SWD%)%SCUM%);
-    VAR_CLIBOX.L(CM_VAR,LL) $= SUM(%SWSW% %VAR%_CLIBOX.L(CM_VAR,LL%SWD%)%SCUM%);
-$IF %STAGES%%SCUM%==YES  VAR_CLIBOX.L(CM_VAR,LL) $= %VAR%_CLIBOX.L(CM_VAR,LL,SOW);
+    VAR_CLIBOX.L(CM_VAR,CM_BOX,LL) $= SUM(%SWSW% %VAR%_CLIBOX.L(CM_VAR,CM_BOX,LL%SWD%)%SCUM%);
+$IF %STAGES%%SCUM%==YES  VAR_CLIBOX.L(CM_VAR,CM_BOX,LL) $= %VAR%_CLIBOX.L(CM_VAR,CM_BOX,LL,SOW);
     EQ_CLIMAX.M(LL,CM_VAR)  $= SUM(%SWSW% %EQ%_CLIMAX.M(LL,CM_VAR%SWD%)*SW_UNPB(T,WW)));
    EQ_CLITOT.M(CM_VAR,T,T)  $= SUM(%SWSW% %EQ%_CLITOT.M(CM_VAR,T,T%SWD%)*SW_UNPB(T,WW));
 $LABEL REPORT BATINCLUDE rpt_par.cli
@@ -50,4 +49,4 @@ $IF NOT %STAGES%==YES $EXIT
   LOOP(SUPERYR(T,LL)$CM_LED(LL),
     EQ_CLIMAX.M(LL,CM_VAR)  $= SUM(SW_T(T,W),%EQ%_CLIMAX.M(LL,CM_VAR,W));
     VAR_CLITOT.L(CM_VAR,LL) $= SUM(SW_T(T,W),SW_TPROB(T,W)*%VAR%_CLITOT.L(CM_VAR,LL,W));
-    VAR_CLIBOX.L(CM_VAR,LL) $= SUM(SW_T(T,W),SW_TPROB(T,W)*%VAR%_CLIBOX.L(CM_VAR,LL,W)));
+    VAR_CLIBOX.L(CM_VAR,CM_BOX,LL) $= SUM(SW_T(T,W),SW_TPROB(T,W)*%VAR%_CLIBOX.L(CM_VAR,CM_BOX,LL,W)));

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *============================================================================*
@@ -52,4 +52,4 @@ $IF DEFINED RTC_MS
 $IF %ECB%==YES  %EQ%_MSNCAP, %EQ%_MSNCAPB
 
 $IF DEFINED GG_MM
-  EQ_GG_MFLO, EQ_GG_GAMA, EQ_GG_MBND, EQ_GG_HLIP, EQ_GG_HLEV, EQ_GG_STEP, EQ_GG_PRIO, EQ_GG_PDIF1, EQ_GG_PDIF2, EQ_GG_WEYMST, EQ_GG_WEYMTX
+  EQ_GG_MFLO, EQ_GG_GAMA, EQ_GG_HLIP, EQ_GG_HLEV, EQ_GG_STEP, EQ_GG_PRIO, EQ_GG_MBND, EQ_GG_PDIF1, EQ_GG_PDIF2, EQ_GG_WEYMST, EQ_GG_WEYMTX

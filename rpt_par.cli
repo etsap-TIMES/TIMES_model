@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
@@ -15,28 +15,28 @@
 *-----------------------------------------------------------------------------
 * Calculate incremental radiative forcing in each year
   OPTION CLEAR=MY_ARRAY;
-  MY_F = SUM(CM_BOXMAP('CO2-GTC',CM_VAR,CM_BOX)$CM_PHI('CO2-GTC',CM_BOX,'CO2-GTC'),CM_CONST(CM_VAR))/CM_CONST('CO2-PREIND');
+  MY_F = SUM(CM_BOXMAP('CO2-GTC',CM_VAR,CM_BOX)$CM_PHI('CO2-GTC',CM_BOX,'CO2-GTC'),CM_STAT0(CM_VAR,CM_BOX))/CM_CONST('CO2-PREIND');
   VALLVL = CM_CONST('GAMMA') / LOG(2);
   Z = SMIN(T,M(T))-CM_CALIB;
   LOOP(LL$CM_LED(LL), CNT = MAX(1,CM_LED(LL));
-    ATTLVL = SUM(CM_BOXMAP('CO2-GTC',CM_VAR,CM_BOX)$CM_PHI('CO2-GTC',CM_BOX,'CO2-GTC'),VAR_CLIBOX.L(CM_VAR,LL))/CM_CONST('CO2-PREIND');
+    ATTLVL = SUM(CM_BOXMAP('CO2-GTC',CM_VAR,CM_BOX)$CM_PHI('CO2-GTC',CM_BOX,'CO2-GTC'),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL))/CM_CONST('CO2-PREIND');
     Z = (ATTLVL - MY_F) / CNT;
     FOR(F = 0 TO CNT-1, MY_ARRAY(LL-F) = VALLVL*LOG(ATTLVL-F*Z)+CM_EXOFORC(LL-F));
     MY_F = ATTLVL;
   );
-  CM_RESULT('FORC+CO2',LL)$CM_LED(LL) = MY_ARRAY(LL)-CM_EXOFORC(LL);
+  CM_RESULT('FORC+CO2','CM-FORC',LL)$CM_LED(LL) = MY_ARRAY(LL)-CM_EXOFORC(LL);
 *-----------------------------------------------------------------------------
 * Calculate radiative forcing from other emissions in each year
-  LOOP(SUPERYR(T,LL)$CM_LED(LL), CM_RESULT(CM_OFOR,LL) =
+  LOOP(SUPERYR(T,LL)$CM_LED(LL), CM_RESULT(CM_OFOR,'CM-FORC',LL) =
     SUM(CM_FORCMAP(CM_OFOR,CM_EMIS),CM_LINFOR(LL,CM_EMIS,'FX')+CM_LINFOR(LL,CM_EMIS,'N')/CM_PPM(CM_EMIS)*
-      SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,LL))) +
-    SUM(CM_FORCMAP(CM_TKIND(CM_OFOR),CM_VAR)$(NOT CM_EMIS(CM_VAR)),VAR_CLITOT.L(CM_OFOR,LL)));
+      SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL))) +
+    SUM(CM_FORCMAP(CM_TKIND(CM_OFOR),CM_VAR)$((NOT CM_EMIS(CM_VAR))$CM_TKIND(CM_VAR)),VAR_CLITOT.L(CM_OFOR,LL)));
   LOOP(MIYR_1(T), FIRST_VAL =
     SUM(CM_FORCMAP(CM_OFOR,CM_EMIS),CM_LINFOR(T,CM_EMIS,'FX')+CM_LINFOR(T,CM_EMIS,'N')/CM_PPM(CM_EMIS)*
-      SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),CM_CONST(CM_VAR))) +
-    SUM(CM_FORCMAP(CM_TKIND,CM_VAR)$(NOT CM_EMIS(CM_VAR)),VAR_CLITOT.L(CM_TKIND,T)));
+      SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),CM_STAT0(CM_VAR,CM_BOX))) +
+    SUM(CM_FORCMAP(CM_TKIND,CM_VAR)$((NOT CM_EMIS(CM_VAR))$CM_TKIND(CM_VAR)),VAR_CLITOT.L(CM_TKIND,T)));
   LOOP(LL$CM_LED(LL), CNT = MAX(1,CM_LED(LL));
-    LAST_VAL = SUM(CM_FORCMAP(CM_OFOR,CM_VAR),CM_RESULT(CM_OFOR,LL));
+    LAST_VAL = SUM(CM_FORCMAP(CM_OFOR,CM_TKIND(CM_VAR)),CM_RESULT(CM_OFOR,'CM-FORC',LL));
     FOR(F = 0 TO CNT-1, MY_F = F/CNT; MY_FIL2(LL-F) = MY_F*FIRST_VAL+(1-MY_F)*LAST_VAL);
     FIRST_VAL = LAST_VAL);
   MY_ARRAY(LL)$MY_ARRAY(LL) = MY_ARRAY(LL) + MY_FIL2(LL);
@@ -45,20 +45,20 @@
 *-----------------------------------------------------------------------------
 * Calculate the ith powers of SIG, i=1...Z, where Z = LEAD(T)
 * First intialize CM_DD to the identity matrix, CM_EE to zero
-  LOOP((CM_VAR('FORCING'),LL)$CM_LED(LL), Z = CM_LED(LL); 
+  LOOP((CM_VAR('FORCING'),LL)$CM_LED(LL), Z = CM_LED(LL);
     OPTION CLEAR=CM_RR;
     CM_RR('1',CM_BUCK,CM_BOX) = DIAG(CM_BUCK,CM_BOX);
-    FOR(F = 0 TO Z-1, 
+    FOR(F = 0 TO Z-1,
       CM_RR('2',CM_BOX,'LO') = CM_RR('2',CM_BOX,'LO') + MY_ARRAY(LL-F)*CM_RR('1',CM_BOX,'ATM');
-      CM_RR('1',CM_BUCK,CM_BOX) = SUM(ITEM$CM_BOX(ITEM),CM_RR('1',CM_BUCK,ITEM)*CM_SIG(SOW,ITEM,CM_BOX));
+      CM_RR('1',CM_BUCK,CM_BOX) = SUM(CM_Q$CM_BOX(CM_Q),CM_RR('1',CM_BUCK,CM_Q)*CM_SIG(SOW,CM_Q,CM_BOX));
     );
 * Calculate temperature changes
-    CM_DELTAT(LL,CM_BOX) = 
+    CM_DELTAT(LL,CM_BOX) =
                   CM_RR('1',CM_BOX,'ATM') * CM_DELTAT(LL-CM_LED(LL),'ATM') +
                   CM_RR('1',CM_BOX,'LO') * CM_DELTAT(LL-CM_LED(LL),'LO') +
                   CM_RR('2',CM_BOX,'LO') * CM_SIG1(SOW) +
-                  (CM_RR('1',CM_BOX,'ATM') * CM_CONST('DELTA-ATM') +
-                   CM_RR('1',CM_BOX,'LO') * CM_CONST('DELTA-LO'))$MIYR_1(LL);
+                  (CM_RR('1',CM_BOX,'ATM') * CM_STAT0('FORCING','ATM') +
+                   CM_RR('1',CM_BOX,'LO') * CM_STAT0('FORCING','LO'))$MIYR_1(LL);
   );
 *-----------------------------------------------------------------------------
 * Shadow price of total and maximum constraints
@@ -67,13 +67,15 @@
 
 *-----------------------------------------------------------------------------
 * Collect all basic results
-  CM_RESULT(CM_VAR,LL) $= VAR_CLITOT.L(CM_VAR,LL);
-  CM_RESULT(CM_VAR,LL) $= VAR_CLIBOX.L(CM_VAR,LL);
-  LOOP(CM_ATMAP(CM_EMIS,CM_HISTS), CM_RESULT(CM_HISTS,LL)$CM_LED(LL) =
-    SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,LL))/CM_PPM(CM_EMIS));
-  CM_RESULT('FORC+TOT',LL)$CM_LED(LL) $= CM_DT_FORC(LL);
-  CM_RESULT('DELTA+ATM',LL)  $= CM_DELTAT(LL,'ATM');
-  CM_RESULT('DELTA+LO',LL)   $= CM_DELTAT(LL,'LO');
-  CM_SRESULT(SOW,ITEM,LL)    $= CM_RESULT(ITEM,LL);
-  CM_SMAXC_M(SOW,ITEM,LL)    $= CM_MAXC_M(ITEM,LL);
+  CM_RESULT(CM_VAR,'CM-EMIS',LL)$CM_EMIS(CM_VAR) $= VAR_CLITOT.L(CM_VAR,LL);
+  CM_RESULT(CM_VAR,'CM-FORC',LL)$(NOT CM_EMIS(CM_VAR)) $= VAR_CLITOT.L(CM_VAR,LL);
+
+  CM_RESULT(CM_VAR,CM_Q,LL) $= SUM(CM_REBOX(CM_Q,CM_BOX),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL));
+  LOOP(CM_ATMAP(CM_EMIS,CM_HISTS), CM_RESULT(CM_HISTS,'CM-PPX',LL)$CM_LED(LL) =
+    SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL))/CM_PPM(CM_EMIS));
+  CM_RESULT('FORC+TOT','CM-FORC',LL)$CM_LED(LL) $= CM_DT_FORC(LL);
+  CM_RESULT('DELTA+ATM','CM-DT',LL)  $= CM_DELTAT(LL,'ATM');
+  CM_RESULT('DELTA+LO','CM-DT',LL)   $= CM_DELTAT(LL,'LO');
+  CM_SRESULT(SOW,ITEM,U2,LL)     $= CM_RESULT(ITEM,U2,LL);
+  CM_SMAXC_M(SOW,ITEM,LL)        $= CM_MAXC_M(ITEM,LL);
 %2

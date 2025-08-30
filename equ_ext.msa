@@ -1,12 +1,12 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *============================================================================*
 * EQU_EXT.MSA Equation definitions for MACRO Stand-Alone
 *============================================================================*
-$ SET VAR_CLIBOX CM_RESULT
-$ IFI %CLI%==YES $SET VAR_CLIBOX VAR_CLIBOX
+$ IFI NOT %CLI%==YES $MACRO CM_CLIBOX(v,b,y) 0
+$ IFI %CLI%==YES $MACRO CM_CLIBOX VAR_CLIBOX
 * Prepare annualized coefficients and enable adjusted PV factors
 $ BATINCLUDE eqobjann.tm N *0
 $ IFI %OBJANN%%MSA%==YESMSA COEF_PVT(R,T) $= TM_UDF(R,T); OBJ_PVT(R,T,CUR)$RDCUR(R,CUR) $= TM_UDF(R,T);
@@ -30,7 +30,7 @@ EQUATIONS
 *  Utility Production Function, the Objective Function
 * ======================================================================
 
- EQ_UTIL.. SUM(MR(R), SUM(T, TM_NWT(R) * TM_PWT(T) * TM_DFACT(R,T) * LOG(VAR_C(R,T))) + 
+ EQ_UTIL.. SUM(MR(R), SUM(T, TM_NWT(R) * TM_PWT(T) * TM_DFACT(R,T) * LOG(VAR_C(R,T))) +
       SUM((TM_DAM(R,L),XTP), TM_NWT(R) * TM_PWT(XTP)*TM_UDF(R,XTP) * LOG(VAR_CDM(R,L,XTP))))
 
   =E=  VAR_UTIL * MAX(1,LOG(TM_SCALE_UTIL*1000))/1000;
@@ -47,7 +47,7 @@ EQUATIONS
 *  Production Constraint
 *=======================================================================
 
- EQ_PROD_Y(MR(R),T)..  VAR_Y(R,T) =L= 
+ EQ_PROD_Y(MR(R),T)..  VAR_Y(R,T) =L=
 
  (TM_AKL(R) * (VAR_K(R,T) ** (TM_KPVS(R) * TM_RHO(R))) * TM_L(R,T) ** ((1 - TM_KPVS(R)) * TM_RHO(R))
 
@@ -108,10 +108,10 @@ EQUATIONS
   EQ_TRDBAL(PP,TRD)..  SUM(MR(R), VAR_NTX(R,PP,TRD)) =E= 0;
 
   EQ_CCDM(TM_DAM(MR(R),MDM),XTP)..  VAR_CDM(R,MDM,XTP)  =E=
-   
-   ((1-(%VAR_CLIBOX%('DELTA-ATM',XTP)/TM_CATT(R))**2)**TM_HSX(R,XTP))$L(MDM) +
+
+   ((1-(CM_CLIBOX('DELTA-ATM','ATM',XTP)/TM_CATT(R))**2)**TM_HSX(R,XTP))$L(MDM) +
 
    SUM(SUPERYR(T(XTP),LL)$XTP(LL),TM_GDPGOAL(MR,T)*TM_XWT(R,LL)*
-   (TM_MDTL(R)*%VAR_CLIBOX%('DELTA-ATM',LL)/MAX(1,TM_DEFVAL('REFTEMP')) +
-    TM_MDTQ(R)*POWER(%VAR_CLIBOX%('DELTA-ATM',LL)/MAX(1,TM_DEFVAL('REFTEMP')),2)))$IO(MDM);
+   (TM_MDTL(R)*CM_CLIBOX('DELTA-ATM','ATM',LL)/MAX(1,TM_DEFVAL('REFTEMP')) +
+    TM_MDTQ(R)*POWER(CM_CLIBOX('DELTA-ATM','ATM',LL)/MAX(1,TM_DEFVAL('REFTEMP')),2)))$IO(MDM);
 

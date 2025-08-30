@@ -91,7 +91,7 @@ not-0 var_fin var_fout var_act var_actm var_cap var_capm cost_flo cost_act eq_cu
   User_DynbM    par_ucrtp        uc_n r t p c
   User_MaxBet   par_ucmax        uc_n r p c
 *** Climate and MACRO
-  VAR_Climate   CM_RESULT        c t
+  VAR_Climate   CM_RESULT        c uc_n t
   Dual_clic     CM_MAXC_M        c t
   VAR_Macro     TM_RESULT        c r t
 

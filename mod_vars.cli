@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -8,16 +8,16 @@
 * Comments: For convenience, equations are declared here as well
 *-----------------------------------------------------------------------------
 POSITIVE VARIABLES
-  %VAR%_CLITOT(CM_VAR,LL %SWD%) 'Total emissions or forcing by milestone year'
-  %VAR%_CLIBOX(CM_VAR,LL %SWD%) 'Quantities in the climate reservoirs'
+  %VAR%_CLITOT(CM_ITEM,LL %SWD%) 'Total emissions or forcing by milestone year'
+  %VAR%_CLIBOX(CM_ITEM,CM_BOX,LL %SWD%) 'Quantities in the climate reservoirs'
 ;
 *-----------------------------------------------------------------------------
 EQUATIONS
-  %EQ%_CLITOT(CM_VAR,T,LL %SWD%) 'Balances for the total emissions or forcing'
-  %EQ%_CLICONC(CM_VAR,CM_BOX,T %SWD%) 'Balances for the concentration in the reservoirs'
-  %EQ%_CLITEMP(CM_VAR,CM_BOX,T %SWD%) 'Balances for the temperature in the reservoirs'
-  %EQ%_CLIBEOH(CM_VAR,CM_BOX,T,LL %SWD%) 'Balances for the quantities in the BEOH reservoirs'
-  %EQ%_CLIMAX(ALLYEAR,CM_VAR %SWD%) 'Constraint for maximum climate quantities'
+  %EQ%_CLITOT(CM_ITEM,T,LL %SWD%) 'Balances for the total emissions or forcing'
+  %EQ%_CLICONC(CM_ITEM,CM_BOX,T %SWD%) 'Balances for the concentration in the reservoirs'
+  %EQ%_CLITEMP(CM_ITEM,CM_BOX,T %SWD%) 'Balances for the temperature in the reservoirs'
+  %EQ%_CLIBEOH(CM_ITEM,CM_BOX,T,LL %SWD%) 'Balances for the quantities in the BEOH reservoirs'
+  %EQ%_CLIMAX(ALLYEAR,CM_ITEM %SWD%) 'Constraint for maximum climate quantities'
 ;
 OPTION CLEAR=%EQ%_CLITOT;
 *-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2023 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
+* Copyright (C) 2025 IEA-ETSAP.  Licensed under GPLv3 (see file NOTICE-GPLv3.txt).
 *---------------------------------------------------------------------
 * SOLPUTTA.ANS
 *
@@ -258,6 +258,6 @@ $ BATINCLUDE solsubta.ans PUTI4 'RTC(R,T,C)'                COST_     'R.TL' 'C.
 SET XRT(%2ITEM,U2,T);
 $IF %1==''
 $ BATINCLUDE solsubta.ans XRT TM_RESULT(ITEM,R,T)   "" 'R.TL' "''"  "''"  "''"  "''" '_' TM_RESULT(ITEM,R,T) (ITEM,R,TT) (ITEM,R,TT(T--ORD(T))) @1,ITEM.TL
-$ BATINCLUDE solsubta.ans XRT CM_%1RESULT(%3ITEM,T) CM  "''"  "''"  "''"  "''"  "''" '_' CM_%1RESULT(%3ITEM,T) (%3ITEM,'',TT) (%3ITEM,'',TT(T--ORD(T))) ITEM.TL
+$ BATINCLUDE solsubta.ans XRT CM_%1RESULT(%3ITEM,U2,T) CM  "''"  "''"  "''"  "''"  "''" '_' CM_%1RESULT(%3ITEM,U2,T) (%3ITEM,U2,TT) (%3ITEM,U2,TT(T--ORD(T))) ITEM.TL
 *---------------------------------------------------------------------
 PUTCLOSE sola;

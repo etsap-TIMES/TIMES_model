@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -30,7 +30,7 @@ $IF %VAR_UC%==YES $GOTO UCLEAR
 $CLEAR EQG_UC EQG_UCR EQG_UCT EQG_UCRT EQG_UCTS EQG_UCRTS EQG_UCRS EQG_UCSU EQG_UCSUS EQG_UCRSU EQG_UCRSUS
 $CLEAR EQL_UC EQL_UCR EQL_UCT EQL_UCRT EQL_UCTS EQL_UCRTS EQL_UCRS EQL_UCSU EQL_UCSUS EQL_UCRSU EQL_UCRSUS
 $LABEL UCLEAR
-$IF DEFINED EQ_CLITOT OPTION CLEAR=EQ_CLITOT,CLEAR=EQ_CLIMAX; VAR_CLIBOX.L(CM_VAR,LL)$NO=0;
+$IF DEFINED EQ_CLITOT OPTION CLEAR=EQ_CLITOT,CLEAR=EQ_CLIMAX; VAR_CLIBOX.L(CM_VAR,CM_BOX,LL)$NO=0;
   VAR_BLND.L(R,T,BLE,OPR)$NO = 0;
 $IF %TIMESED%==YES VAR_OBJELS.L(R,BD,CUR)$NO = 0;
 $IFI %MERGE%==YES $BATINCLUDE clears.mrg

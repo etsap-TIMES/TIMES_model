@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -40,7 +40,7 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
   ACT_LOSSD(R,LL,P,UPT,BD)    'Efficiency at one hour from start-up (BD=UP) or at one hour to end of shut-down (BD=LO)' //
   STG_MAXCYC(R,YEAR,P)        'Maximum number of storage cycles over lifetime' //;
 *-----------------------------------------------------------------------------
-* Special: Risk parameters & reporting options
+* Risk parameters & network modeling attributes
   PARAMETER UC_ACTBET(UC_N,ALL_REG,ALLYEAR,PRC);
   PARAMETER UC_FLOBET(UC_N,ALL_REG,ALLYEAR,PRC,CG);
   PARAMETER COM_CSTBAL(R,ALLYEAR,C,S,ITEM,CUR) 'Cost on specific component of node balance';
@@ -60,7 +60,7 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
     GG_KGF(R,YEAR,P,C)    'Weymouth constants'//
     GG_KLP(R,YEAR,P,C)    'Linepack constants'//
     GG_PRBD(R,YEAR,C,LIM) 'Nodal pressure bounds'//
-    GG_PP(R,YEAR,P,C,BD,J) //;
+    GG_PP(R,YEAR,P,C,L,J) 'Fixed pressure points'//;
 
 *-----------------------------------------------------------------------------
 * Attributes for experimental ECB extension

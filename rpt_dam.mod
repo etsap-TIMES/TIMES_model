@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *------------------------------------------------------------------------------
@@ -17,7 +17,7 @@ $IFI %STAGES%==YES $SETLOCAL SWP 'S' SETLOCAL SW1 'SOW,'
 *------------------------------------------------------------------------------
 * If using climate module, enable damages for total emissions/concentration
 $IF %CLI%==YES %SWP%CST_DAM(%SW1%R,T,C(CG(CM_VAR)))$((NOT RC(R,C))$RXX(R,T,C)) = 
-$IF %CLI%==YES   %VART%_CLITOT.L(CM_VAR,T%SWS%)$CM_KIND(CM_VAR)+%VAR%_CLIBOX.L(CM_VAR,T%SOW%)$(NOT CM_KIND(CM_VAR));
+$IF %CLI%==YES   %VART%_CLITOT.L(CM_VAR,T%SWS%)$CM_KIND(CM_VAR)+%VAR%_CLIBOX.L(CM_VAR,'ATM',T%SOW%)$(NOT CM_KIND(CM_VAR));
 *------------------------------------------------------------------------------
    %SWP%CST_DAM(%SW1%RXX(R,T,C))$RC(R,C) = 
      SUM(COM_TS(R,C,S),DAM_COEF(R,T,C,S) *

@@ -12,7 +12,7 @@ $IF NOT %STAGES%==YES  SOW('1') = YES;
 *-----------------------------------------------------------------------------
 * Make sure CLI attributes are defined
 $IF %CLI%==YES $GOTO ADESCVDD
-$IF %SOLVEDA%==1 PARAMETER CM_SRESULT(ALLSOW,ITEM,ALLYEAR) //;
+$IF %SOLVEDA%==1 PARAMETER CM_SRESULT(ALLSOW,ITEM,ITEM,ALLYEAR) //;
 $IF %SOLVEDA%==1 PARAMETER CM_SMAXC_M(ALLSOW,ITEM,ALLYEAR) //;
 *-----------------------------------------------------------------------------
 $LABEL ADESCVDD

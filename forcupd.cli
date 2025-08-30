@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *----------------------------------------------------------------------------
@@ -10,7 +10,7 @@ $SET N2O_PRE 270
 $SET FOFO (0.47*LOG(1 + 2.01E-5*(F*Z)**0.75 + 5.31E-15*F*(F*Z)**1.52)-MY_SUM)
 
   LOOP(CM_ATMAP(CM_EMIS,CM_HISTS), CM_RESULT(CM_HISTS,LL)$CM_LED(LL) =
-    SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,LL))/CM_PPM(CM_EMIS));
+    SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL))/CM_PPM(CM_EMIS));
   F=%CH4_PRE%; Z=%N2O_PRE%; MY_SUM=0; MY_SUM=%FOFO%;
   LOOP(LL$CM_LED(LL),
 *...methane
