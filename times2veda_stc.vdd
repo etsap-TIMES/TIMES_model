@@ -54,8 +54,9 @@ not-0 var_fin var_fout var_act var_actm var_cap var_capm cost_flo cost_act eq_co
   EQ_CumfloM    spar_cumflom      w r p c v t
 *** Parameters
   PAR_Top       par_top           r t p c uc_n
-  PAR_CapLO     spar_caplo        w r t p
-  PAR_CapUP     spar_capup        w r t p
+  PAR_CapLO     spar_capbd        w r t p /LO/
+  PAR_CapUP     spar_capbd        w r t p /UP/
+  PAR_CapRet    spar_cumret       w r v t p
   Cap_New       SCap_New          w r v p t uc_n
 *** Costs
   Cost_Inv      scst_invc         w r v t p uc_n

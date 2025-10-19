@@ -11,14 +11,14 @@
 *-----------------------------------------------------------------------------
 * Calculate Reporting parameters for Climate Module
 %1
-  OPTION CLEAR=CM_RESULT,CLEAR=CM_MAXC_M;
+  OPTION CLEAR=CM_RESULT, CLEAR=CM_MAXC_M;
 *-----------------------------------------------------------------------------
 * Calculate incremental radiative forcing in each year
   OPTION CLEAR=MY_ARRAY;
   MY_F = SUM(CM_BOXMAP('CO2-GTC',CM_VAR,CM_BOX)$CM_PHI('CO2-GTC',CM_BOX,'CO2-GTC'),CM_STAT0(CM_VAR,CM_BOX))/CM_CONST('CO2-PREIND');
   VALLVL = CM_CONST('GAMMA') / LOG(2);
-  Z = SMIN(T,M(T))-CM_CALIB;
-  LOOP(LL$CM_LED(LL), CNT = MAX(1,CM_LED(LL));
+  Z = SMIN(T,M(T)-CM_CALIB)$CARD(VAR_CLIBOX);
+  LOOP(LL$(Z$CM_LED(LL)), CNT = MAX(1,CM_LED(LL));
     ATTLVL = SUM(CM_BOXMAP('CO2-GTC',CM_VAR,CM_BOX)$CM_PHI('CO2-GTC',CM_BOX,'CO2-GTC'),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL))/CM_CONST('CO2-PREIND');
     Z = (ATTLVL - MY_F) / CNT;
     FOR(F = 0 TO CNT-1, MY_ARRAY(LL-F) = VALLVL*LOG(ATTLVL-F*Z)+CM_EXOFORC(LL-F));
@@ -69,7 +69,6 @@
 * Collect all basic results
   CM_RESULT(CM_VAR,'CM-EMIS',LL)$CM_EMIS(CM_VAR) $= VAR_CLITOT.L(CM_VAR,LL);
   CM_RESULT(CM_VAR,'CM-FORC',LL)$(NOT CM_EMIS(CM_VAR)) $= VAR_CLITOT.L(CM_VAR,LL);
-
   CM_RESULT(CM_VAR,CM_Q,LL) $= SUM(CM_REBOX(CM_Q,CM_BOX),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL));
   LOOP(CM_ATMAP(CM_EMIS,CM_HISTS), CM_RESULT(CM_HISTS,'CM-PPX',LL)$CM_LED(LL) =
     SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX)$CM_PHI(CM_EMIS,CM_BOX,CM_EMIS),VAR_CLIBOX.L(CM_VAR,CM_BOX,LL))/CM_PPM(CM_EMIS));

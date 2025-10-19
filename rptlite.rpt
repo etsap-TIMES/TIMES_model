@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -71,11 +71,10 @@ $IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
  PARAMETER %1PAR_PASTI(%2R,T,P,ITEM)    //;
  PARAMETER %1PAR_CAPL(%2R,YEAR,P)       //;
  PARAMETER %1PAR_CAPM(%2R,YEAR,P)       //;
- PARAMETER %1PAR_CAPLO(%2R,YEAR,P)      //;
- PARAMETER %1PAR_CAPUP(%2R,YEAR,P)      //;
-
- PARAMETER %1PAR_NCAPL(%2R,ALLYEAR,P)      //;
- PARAMETER %1PAR_NCAPM(%2R,ALLYEAR,P)      //;
+ PARAMETER %1PAR_CAPBD(%2R,YEAR,P,BD)   //;
+ PARAMETER %1PAR_CUMRET(%2R,YEAR,YEAR,P)//;
+ PARAMETER %1PAR_NCAPL(%2R,ALLYEAR,P)   //;
+ PARAMETER %1PAR_NCAPM(%2R,ALLYEAR,P)   //;
  PARAMETER %1PAR_NCAPR(%2R,ALLYEAR,P,ITEM) //;
  PARAMETER %1PAR_OBJSAL(%2R,ALLYEAR,P,CUR) //;
 
@@ -89,12 +88,12 @@ $IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
  PARAMETER %1PAR_PEAKM(%2R,ALLYEAR,CG,S)    //;
  PARAMETER %1PAR_UCSL(%2UC_N,*,*,*)         //;
  PARAMETER %1PAR_UCSM(%2UC_N,*,*,*)         //;
+ PARAMETER %1PAR_UCMRK(%2R,T,ITEM,C,S)      //;
+ PARAMETER %1PAR_UCMAX(%2UC_N,ALL_R,ITEM,C) //;
  PARAMETER %1PAR_CUMFLOL(%2R,P,C,LL,LL)     //;
  PARAMETER %1PAR_CUMFLOM(%2R,P,C,LL,LL)     //;
  PARAMETER %1PAR_CUMCST(%2R,LL,LL,COSTAGG,CUR) //;
- PARAMETER %1PAR_UCMRK(%2R,T,ITEM,C,S)      //;
  PARAMETER %1PAR_UCRTP(%2UC_N,R,T,P,UC_GRPTYPE)//;
- PARAMETER %1PAR_UCMAX(%2UC_N,ALL_R,ITEM,C) //;
 
 * Stochastic cost parameters
  PARAMETER REG_WOBJ(REG,ITEM,CUR)              //;

@@ -46,6 +46,14 @@ $BATINCLUDE filparam CM_STATS 'CM_HISTS,' CM_BOX ",'','','','',''" LL FIL
  CM_ATMAP(CM_EMIS,CM_EMIS)$(NOT SUM(CM_ATMAP(CM_EMIS,CM_VAR),1)) = YES;
  LOOP(CM_EMIS$(NOT SUM(CM_BOXMAP(CM_EMIS,CM_VAR,CM_BOX),1)),CM_BOXMAP(CM_ATMAP(CM_EMIS,CM_VAR),CM_BOX)$CM_DECAY(CM_EMIS,CM_BOX)=YES);
 * Coupled concentrations
+ LOOP(CM_COUPMAP(CM_VAR,CM_EMIS,'ATM')$CM_STAT0(CM_EMIS,'UP'),
+   CM_DECAY(CM_EMIS,'N')=CM_DECAY(CM_EMIS,'ATM'); CM_BOXMAP(CM_EMIS,CM_EMIS,'N')=YES);
+* Reference concentration
+ CM_COUPLE(CM_VAR,T,CM_EMIS,'FX')$((CM_COUPLE(CM_VAR,T,CM_EMIS,'FX')<=0)$CM_COUPLE(CM_VAR,T,CM_EMIS,'ATM')) =
+   CM_STAT0(CM_EMIS,'ATM')*CM_DECAY(CM_EMIS,'ATM');
+* Reference life and final unit life coefficient
+ CM_COUPLE(CM_VAR,T,CM_EMIS,'N')$CM_COUPLE(CM_VAR,T,CM_EMIS,'ATM') =
+   (CM_COUPLE(CM_VAR,T,CM_EMIS,'FX')+CM_STAT0(CM_EMIS,'UP')/CM_STAT0(CM_EMIS,'LIFE'))*CM_DECAY(CM_EMIS,'ATM')/CM_PPM(CM_VAR);
  OPTION CM_COUPMAP < CM_COUPLE;
 *-----------------------------------------------------------------------------
 * Set up the 3x3 PHI matrix for emissions

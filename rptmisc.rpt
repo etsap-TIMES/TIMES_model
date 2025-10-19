@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -34,10 +34,11 @@
   %1PAR_PASTI(%2RTP(R,T,P),'0') = SUM(PYR(K)$COEF_CPT(R,K,T,P),COEF_CPT(R,K,T,P)*NCAP_PASTI(R,K,P)-RTFORC(R,K,T,P)$PYR_S(K));
 
 $IF DEFINED VNRET COEF_CAP(R,V,T,P)$=VAR_SCAP.L(R,V,T,P); %1PAR_PASTI(%2RTP(R,T,P),'¤')$PRC_RCAP(R,P) = -SUM(VNRET(V,T),COEF_CAP(R,V,T,P)*COEF_CPT(R,V,T,P)-RTFORC(R,V,T,P));
+  IF(RPT_OPT('CAP','5')>0,%1PAR_CUMRET(%2RTP_CPTYR) $= COEF_CAP(RTP_CPTYR));
   %1PAR_CAPM(%2RTP(R,T,P))   $= VAR_CAP.M(RTP)*R_DF(R,T);
-  %1PAR_CAPLO(%2RTP)         $= CAP_BND(RTP,'LO');
-  %1PAR_CAPUP(%2RTP_OFF(RTP))$RCAP_BND(RTP,'N') $= PRC_RESID(RTP);
-  %1PAR_CAPUP(%2RTP)$(CAP_BND(RTP,'UP') NE INF) $= CAP_BND(RTP,'UP');
+  %1PAR_CAPBD(%2RTP,'LO')    $= CAP_BND(RTP,'LO');
+  %1PAR_CAPBD(%2RTP_OFF(RTP),'UP')$RCAP_BND(RTP,'N') $= PRC_RESID(RTP);
+  %1PAR_CAPBD(%2RTP,'UP')$(CAP_BND(RTP,'UP') NE INF) $= CAP_BND(RTP,'UP');
 
   %1PAR_NCAPL(%2RTP(R,V,P))  $= VAR_NCAP.L(RTP);
   %1PAR_NCAPM(%2RTP)$(VAR_NCAP.M(RTP)*COEF_OBJINV(RTP)) = VAR_NCAP.M(RTP)/COEF_OBJINV(RTP);

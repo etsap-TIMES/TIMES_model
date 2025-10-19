@@ -3141,3 +3141,31 @@ clearsol.stp  : (1)
 initmty.stc   : (1)
 equ_ext.msa   : (1)
 times2veda.vdd: (1)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.2
+-----------------------------------------------------------------------------------------
+Date: 29-Sep-2025 [AL]: Minor release
+1) Added support for using PRC_ACTFLO to adjust CHP reduction heat efficiency
+2) Added option for separate reporting of capacity retirements (Par_CapRet)
+3) Added new attribute for defining absolute power rate levels
+4) Added Climate Module agent coupling feature (tentative)
+5) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.2
+initmty.mod   : (3)
+ppmain.mod    : (3)
+preppm.mod    : (3)
+pp_chp.mod    : (1)
+solsetv.v3    : (2)
+rptlite.rpt   : (2)
+rptmisc.rpt   : (2)
+rpt_ext.ecb   : (2)
+ppm_ext.cli   : (4)
+coef_ext.cli  ; (4)
+equ_ext.cli   : (4)
+rpt_par.cli   : (5)
+rptmain.stc   : (5)
+times2veda.vdd: (2)
+

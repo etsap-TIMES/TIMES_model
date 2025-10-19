@@ -48,6 +48,7 @@ EQ_IreM    'Inter-regional trade equations - Marginals'
 * calculated parameters
 PAR_capLO  'Capacity Lower Limit'
 PAR_capUP  'Capacity Upper Limit'
+PAR_CapRet 'Cumulative Retirements of Technology Capacity by Vintage'
 PAR_Top    'Process topology (Opted out - SET RPT_TOP YES to activate)'
 Cap_New    'Newly installed capacity and lumpsum investment by vintage and commissioning period'
 

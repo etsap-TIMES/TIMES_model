@@ -241,18 +241,19 @@ $IF NOT SET PGPRIM $SETGLOBAL PGPRIM "'ACT'"
   PARAMETER COM_VOC(REG,ALLYEAR,COM,BD)             'Variance of elastic demand'        //;
 
 * flow of commodities through processes
-  PARAMETER FLO_BND(REG,ALLYEAR,PRC,CG,TS,BD)       'Bound on the flow variable'                           //;
-  PARAMETER FLO_COST(REG,ALLYEAR,PRC,COM,TS,CUR)    'Added variable O&M of using a commodity'              //;
-  PARAMETER FLO_DELIV(REG,ALLYEAR,PRC,COM,TS,CUR)   'Delivery cost for using a commodity'                  //;
-  PARAMETER FLO_FEQ(REG,ALLYEAR,PRC,COM)            'Fossil equivalent of a commodity in a process'        //;
-  PARAMETER FLO_FR(REG,ALLYEAR,PRC,COM,TS,LIM)      'Load-curve of availability of commodity to a process' //;
-  PARAMETER FLO_FUNC(REG,ALLYEAR,PRC,CG,CG,TS)      'Relationship between 2 (group of) flows'              //;
-  PARAMETER FLO_FUNCX(REG,ALLYEAR,PRC,CG,CG)        'Change in FLO_FUNC/FLO_SUM by age'                    //;
-  PARAMETER FLO_SHAR(REG,ALLYEAR,PRC,C,CG,TS,BD)    'Relationship between members of the same flow group'  //;
-  PARAMETER FLO_SUB(REG,ALLYEAR,PRC,COM,TS,CUR)     'Subsidy for the production/use of a commodity'        //;
-  PARAMETER FLO_SUM(REG,ALLYEAR,PRC,CG,C,CG,TS)     'Multipier for commodity in cg1 where each is summed into cg2' //;
-  PARAMETER FLO_TAX(REG,ALLYEAR,PRC,COM,TS,CUR)     'Tax on the production/use of a commodity'             //;
-  PARAMETER FLO_CUM(REG,PRC,COM,ITEM,ITEM,LIM)      'Bound on cumulative flow'                             //;
+  PARAMETER FLO_BND(REG,ALLYEAR,PRC,CG,TS,BD)       'Bound on the flow variable'                         //;
+  PARAMETER FLO_BDLVL(REG,ALLYEAR,PRC,CG,S,BD)      'Bound on the flow variable by hourly rate level'    //;
+  PARAMETER FLO_COST(REG,ALLYEAR,PRC,COM,TS,CUR)    'Added variable O&M of using a commodity'            //;
+  PARAMETER FLO_DELIV(REG,ALLYEAR,PRC,COM,TS,CUR)   'Delivery cost for using a commodity'                //;
+  PARAMETER FLO_FEQ(REG,ALLYEAR,PRC,COM)            'Fossil equivalent of a commodity in a process'      //;
+  PARAMETER FLO_FR(REG,ALLYEAR,PRC,COM,TS,LIM)      'Load-curve limitations for a process commodity flow'//;
+  PARAMETER FLO_FUNC(REG,ALLYEAR,PRC,CG,CG,TS)      'Relationship between 2 (group of) flows'            //;
+  PARAMETER FLO_FUNCX(REG,ALLYEAR,PRC,CG,CG)        'Change in FLO_FUNC/FLO_SUM by age'                  //;
+  PARAMETER FLO_SHAR(REG,ALLYEAR,PRC,C,CG,TS,BD)    'Relationship between members of the same flow group'//;
+  PARAMETER FLO_SUB(REG,ALLYEAR,PRC,COM,TS,CUR)     'Subsidy for the production/use of a commodity'      //;
+  PARAMETER FLO_SUM(REG,ALLYEAR,PRC,CG,C,CG,TS)     'Multipier for commodity in cg1 where each is summed into cg2'//;
+  PARAMETER FLO_TAX(REG,ALLYEAR,PRC,COM,TS,CUR)     'Tax on the production/use of a commodity'           //;
+  PARAMETER FLO_CUM(REG,PRC,COM,ITEM,ITEM,LIM)      'Bound on cumulative flow'                           //;
   PARAMETER FLO_MARK(REG,ALLYEAR,PRC,COM,BD)        'Process-wise market share in total commodity production' //;
   PARAMETER PRC_MARK(REG,ALLYEAR,PRC,ITEM,C,LIM)    'Process group-wise market share' //;
   PARAMETER PRC_RESID(REG,ALLYEAR,PRC)              'Residual capacity available in each period' //;

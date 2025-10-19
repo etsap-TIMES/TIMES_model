@@ -35,11 +35,11 @@
   );
 *-----------------------------------------------------------------------------
 * Calculate ACTFLOs for pg and elc
+  PRC_ACTFLO(RVP(R,V,P),C)$RPC_PG(R,P,C) = 1+((PRC_ACTFLO(RVP,C)/COEF_RTP(RVP)+1)/MAX(1E-3,EXP(ABS(LOG(NCAP_CEH(RVP))))-PRC_ACTFLO(RVP,C))-1)$TRACKPG(R,P,C);
   PRC_ACTFLO(RVP(R,V,P),C)$((NCAP_CEH(RVP) LE 1)$RPC_PG(R,P,C)) =
-     POWER(NCAP_CEH(RVP),(1$CHP_ELC(R,P,C)-1)$NCAP_CEH(RVP)) * (1-NCAP_BPME(RVP));
+     POWER(NCAP_CEH(RVP),(1$CHP_ELC(R,P,C)-1)$NCAP_CEH(RVP)) * (1-NCAP_BPME(RVP)) * PRC_ACTFLO(RVP,C);
   PRC_ACTFLO(RVP(R,V,P),C)$(((NCAP_CEH(RVP) GT 1)*NCAP_CEH(RVP))$RPC_PG(R,P,C)) =
-     (1+(1/NCAP_CEH(RVP)-1)/(1+1/COEF_RTP(RVP))) * POWER(NCAP_CEH(RVP),1-1$CHP_ELC(R,P,C));
-  PRC_ACTFLO(RVP(R,V,P),C)$TRACKPG(R,P,C) = PRC_ACTFLO(RVP,C)*(1/COEF_RTP(RVP)+1)/MAX(1E-3,EXP(ABS(LOG(NCAP_CEH(RVP))))-1);
+     (1+(1/NCAP_CEH(RVP)-1)/(1+1/COEF_RTP(RVP))) * POWER(NCAP_CEH(RVP),1-1$CHP_ELC(R,P,C)) * PRC_ACTFLO(RVP,C);
 * EQ_PTRANS control - low-temperature heat
   FLO_SUM(RTP(R,V,P),C,COM,C,ANNUAL)$(RP_GRP(R,P,COM)$CHP_ELC(R,P,C)$NCAP_CDME(RTP)) = -1/PRC_ACTFLO(RTP,COM);
 *-----------------------------------------------------------------------------

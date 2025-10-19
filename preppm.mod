@@ -187,6 +187,7 @@ $BATINCLUDE prepparm COM_BNDPRD R 'C,TS,BD' ",'0','0'" T 1 1
 *-----------------------------------------------------------------------------
 $BATINCLUDE prepparm ACT_BND R 'P,TS,BD' ",'0','0'" T 'RTP(R,T,P)' 1 '' X_RPSB
 $BATINCLUDE prepparm FLO_BND R 'P,CG,TS,BD' ",'0'" T 'RTP(R,T,P)' 1 '' X_RPGSB
+$BATINCLUDE prepparm FLO_BDLVL R 'P,CG,S,BD' ",'0'" T 'RTP(R,T,P)' 1 '' X_RPGSB
 $BATINCLUDE prepparm FLO_FR R 'P,C,TS,LIM' ",'0'" T 'RTP(R,T,P)' 1 '' X_RPCSL
 $BATINCLUDE prepparm FLO_SHAR R 'P,C,CG,TS,BD' "" V 'RVP(R,V,P)' 1 '' X_RPCGSB +
 $BATINCLUDE prepparm IRE_BND R 'C,TS,ALL_REG,IE,BD' "" T 1 1
@@ -231,13 +232,12 @@ $BATINCLUDE preshape NCAP_FSUBM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_FTAXM R P "" V RXX RTP(R,V,P)
 $BATINCLUDE preshape NCAP_CPX R P "" V RXX RTP(R,V,P)
 *-----------------------------------------------------------------------------
-* All non-cost parameters now interpolated / extrapolated with user-defined options
-* Second interpolation pass still needed for cost parameters (dense interpolation)
+* All parameters now processed, but second pass (dense interpolation) still needed for cost parameters
   OPTION CLEAR = UNCD7;
   PRC_MARK(R,T,P,P,C,BD) $= FLO_MARK(R,T,P,C,BD);
 *-----------------------------------------------------------------------------
-* Augment datayear with MILESTONYR, as any MODLYEAR may now contain user data.
-* Remove the special year from DATAYEAR, as the controls are processed.
+* Augment datayear with MILESTONYR, as they now contain user data.
+* Remove the special year from DATAYEAR, as controls are processed.
   DATAYEAR(MILESTONYR) = YES;
   DATAYEAR('%DFLBL%') = NO;
 *-----------------------------------------------------------------------------

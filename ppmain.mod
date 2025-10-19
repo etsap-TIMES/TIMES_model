@@ -761,7 +761,7 @@ $IF %TIMESED%==YES $BATINCLUDE pp_micro.mod PRE
 *   - set default, if necessary
 *-----------------------------------------------------------------------------
 
-* leveling of availability; set at the PRC level by bring down 1st one from above, if not yet set
+* leveling of availability; set at the PRC_TS level by inheriting from above, if not yet set
   PUTGRP = 0;
   RTPS_BD(RTP(R,V,P),S,BD)$PRC_TS(R,P,S) $= NCAP_AFS(RTP,S,BD)$(NOT NCAP_AF(RTP,S,BD));
 $ BATINCLUDE pp_lvlbr.%1 NCAP_AF '' PRC_TS ",'0','0'" 0 1
@@ -785,7 +785,7 @@ $ BATINCLUDE pp_lvlbr.%1 NCAP_AF '' PRC_TS ",'0','0'" 0 1
   OPTION CLEAR=PRC_TS2,CLEAR=TRACKP,CLEAR=RTPS_BD;
 
 *-----------------------------------------------------------------------------
-*        Fraction of capacity that can contribute to the peak
+*      Fraction of capacity that can contribute to the peak
 *
 *   1) If NCAP_PKCNT below or ablve COM_TS is specified => aggregate & inherit to COM_TS
 *
@@ -806,6 +806,8 @@ $   BATINCLUDE pp_lvlfc.mod FLO_DELIV 'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DA
 $   BATINCLUDE pp_lvlfc.mod FLO_SUB   'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_TAX   'P,C' RPCS_VAR ',CUR' ",'0','0'" ALL_TS DATAYEAR RPC(R,P,C) '' '' N
 $   BATINCLUDE pp_lvlfc.mod FLO_PKCOI 'P,C' RPCS_VAR '' ",'0','0','0'" ALL_TS T RTP(R,T,P)
+$   BATINCLUDE pp_lvlfc.mod FLO_BDLVL 'P'   PRC_TS   ',BD' ",'0','0'" ALL_TS T RTP(R,T,P) 0 ',CG' 1 $(C(CG)->ACTCG(CG))
+$   BATINCLUDE pp_lvlfc.mod FLO_BDLVL 'P,C' RPCS_VAR ',BD' ",'0','0'" ALL_TS T RTP(R,T,P) 0 '' 1 $RPC(R,P,C)
 $   BATINCLUDE pp_lvlfc.mod ACT_FLO   'P'   RPS_S1   '' ",'0','0','0'" ALL_TS V RTP(R,V,P) 0 ',C' 0 $STOA(S)
 
 *GG*PKCOI defaults to 1
@@ -815,7 +817,7 @@ $   BATINCLUDE pp_lvlfc.mod ACT_FLO   'P'   RPS_S1   '' ",'0','0','0'" ALL_TS V 
     FLO_PKCOI(RTP(R,T,P),C,S)$(RPCS_VAR(R,P,C,S)$TRACKPC(R,P,C))  = 1.0
     OPTION CLEAR=TRACKPC;
 
-* derive the CHP flow control attributes from the input data
+* derive the CHP flow control attributes
 $   BATINCLUDE pp_chp.%1 %1
 
 *-----------------------------------------------------------------------------
@@ -823,11 +825,10 @@ $   BATINCLUDE pp_chp.%1 %1
 *-----------------------------------------------------------------------------
 * FLO_ attributes
 
-* handle FLO_FUNC aggregation/inheritance
+* handle FLO_FUNC and FLO_SUM aggregation/inheritance
 $   BATINCLUDE pp_lvlff.mod
-
-* handle FLO_SUM aggregation/inheritance
 $   BATINCLUDE pp_lvlfs.mod
+
 * Add FLO_SUM translated from PRC_ACTFLO
   IRE_FLOSUM(RTP(R,V,P),C,S,IE,COM,IO)$(RPC_PG(R,P,C)*RPC_IRE(R,P,C,IE)*RPCS_VAR(R,P,C,S)*TOP(R,P,COM,IO)) $=
      SUM(RPC_ACT(RP_IRE(R,P),COM),PRC_ACTFLO(R,V,P,COM)*(1/PRC_ACTFLO(R,V,P,C)));
@@ -992,6 +993,12 @@ $  BATINCLUDE pp_lvlbd.%1 FLO_FR     P C, '' ",''"       RPCS_VAR RPCS_VAR UNCD7
 $  BATINCLUDE pp_lvlbd.%1 COM_BNDNET C '' '' ",'',''"    COM_TS RCS_COMTS UNCD7
 $  BATINCLUDE pp_lvlbd.%1 COM_BNDPRD C '' '' ",'',''"    COM_TS RCS_COMTS UNCD7
 $  BATINCLUDE pp_lvlbd.%1 IRE_BND    C '' 'ALL_R,IE,' '' COM_TS RCS_COMTS UNCD7 EPS
+
+* Add bounds based on rate levels
+  FLO_BDLVL(RTP,CG,S,BD)$FLO_BND(RTP,CG,S,BD) = 0;
+  FLO_BND(RTPC(R,T,P,C),S,BD)$(RPCS_VAR(R,P,C,S)$FLO_BDLVL(RTPC,S,BD)) = FLO_BDLVL(RTPC,S,BD)*G_YRFR(R,S)*8760;
+  FLO_BND(RTP(R,T,P),CG(COM_TYPE),S,BD)$(PRC_TS(R,P,S)$RP_IRE(R,P)$FLO_BDLVL(RTP,CG,S,BD)) = FLO_BDLVL(RTP,CG,S,BD)*G_YRFR(R,S)*8760;
+  ACT_BND(RTP(R,T,P),S,BD)$((RP_STG(R,P)->0)$PRC_TS(R,P,S)$FLO_BDLVL(RTP,%PGPRIM%,S,BD)) = FLO_BDLVL(RTP,%PGPRIM%,S,BD)*G_YRFR(R,S)*8760;
 
 *-----------------------------------------------------------------------------
 * process cumulative bounds

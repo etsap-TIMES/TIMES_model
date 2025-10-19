@@ -146,7 +146,7 @@ $ MACRO VAR_GG_PRU(r,t,p,c,s) sum(actcg(com2),VAR_GG_PDIF(r,t,p,c,r,com2,s))
 $ MACRO VAR_GG_Y2(r,t,p,c,reg,com,s) (VAR_GG_Y(R,T,P,C,S)$GG_TOP(R,C,REG,COM,P)+(1-VAR_GG_Y(REG,T,P,COM,S))$GG_TOP(REG,COM,R,C,P))
 $ MACRO VAR_GG_PRIO(r,t,p,c,s) (VAR_GG_PR(r,t,c,s)+VAR_GG_PADD(r,t,p,c,s)$GG_GAMMA(r,t,p,c))
 $ MACRO VAR_GG_HLIP(r,t,p,s) VAR_GG_PADD(r,t,p,%PGPRIM%,s)
-$ MACRO VAR_GG_WSLAC(r,t,p,c,reg,com,s) sum(com2(actcg)$GG_KGF(r,t,p,c),var_gg_pdif(r,t,p,com2,r,c,s)+2/3*var_gg_pdif(reg,t,p,com2,reg,com,s)$gg_wink(reg,p,com,r,c)$(GG_M1->0))
+$ MACRO VAR_GG_WSLAC(r,t,p,c,reg,com,s) sum(com2(actcg)$GG_KGF(r,t,p,c),var_gg_pdif(r,t,p,com2,r,c,s)+8/11*var_gg_pdif(reg,t,p,com2,reg,com,s)$gg_wink(reg,p,com,r,c)$(GG_M1->0))
 * Max pr-diffs in LP vs. MIP CASE
 $ MACRO VAR_GG_PDMAX(r,t,p,c,reg,com,ts,z) MAX(POWER(GG_PRBD(R,T,C,'UP')*max(1,GG_GAMMA(r,t,p,c)),Z)-POWER(GG_PRBD(REG,T,COM,'LO'),Z),0))*((VAR_GG_Y(r,t,p,c,ts)$GG_TOP(r,c,reg,com,p) + (1-VAR_GG_Y(reg,t,p,com,ts))$GG_TOP(reg,com,r,c,p))
 *-------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ $ MACRO VAR_GG_PDMAX(r,t,p,c,reg,com,ts,z) MAX(POWER(GG_PRBD(R,T,C,'UP')*max(1,G
     ;
     EQ_GG_PDIF1(GG_RTPC(%R_T%,P,C),RC(REG,COM),GG_VI(J),RTS(S))$((NOT GG_WTX(R,P,C)$GG_O(J))$GG_LINK(REG,P,COM,R,C)$PRC_TS(R,P,S)$GG_LINK(R,P,C,RC))..
       (VAR_GG_PDIF(R,T,P,C,REG,COM,S) - (VAR_GG_PDMAX(R,T,P,C,REG,COM,S,1)))$(NOT GG_O(J)) +
-      SUM(GG_O(J)$(ORD(J)=1),VAR_GG_PRU(R,T,P,C,S) - GG_PRBD(R,T,C,'UP')*VAR_GG_Y2(R,T,P,C,REG,COM,S))  +
+      SUM(GG_O(J)$(ORD(J)=1),VAR_GG_PRU(R,T,P,C,S) - GG_PRBD(R,T,C,'UP')*VAR_GG_Y2(R,T,P,C,REG,COM,S)) +
       SUM(GG_O(J)$(ORD(J)=2),VAR_GG_PRU(R,T,P,C,S) - (VAR_GG_PRIO(R,T,P,C,S)-GG_PRBD(R,T,C,'LO')*(1-VAR_GG_Y2(R,T,P,C,REG,COM,S))))
       =L= 0
     ;
