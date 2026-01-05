@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
@@ -68,13 +68,13 @@ $ SETGLOBAL CLI YES
   SET CM_BOXMAP(CM_ITEM,CM_ITEM,CM_BOX) / CO2-GTC.CO2-ATM.ATM, CO2-GTC.CO2-UP.UP, CO2-GTC.CO2-LO.LO,
                                   CH4-MT.CH4-ATM.ATM, CH4-MT.CH4-UP.UP, N2O-MT.N2O-ATM.ATM, N2O-MT.N2O-UP.UP
                                   FORCING.DELTA-ATM.ATM, FORCING.DELTA-LO.LO /;
-  SET PRET(T,T) //;  
+  SET PRET(T,T) //;
   SET SUPERYR(T,ALLYEAR) 'SUpremum PERiod YeaR' //;
   SET CM_FORCMAP(CM_ITEM,CM_ITEM) / FORCING.FORC-FGS,FORC-KYO.FORC-FGS
     FORC-CO2.CO2-GTC,FORC-CH4.CH4-MT,FORC-N2O.N2O-MT,FORC-FGS.FGS-MT,FORC-FGS.FORC-FGS /;
 
 * Internal parameters
-  PARAMETER CM_STAT0(CM_ITEM,CM_Q) / N2O-MT.LIFE 121, CH4-MT.LIFE 7 /;
+  PARAMETER CM_STAT0(CM_ITEM,CM_Q) / N2O-MT.LIFE 121, CH4-MT.LIFE 7.2 /;
   PARAMETER CM_SIG1(ALLSOW) //;
   PARAMETER CM_PHI(CM_ITEM,*,*) 'Conc. transport matrix between reservoirs' //;
   PARAMETER CM_SIG(ALLSOW,*,*) 'Temperature transport matrix between reservoirs' //;
@@ -82,7 +82,7 @@ $ SETGLOBAL CLI YES
   PARAMETER CM_BB(CM_ITEM,ALLYEAR,ALLSOW,CM_BOX) 'Periodical emission transport vector' //;
   PARAMETER CM_CC(CM_ITEM,ALLYEAR,ALLSOW,CM_BOX) 'Periodical emission transport vector' //;
   PARAMETER CM_RR(J,CM_BOX,*) 'Reporting' //;
-  PARAMETER CM_DELTAT(ALLYEAR,CM_BOX) 'Temperature change in T boxes' //;
+  PARAMETER CM_DELTAT(ALLYEAR,CM_BOX) 'Temperature change in the Temp boxes' //;
   PARAMETER CM_LED(ALLYEAR) //;
   PARAMETER CM_BEMI(CM_ITEM,LL) //;
   PARAMETER CM_EVAR(CM_ITEM,LL) //;
@@ -94,38 +94,41 @@ $ SETGLOBAL CLI YES
   SET COM     / CO2-GTC, CH4-MT, N2O-MT, FORCING, CO2-ATM, DELTA-ATM /;
 *-----------------------------------------------------------------------------
   PARAMETER CM_CONST(*) 'Climate module constants' /
-    PHI-UP-AT	0.0453
-    PHI-AT-UP	0.0495
-    PHI-LO-UP	0.00053
-    PHI-UP-LO	0.0146
-    GAMMA	0
-    LAMBDA	1.41
-    CS		2.91
-    SIGMA1	0.024
-    SIGMA2	0.44
-    SIGMA3	0.002
-    CO2-PREIND	596.4
-    PHI-CH4     0.09158
-    PHI-N2O     0.008803
     EXT-EOH     -1
     BEOHMOD     20
+    CALIBSET    0  /;
+  PARAMETER CM_DEFAULT(ALLYEAR,ITEM) /
+    0.PHI-UP-AT	  0.0529
+    0.PHI-AT-UP	  0.0578
+    0.PHI-LO-UP	  0.00037
+    0.PHI-UP-LO	  0.0102
+    0.GAMMA	  3.81924
+    0.LAMBDA	  1.2731
+    0.CS	  3
+    0.SIGMA1	  0.0843
+    0.SIGMA2	  0.9621
+    0.SIGMA3	  0.006
+    0.CO2-PREIND  591.7
+    0.PHI-CH4	  0.0925
+    0.PHI-N2O	  0.0087
  /;
-IF(NOT CM_CONST('GAMMA'), CM_CONST('GAMMA') = 5.35*LOG(2));
-IF(CM_CONST('LAMBDA') EQ 0, CM_CONST('LAMBDA') = 1.25);
-IF(CM_CONST('CS') EQ 0, CM_CONST('CS') = CM_CONST('GAMMA')/CM_CONST('LAMBDA'));
-CM_CONST('LAMBDA') = CM_CONST('GAMMA')/CM_CONST('CS');
-E('0')=0; IF(CM_CONST('EXT-EOH') EQ 0, CM_CONST('EXT-EOH')=SMAX(LL$E(LL),E(LL)));
 *-----------------------------------------------------------------------------
+$SET X1 %EOTIME%
 * The following parameters describe historical mass of CO2 in the ATM and ocean
 * as well as historical temperature increases in surface and deep ocean
 **** User provided values override these default hard-coded values ****
-  PARAMETER CM_DEFAULT(ALLYEAR,CM_ITEM) //;
-  TABLE CM_DEFAULT(ALLYEAR,CM_ITEM)
+  TABLE CM_DEFAULT(ALLYEAR,ITEM)
         CO2-ATM   CO2-UP   CO2-LO   DELTA-ATM   DELTA-LO  CH4-ATM  CH4-UP  N2O-ATM  N2O-UP
-1990       735              19230      0.43       0.06
-1995       765      781     19230      0.50       0.06
-2000       785      798     19230      0.65       0.06      3030    1988     360     2109
-2005       806              19230      0.75       0.06      3067    1988     390     2109
-2010       826      830     19230      0.80       0.06      3122    1988     414     2109
+2005     807.27    793     19217     0.884       0.13      3051     1988     382     2109
+2010     828       812     19222     0.93        0.152     3121     1988     415     2109
+2015     853       832     19228     1.06        0.177     3221     1988     454     2109
+2020     880       853     19235     1.21        0.205     3348     1988     492     2109
+2024     903       870     19241     1.34        0.23      3493     1988     529     2109
+%X1%     807.27   1600     10010     0.8842     0.505681   3150     1850     390     2103
+;
+* Alternative calibration parameters
+  TABLE CM_DEFAULT(ALLYEAR,ITEM)
+     PHI-UP-AT  PHI-AT-UP  PHI-LO-UP  PHI-UP-LO  GAMMA    CS  SIGMA1   SIGMA2   SIGMA3   CO2-PREIND PHI-CH4  PHI-N2O
+%X1%  0.008127   0.023132   0.001126   0.000092  3.70426  3   0.087403 1.396454 0.013246 589.996039  0.087   0.0081
 ;
 *-----------------------------------------------------------------------------

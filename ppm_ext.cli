@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -53,3 +53,19 @@ $ BATINCLUDE fillparm CM_COUPLE CG1 'CG,CM_Q' ",'0','0','0','0'" T YES '>=0'
   CM_USUBS('CO2-GTC') = NO;
   CM_FORCMAP(CM_USUBS,CM_USUBS) = YES;
   CM_OFOR(CM_USUBS) = YES;
+
+* If calibration values are not provided by user, use the defaults:
+  CM_CONST(CM_PREDEF) = 0;
+  LOOP((LL,CM_HISTS)$CM_HISTORY(LL,CM_HISTS),CM_CONST(CM_HISTS) = EPS);
+  IF(CM_CONST('CALIBSET') > 0, LOOP(YEAR('%EOTIME%'),
+    CM_CONST(ITEM)$((NOT CM_CONST(ITEM)+1$CM_PREDEF(ITEM))$CM_DEFAULT(YEAR,ITEM)) = CM_DEFAULT(YEAR,ITEM);
+    CM_HISTORY(LL(MIYR_1),CM_HISTS(CG(CM_PREDEF)))$(NOT CM_CONST(CM_HISTS)) $= CM_DEFAULT(YEAR,CM_HISTS));
+  ELSE 
+    CM_CONST(ITEM)$((NOT CM_CONST(ITEM)+1$CM_PREDEF(ITEM))$CM_DEFAULT('0',ITEM)) = CM_DEFAULT('0',ITEM);
+    CM_HISTORY(LL(YEAR-2),CM_HISTS(CG(CM_PREDEF)))$(NOT CM_CONST(CM_HISTS)) $= CM_DEFAULT(LL,CM_HISTS));
+* AR6 defaults for Gamma, Lambda & CS
+  IF(CM_CONST('GAMMA')=0, CM_CONST('GAMMA') = 5.5*LOG(2));
+  IF(CM_CONST('CS')=0, IF(CM_CONST('LAMBDA')=0, CM_CONST('LAMBDA') = CM_CONST('GAMMA')/3);
+     CM_CONST('CS') = CM_CONST('GAMMA')/CM_CONST('LAMBDA'));
+  CM_CONST('LAMBDA') = CM_CONST('GAMMA')/CM_CONST('CS');
+  E('0')=0; IF(CM_CONST('EXT-EOH') EQ 0, CM_CONST('EXT-EOH')=SMAX(LL$E(LL),E(LL)));

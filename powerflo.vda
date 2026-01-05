@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -104,13 +104,15 @@ $IF NOT '%1'=='' $GOTO %1%2%3
 $ BATINCLUDE pp_lvlfc.mod GR_DEMFR C COM_TS '' ",'0','0','0','0'" ALL_TS T RTC(R,T,C)
 * Preliminaries
   GR_ENDFR(R,T,COM,C)$TRACKC(R,C) = 0;
+  GR_GENFR(R,LL--ORD(LL),C,ITEM)$GR_GENFR(R,LL,C,ITEM)=1;
+  LOOP((RC(R,C),RP(R,P))$GR_GENFR(R,'0',C,P),TRACKP(R,P)=YES);
+  GR_GENMAP(TRACKP(R,P),P)$(NOT SUM(PRC$GR_GENMAP(R,PRC,P),1))=YES;
   OPTION CLEAR=RXX, GR_GENP < GR_GENMAP, GR_ENDC < GR_ENDFR;
   GR_GENLEV(TRACKC) = 0;
   GR_GENLEV(R,C)$GR_GENLEV(R,C) = ROUND(GR_GENLEV(R,C));
   TRACKPC(RPC(GR_GENP(R,P),C))$GR_GENLEV(R,C)=YES;
   GR_PRCMAP(TRACKPC(R,P,C),ITEM)$(TOP(R,P,C,'OUT')$GR_GENMAP(R,P,ITEM))=YES;
   GR_PRCMAP(TRACKPC(RP_IRE(R,P),C),ITEM)$GR_GENMAP(R,P,ITEM)=YES;
-  GR_GENFR(R,LL--ORD(LL),C,ITEM)$GR_GENFR(R,LL,C,ITEM)=1;
   LOOP((GR_GRID(J,R,C),ITEM)$GR_GENFR(R,'0',C,ITEM),LOOP(GR_PRCMAP(R,P,COM,ITEM),RXX(R,J,COM)=YES));
   LOOP(RXX(R,J,COM), GR_ALLMAP(TRACKC(R,C),COM)$GR_GRID(J,R,C)=YES);
   LOOP(NRG_GRID,GR_ALLMAP(R,C,COM)$((NOT NRG_GMAP(R,NRG_GRID,C))$NRG_GMAP(R,NRG_GRID,COM)) = NO);

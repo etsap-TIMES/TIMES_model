@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
@@ -10,20 +10,14 @@
 *-----------------------------------------------------------------------------
 $IF '%1'==SLOPE $GOTO %1
 *-----------------------------------------------------------------------------
-* Set up the history calibration values
-
-* If calibration values are not provided by user, use the defaults:
-CM_CONST(CM_HISTS) = 0;
-LOOP((LL,CM_HISTS)$CM_HISTORY(LL,CM_HISTS),CM_CONST(CM_HISTS) = EPS);
-CM_HISTORY(LL,CM_HISTS)$(NOT CM_CONST(CM_HISTS)) $= CM_DEFAULT(LL,CM_HISTS);
-
-* Pick up the appropriate calibration values for the calibration year;
-CM_CALIB=1;
+* Set up the history with calibration values
+* Pick up the appropriate calibration values for the calibration year
+ CM_CALIB=1;
 $IFI %CM_CALIB%==B  CM_CALIB = SUM(MIYR_1(T),M(T)-B(T))+1;
 $IFI %CM_CALIB%==M  CM_CALIB = EPS;
 
 * Inter-/extrapolate calibration values
-OPTION CLEAR=FIL; LOOP(MIYR_1(LL),FIL(LL-CM_CALIB) = YES);
+ OPTION CLEAR=FIL; LOOP(MIYR_1(LL),FIL(LL-CM_CALIB) = YES);
 $BATINCLUDE filparam CM_HISTORY '' 'CM_HISTS' ",'','','','','',''" LL FIL ''
 
  CM_STAT0(CM_HISTS,CM_BOX) = 0;
@@ -32,7 +26,7 @@ $BATINCLUDE filparam CM_HISTORY '' 'CM_HISTS' ",'','','','','',''" LL FIL ''
  LOOP(CM_BOXMAP(CM_HISTS,CM_VAR,CM_BOX(CM_Q))$(NOT CM_STAT0(CM_HISTS,CM_Q)),
    CM_STATS(CM_HISTS,LL,CM_Q)$CM_HISTORY(LL,CM_VAR) = CM_HISTORY(LL,CM_VAR)*POWER(CM_PPM(CM_HISTS),-1$CM_USUBS(CM_HISTS)));
 $BATINCLUDE filparam CM_STATS 'CM_HISTS,' CM_BOX ",'','','','',''" LL FIL
-* Pick the history values
+* Pick up the history values
  LOOP((MIYR_1(LL),YEAR(LL-CM_CALIB)),
    CM_STAT0(CM_HISTS,CM_BOX) = CM_STATS(CM_HISTS,YEAR,CM_BOX)*POWER(CM_PPM(CM_HISTS),1$CM_USUBS(CM_HISTS)));
  CM_STAT0(CM_HISTS,'N') = 0;

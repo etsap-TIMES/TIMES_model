@@ -3145,10 +3145,10 @@ times2veda.vdd: (1)
 -----------------------------------------------------------------------------------------
 TIMES Version 4.9.2
 -----------------------------------------------------------------------------------------
-Date: 29-Sep-2025 [AL]: Minor release
+Date: 19-Oct-2025 [AL]: Minor release
 1) Added support for using PRC_ACTFLO to adjust CHP reduction heat efficiency
 2) Added option for separate reporting of capacity retirements (Par_CapRet)
-3) Added new attribute for defining absolute power rate levels
+3) Added new attribute for defining bounds on absolute power rate levels
 4) Added Climate Module agent coupling feature (tentative)
 5) Cosmetic improvements
 
@@ -3169,3 +3169,17 @@ rpt_par.cli   : (5)
 rptmain.stc   : (5)
 times2veda.vdd: (2)
 
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.3
+-----------------------------------------------------------------------------------------
+Date: 5-Jan-2026 [AL]: Minor release
+1) Added support for auto-genration of signleton GR_GENMAP
+2) Updated Climate Modulte default parameters
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.3
+powerflo.vda  : (1)
+initmty.cli   : (2)
+ppm_ext.cli   : (2)
+coef_ext.cli  : (3)
