@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -23,8 +23,8 @@ $ BATINCLUDE clearsol.stc
 * Get the expected Levels
   VAR_ACT.L(R,V,T%2,P,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_ACT.L(R,V,T,P,S,W));
   VAR_BLND.L(R,T%2,COM,C) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_BLND.L(R,T,COM,C,W));
-  VAR_COMNET.L(R,T%2,COM,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_COMNET.L(R,T,COM,S,W));
-  VAR_COMPRD.L(R,T%2,COM,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_COMPRD.L(R,T,COM,S,W));
+  VAR_COMNET.L(R,T%2,C,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_COMNET.L(R,T,C,S,W));
+  VAR_COMPRD.L(R,T%2,C,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_COMPRD.L(R,T,C,S,W));
   VAR_IRE.L(R,V,T%2,P,C,S,IE) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_IRE.L(R,V,T,P,C,S,IE,W));
   VAR_ELAST.L(R,T%2,C,S,J,BD) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_ELAST.L(R,T,C,S,J,BD,W));
   VAR_FLO.L(R,V,T%2,P,C,S) $= SUM(SW_T(T,W), SW_TPROB(T,W)*%VAR%_FLO.L(R,V,T,P,C,S,W));
@@ -38,6 +38,7 @@ $IF %TIMESED% == YES   VAR_OBJELS.L(R,BD,CUR)  $= SUM(W, SW_PROB(W)*%VAR%_OBJELS
   VAR_CAP.L(R,T%2,P)  $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_CAP.L(R,T,P,%1));
   VAR_NCAP.L(R,T%2,P) $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_NCAP.L(R,T,P,%1));
   VAR_SCAP.L(R,V,T%2,P) $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_SCAP.L(R,V,T,P,%1));
+  VAR_RCAP.L(R,V,T%2,P) $= SUM(SW_T(T,SOW), SW_TPROB(T,SOW)*%VAR%_RCAP.L(R,V,T,P,%1));
 
   VAR_UC.L(UC_N) $= SUM(W, SW_PROB(W)*%VAR%_UC.L(UC_N,W));
   VAR_UCR.L(UC_N,R) $= SUM(W, SW_PROB(W)*%VAR%_UCR.L(UC_N,R,W));
@@ -48,12 +49,12 @@ $IF %TIMESED% == YES   VAR_OBJELS.L(R,BD,CUR)  $= SUM(W, SW_PROB(W)*%VAR%_OBJELS
   VAR_OBJ.L(R,OBV,CUR) $= SUM(W, SW_PROB(W)*%VAR%_OBJ.L(R,OBV,CUR,W));
 
 * Get the sum of weighted Marginals
-  VAR_ACT.M(R,V,T%2,P,S) $= SUM(SW_T(T,W), %VAR%_ACT.M(R,V,T,P,S,W));
-  VAR_COMNET.M(R,T%2,COM,S) $= SUM(SW_T(T,W), %VAR%_COMNET.M(R,T,COM,S,W));
-  VAR_COMPRD.M(R,T%2,COM,S) $= SUM(SW_T(T,W), %VAR%_COMPRD.M(R,T,COM,S,W));
+  VAR_ACT.M(R,V,T%2,P,S)  $= SUM(SW_T(T,W), %VAR%_ACT.M(R,V,T,P,S,W));
+  VAR_COMNET.M(R,T%2,C,S) $= SUM(SW_T(T,W), %VAR%_COMNET.M(R,T,C,S,W));
+  VAR_COMPRD.M(R,T%2,C,S) $= SUM(SW_T(T,W), %VAR%_COMPRD.M(R,T,C,S,W));
   VAR_CUMFLO.M(R,P,C,YEAR,LL) $= SUM(W, %VAR%_CUMFLO.M(R,P,C,YEAR,LL,W));
-  VAR_CAP.M(R,T%2,P)     $= SUM(SW_T(T,%1), %VAR%_CAP.M(R,T,P,%1));
-  VAR_NCAP.M(R,T%2,P)    $= SUM(SW_T(T,%1), %VAR%_NCAP.M(R,T,P,%1));
+  VAR_CAP.M(R,T%2,P)      $= SUM(SW_T(T,%1), %VAR%_CAP.M(R,T,P,%1));
+  VAR_NCAP.M(R,T%2,P)     $= SUM(SW_T(T,%1), %VAR%_NCAP.M(R,T,P,%1));
 
   VAR_UC.M(UC_N) $= SUM(W, %VAR%_UC.M(UC_N,W));
   VAR_UCR.M(UC_N,R) $= SUM(W, %VAR%_UCR.M(UC_N,R,W));

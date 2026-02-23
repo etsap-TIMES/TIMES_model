@@ -3172,14 +3172,31 @@ times2veda.vdd: (2)
 -----------------------------------------------------------------------------------------
 TIMES Version 4.9.3
 -----------------------------------------------------------------------------------------
-Date: 5-Jan-2026 [AL]: Minor release
-1) Added support for auto-genration of signleton GR_GENMAP
-2) Updated Climate Modulte default parameters
-3) Cosmetic improvements
+Date: 23-Feb-2026 [AL]: Minor release
+1) Added support for auto-generation of singleton GR_GENMAP
+2) Updated Climate Module default parameters
+3) Added support for OCOM flows from retirements, subject to age
+4) Added support for reporting value flows under stochastics
+5) Cosmetic improvements
 
 Modified files: (reason)
 initsys.mod   : Increased version number to 4.9.3
+setglobs.gms  : (3)
+coef_nio.mod  : (3)
+coef_shp.mod  : (3)
+cal_cap.mod   : (3)
+cal_caps.mod  : (5)
+initmty.vda   : (3)
+init_ext.vda  : (3)
+prep_ext.vda  : (3)
 powerflo.vda  : (1)
 initmty.cli   : (2)
 ppm_ext.cli   : (2)
-coef_ext.cli  : (3)
+coef_ext.cli  : (5)
+prepret.dsc   : (3)
+solputta.ans  : (5)
+rptlite.rpt   : (4)
+rpt_obj.rpt   : (5)
+cost_ann.rpt  : (5)
+rptmisc.rpt   : (4)
+pextlevs.stc  : (4)

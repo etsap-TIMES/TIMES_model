@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -33,7 +33,7 @@
   %1PAR_CAPL(%2RTP(R,T,P))  = SUM(RTP_CAPYR(R,TT,T,P), COEF_CPT(R,TT,T,P)*VAR_NCAP.L(R,TT,P));
   %1PAR_PASTI(%2RTP(R,T,P),'0') = SUM(PYR(K)$COEF_CPT(R,K,T,P),COEF_CPT(R,K,T,P)*NCAP_PASTI(R,K,P)-RTFORC(R,K,T,P)$PYR_S(K));
 
-$IF DEFINED VNRET COEF_CAP(R,V,T,P)$=VAR_SCAP.L(R,V,T,P); %1PAR_PASTI(%2RTP(R,T,P),'¤')$PRC_RCAP(R,P) = -SUM(VNRET(V,T),COEF_CAP(R,V,T,P)*COEF_CPT(R,V,T,P)-RTFORC(R,V,T,P));
+$IF DEFINED VNRET COEF_CAP(R,V,T,P)$=VAR_SCAP.L(R,V,T,P); %1PAR_PASTI(%2RTP(R,T,P),'¤')$PRC_RCAP(R,P) = -SUM(VNTRT(V,T),COEF_CAP(R,V,T,P)*COEF_CPT(R,V,T,P)-RTFORC(R,V,T,P));
   IF(RPT_OPT('CAP','5')>0,%1PAR_CUMRET(%2RTP_CPTYR) $= COEF_CAP(RTP_CPTYR));
   %1PAR_CAPM(%2RTP(R,T,P))   $= VAR_CAP.M(RTP)*R_DF(R,T);
   %1PAR_CAPBD(%2RTP,'LO')    $= CAP_BND(RTP,'LO');
@@ -69,7 +69,8 @@ $IF %1==S %1PAR_COMBALGM(%2RTC,S) $= EQG_COMBAL.L(RTC,S);
 *-----------------------------------------------------------------------------
   OPTION CLEAR=UNCD1,CLEAR=RTP_CAPYR,CLEAR=F_INOUT;
   F_INOUT(R,V,T,P,C,'IN')$COEF_ICOM(R,V,T,P,C) = COEF_ICOM(R,V,T,P,C) * RTP_CAPVL(R,V,P);
-  F_INOUT(R,V,T,P,C,'OUT')$COEF_OCOM(R,V,T,P,C) = COEF_OCOM(R,V,T,P,C) * RTP_CAPVL(R,V,P);
+  F_INOUT(R,V(LL),T,P,C,'OUT')$COEF_OCOM(R,V,T,P,C) = COEF_OCOM(R,V,T,P,C) * RTP_CAPVL(R,V,P) +
+    SUM(VNTRT(V,TT(LL+MIN(VN2T(V,T),RVPRL(R,V,P)))), -COEF_OCOM(R,V,T,P,C) * VAR_SCAP.L(R,V,TT,P) + COEF_RCOM(R,V,T,P,C)*%VAR%_RCAP.L(R,V,TT,P%3))$RCAP_OCAP(R,V,P,C);
   F_INOUT(RTP_CPTYR(R,V,T,P),C,IO)$NCAP_COM(R,V,P,C,IO) = F_INOUT(R,V,T,P,C,IO) +
     (RTP_CAPVL(R,V,P)-COEF_CAP(R,V,T,P)) * COEF_CPT(R,V,T,P) * NCAP_COM(R,V,P,C,IO) * (1+COEF_CIO(R,V,T,P,C,IO));
   F_INOUTS(R,V,T,P,C,ANNUAL(S),IO)$F_INOUT(R,V,T,P,C,IO) = F_INOUTS(R,V,T,P,C,S,IO)+F_INOUT(R,V,T,P,C,IO);
@@ -95,6 +96,8 @@ $IF %1==S %1PAR_COMBALGM(%2RTC,S) $= EQG_COMBAL.L(RTC,S);
     Z=RPT_OPT('FLO','9');
     IF(Z>0,%1F_OUT(%2R,V,T,P,C,S)$((ABS(%1F_OUT(%2R,V,T,P,C,S))<Z)$%1F_OUT(%2R,V,T,P,C,S)) = 0;
            %1F_IN(%2R,V,T,P,C,S)$((ABS(%1F_IN(%2R,V,T,P,C,S))<Z)$%1F_IN(%2R,V,T,P,C,S)) = 0));
+    Z=RPT_OPT('COMPRD','9'); IF(Z>0,%1PAR_COMPRDL(%2R,T,C,S)$((ABS(%1PAR_COMPRDL(%2R,T,C,S))<Z)$%1PAR_COMPRDL(%2R,T,C,S))=0);
+    Z=RPT_OPT('COMNET','9'); IF(Z>0,%1PAR_COMNETL(%2R,T,C,S)$((ABS(%1PAR_COMNETL(%2R,T,C,S))<Z)$%1PAR_COMNETL(%2R,T,C,S))=0);
 *-----------------------------------------------------------------------------
 * If power levels or fall-back to ANNUAL is requested, set reporting at com_TS
   UNCD1(U2(COM_TYPE))$RPT_OPT(U2,'3')=YES;
@@ -128,12 +131,13 @@ $ IFI %RPT_FLOTS%==ANNUAL RCS(RC,ANNUAL)=YES;
      %1P_OUT(%2RTPC(R,T,P,C),S)$(COM_TS(R,C,S)$NRG_TMAP(R,NRG_TYPE,C))=SUM(VNT(V,T)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S)/G_YRFR(R,S)/RPT_OPT(U2,'1'))
         - SUM(VNT(V,T)$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S)/G_YRFR(R,S)/RPT_OPT(U2,'1'))$F);
   ELSE %1PAR_COMPRDL(%2RTTC(R,T,C),ANNUAL)=SUM((VNT(V,T),P,S)$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S));
- );
-$IFI %STAGES%==YES RPT_OPT('FLO','3')=0;
- IF(RPT_OPT('FLO','3'),
-   VAL_FLO(R,V,T,P,C) $= SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S)*%1PAR_COMBALEM(%2R,T,C,S));
+  );
+  Z = RPT_OPT('FLO','3');
+$IFI %STAGES%==YES Z = ROUND(Z/10);
+ IF(Z,
+   %1VAL_FLO(%2R,V,T,P,C) $= SUM(S$%1F_IN(%2R,V,T,P,C,S),%1F_IN(%2R,V,T,P,C,S)*%1PAR_COMBALEM(%2R,T,C,S));
    F_INOUTS(R,V,T,P,C,ANNUAL,'OUT') $= SUM(S$%1F_OUT(%2R,V,T,P,C,S),%1F_OUT(%2R,V,T,P,C,S)*%1PAR_COMBALEM(%2R,T,C,S));
-   VAL_FLO(R,V,T,P,C)$F_INOUTS(R,V,T,P,C,'ANNUAL','OUT') = VAL_FLO(R,V,T,P,C)-F_INOUTS(R,V,T,P,C,'ANNUAL','OUT');
+   %1VAL_FLO(%2R,V,T,P,C)$F_INOUTS(R,V,T,P,C,'ANNUAL','OUT') = %1VAL_FLO(%2R,V,T,P,C)-F_INOUTS(R,V,T,P,C,'ANNUAL','OUT');
    OPTION CLEAR=F_INOUTS;
  );
 * Complete COMPRDL & COMNETL reporting
@@ -185,6 +189,7 @@ $IF NOT DEFINED %EQ%G_UCMAX $GOTO UC_DONE
   %1PAR_UCMAX(%2UC_N,R,'-',C)$(UC_R_EACH(R,UC_N)$UC_GMAX(UC_N,R,'N',C,'N')) = %VAR%_UCR.L(UC_N,R%3)-%EQ%G_UCMAX.L(UC_N,R,'N',C,'N'%3);
   %1PAR_UCMAX(%2UC_N,R,P,C)$(UC_R_EACH(R,UC_N)$UC_GMAX(UC_N,R,P,C,'EACH'))  = %VAR%_UCR.L(UC_N,R%3)-%EQ%G_UCMAX.L(UC_N,R,P,C,'EACH'%3);
 $LABEL UC_DONE
+  Z=RPT_OPT('UCN','9'); IF(Z>0,%1PAR_UCSL(%2UCN,R,T,ITEM)$((ABS(%1PAR_UCSL(%2UCN,R,T,ITEM))<Z)$%1PAR_UCSL(%2UCN,R,T,ITEM))=0);
 *-----------------------------------------------------------------------------
 * Prepare ELC supply by energy source
 $IF %SOLANS%==YES RPT_OPT('FLO','5')=1;

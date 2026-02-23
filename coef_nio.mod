@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -8,7 +8,7 @@
 *=============================================================================*
 *GaG Questions/Comments:
 *  - COEF_RPTI calculated in PPMAIN.MOD
-*[AL] Corrected bugs in the end of commodity flows in the OCOM case
+*  - Delicate handling end of commodity flows in the OCOM case
 *-----------------------------------------------------------------------------
 * commodity flows tied to new capacity
 *V0.5b 980828 re-adjust v,t handling to capture enclosed periods & condition to handle period of length 1
@@ -18,7 +18,7 @@
      LOOP(RPC_CAPFLO(R,FIL(V),P,C)$NCAP_ICOM(R,V,P,C), DFUNC = COEF_RPTI(R,V,P);
        MY_F = NCAP_ILED(R,V,P); F = COEF_ILED(R,V,P); CNT = ABS(NCAP_CLED(R,V,P,C));
        Z = B(V)+MAX(1$(CNT$MY_F=0),MY_F); F = Z-MAX(1,MIN(CNT,F));
-       IF(DFUNC GT 1,
+       IF(DFUNC > 1,
 * repeated investment
           COEF_ICOM(R,T(V),T,P,C) = (DFUNC * NCAP_ICOM(R,V,P,C) / FPD(T))
        ELSE
@@ -30,31 +30,33 @@
        );
       );
      );
-
 * commodity flows tied to decommissioning of capacity
 *V05c 980923 - use the capacity flow control set, including PASTInvestments
+     NCAP_OCOM(RTP,C)$((NOT NCAP_OCOM(RTP,C))$RCAP_OCAP(RTP,C)) = 1;
+     FIL2(T) = E(T)+(1+MAX(1,D(T+1))-B(T)-E(T))/2;
      LOOP(RPC_CAPFLO(R,V,P,C)$NCAP_OCOM(R,V,P,C),
-       F = NCAP_ILED(R,V,P)+NCAP_DLAG(R,V,P); MY_F = NCAP_TLIFE(R,V,P);
-       Z = MAX(1,NCAP_DLIFE(R,V,P)); DFUNC = COEF_RPTI(R,V,P);
-       IF(DFUNC GT 1,
+       F = NCAP_ILED(R,V,P)+NCAP_DLAG(R,V,P); MY_F = NCAP_TLIFE(R,V,P); DFUNC = COEF_RPTI(R,V,P);
+       Z = B(V)+F+DFUNC*MY_F;
+*......adjust short DLIFE for better average timing of flows late in period
+       Z = MAX(1,NCAP_DLIFE(R,V,P),SUM(VNT(V,T)$((Z>=B(T))*(E(T)+1>Z)),(E(T)-Z+1)/(1-(Z-(B(T)+E(T))/2)/FIL2(T))));
+       IF(DFUNC > 1,
          FOR(CNT = 1 TO CEIL(DFUNC),
-           COEF_OCOM(R,V,T,P,C)$(YEARVAL(T) >= YEARVAL(V)) =
-                                 COEF_OCOM(R,V,T,P,C) + MIN(1,DFUNC-CNT+1) *
-                                 MAX(0,(MIN(B(V)+F+(CNT*MY_F)+Z,E(T)+1) -
-                                        MAX(B(V)+F+(CNT*MY_F),B(T))
-                                        ) / FPD(T)
-                                    ) * (NCAP_OCOM(R,V,P,C) / Z)
+           COEF_OCOM(R,VNT(V,T),P,C) =
+                            COEF_OCOM(R,V,T,P,C) + MIN(1,DFUNC-CNT+1) *
+                            MAX(0,(MIN(B(V)+F+(CNT*MY_F)+Z,E(T)+1) -
+                                   MAX(B(V)+F+(CNT*MY_F),  B(T))
+                                   ) / FPD(T)) * (NCAP_OCOM(R,V,P,C) / Z)
             )
-       ELSE
-          COEF_OCOM(R,V,T,P,C)$(YEARVAL(T) >= YEARVAL(V)) =
+       ELSE MY_F = B(V)+F+MY_F;
+          COEF_OCOM(R,V,T,P,C)$(E(T)+1 > MY_F) =
 * some part of release in T
-            MAX(0,(MIN(B(V)+F+MY_F+Z,E(T)+1) -
-                   MAX(B(V)+F+MY_F,B(T))
-                  ) / FPD(T)
-               ) * (NCAP_OCOM(R,V,P,C) / Z)
-       );
+            MAX(0,(MIN(MY_F+Z,E(T)+1) -
+                   MAX(MY_F,  B(T))) / FPD(T)) * (NCAP_OCOM(R,V,P,C) / Z)
+       )
      );
-  OPTION CLEAR = CNT;
+* early retirements
+  COEF_RCOM(RTP_CPTYR(R,V,T,P),C)$RCAP_OCAP(R,V,P,C) = COEF_CPT(R,V,T,P) * NCAP_OCOM(R,V,P,C) / FPD(T);
+  OPTION CLEAR=CNT;
 *display coef_icom, coef_ocom;
 
 * Modification: Convert negative ICOM to OCOM so that NCAP-related outputs can also be modeled

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -34,7 +34,9 @@
 * Internal PARAMATERs
   SCALAR MIYR_BOH / 0 /;
   PARAMETER REG_FIXT //;
+  PARAMETER VN2T(YEAR,T) //;
   PARAMETER RTFORC(R,LL,LL,P) //;
+  PARAMETER COEF_RCOM(R,LL,LL,P,C);
 * For dynamic process bounds
   PARAMETER PRC_DYNUC(UC_N,SIDE,R,ALLYEAR,P,UC_GRPTYPE,BD);
 * For special handling of non-standard FLO_SHAR

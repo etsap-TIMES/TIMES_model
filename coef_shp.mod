@@ -1,11 +1,11 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
 * COEF_SHP prepares the shapes for COEF_PTR and COEF_CPT
 *=============================================================================*
-* Shaping of COEF_PTRANS
+* Shaping of COEF_PTRAN
 *------------------------------------------------------------------------------
   PARAMETER RTP_FFCX(REG,ALLYEAR,ALLYEAR,PRC,CG,CG) //;
   SET AGEJ(J,AGE) / 1.1 /;
@@ -43,7 +43,7 @@
   RTP_FFCX(RTP_CAPYR,'CAPFLO',CG) = 0;
 * Option for non-vintaged FLO_FUNC multipliers
   RTP_FFCX(RTP_VINTYR(R,V,T,P),CG,CG2)$((FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')>0)$RTP_CGC(R,V,P,CG,CG2))=FLO_FUNC(R,T,P,CG,CG2,'ANNUAL')/FLO_FUNC(R,V,P,CG,CG2,'ANNUAL')-1;
-  OPTION CLEAR=TRACKP,CLEAR=RVPRL,CLEAR=RP_GRP;
+  OPTION CLEAR=TRACKP,CLEAR=RVPRL,CLEAR=RP_GRP,CLEAR=RTP_CGC;
 *------------------------------------------------------------------------------
 * Shaping of COEF_CPT
 *------------------------------------------------------------------------------
@@ -71,14 +71,14 @@
     COEF_CAP(RTP_CPTYR(R,V,T,P))$NCAP_CPX(R,V,P) = (1/MAX(1,COEF_CPT(R,V,T,P)/COEF_CAP(R,V,T,P)))$COEF_CAP(R,V,T,P)-1;
   );
   COEF_CPT(R,V,T,P)$COEF_CAP(R,V,T,P) = COEF_CPT(R,V,T,P)*(COEF_CAP(R,V,T,P)+1);
-  OPTION CLEAR=PRC_YMIN,CLEAR=PRC_YMAX,CLEAR=TRACKP,CLEAR=RTP_CGC, RTP_CPX <= COEF_CAP, CLEAR=COEF_CAP;
+  OPTION CLEAR=PRC_YMIN,CLEAR=PRC_YMAX,CLEAR=TRACKP,CLEAR=RVPRL, RTP_CPX <= COEF_CAP, CLEAR=COEF_CAP;
 
 * Override COEF_OCOM if conditions met for using capacity transfer
-  RTP_CGC(RTP(R,V,P),CG('CAPFLO'),C)$((FLO_FUNCX(R,'0',P,CG,C)=3)$NCAP_OCOM(RTP,C))=YES;
-  LOOP(AGEJ(J,AGE)$CARD(RTP_CGC),
-    OPTION RVPRL < RTP_CGC;
-    PASTSUM(RTP(R,V,P))$RVPRL(RTP) = B(V)+ROUND(NCAP_ILED(RTP))+ROUND(NCAP_DLAG(RTP)+NCAP_DLIFE(RTP)/2);
-    RVPRL(RTP)$RVPRL(RTP) = PASTSUM(RTP)+ROUND(COEF_RPTI(RTP)*NCAP_TLIFE(RTP));
+  RPC_CONLY(RTP(R,V,P),C)$((FLO_FUNCX(R,'0',P,'CAPFLO',C)=3)$NCAP_OCOM(RTP,C))=YES;
+  LOOP(AGEJ(J,AGE)$CARD(RPC_CONLY),
+    OPTION PASTSUM < RPC_CONLY;
+    PASTSUM(RTP(R,V,P))$PASTSUM(RTP) = B(V)+ROUND(NCAP_ILED(RTP))+ROUND(NCAP_DLAG(RTP)+NCAP_DLIFE(RTP)/2);
+    RVPRL(RTP)$PASTSUM(RTP) = PASTSUM(RTP)+ROUND(COEF_RPTI(RTP)*NCAP_TLIFE(RTP));
     LOOP(G_RCUR(R,CUR),
       FIL2(T)=COEF_PVT(R,T)*D(T)/SUM(PERIODYR(T,Y_EOH),(YEARVAL(Y_EOH)-B(T)+1)*OBJ_DISC(R,Y_EOH,CUR));
 *.... Calculate remaining levelized capacity levels
@@ -87,8 +87,11 @@
             SUM(PERIODYR(T,Y_EOH)$(YEARVAL(Y_EOH)<RVPRL(R,V,P)),OBJ_DISC(R,Y_EOH,CUR)*POWER(SHAPE(J+(NCAP_CPX(R,V,P)-1),AGE+MOD(YEARVAL(Y_EOH)-PASTSUM(R,V,P),ROUND(NCAP_TLIFE(R,V,P)))),YEARVAL(Y_EOH)-PASTSUM(R,V,P)>=0))/COEF_PVT(R,T)*FIL2(T),
             SHAPE(J+(NCAP_CPX(R,V,P)-1),AGE+MAX(0,E(T)-PASTSUM(R,V,P)))$(E(T)<RVPRL(R,V,P))));
 *...Derive overriding COEF_OCOM coefficients
-    COEF_OCOM(R,VNT(V,T),P,C)$RTP_CGC(R,V,P,'CAPFLO',C) = COEF_RPTI(R,V,P) *
+    COEF_OCOM(R,VNT(V,T),P,C)$RPC_CONLY(R,V,P,C) = COEF_RPTI(R,V,P) *
       (MAX(0,POWER(SHAPE(J+(NCAP_CPX(R,V,P)-1),AGE+(B(T)-PASTSUM(R,V,P)-1)),B(T)-PASTSUM(R,V,P)-1>=0)-COEF_CAP(R,V,T,P))*NCAP_OCOM(R,V,P,C)/FPD(T))$(B(T)<RVPRL(R,V,P));
-    COEF_OCOM(R,V,T(TT+1),P,C)$((B(T)>PASTSUM(R,V,P))$VNT(V,TT)$RTP_CGC(R,V,P,'CAPFLO',C)) = COEF_RPTI(R,V,P) * MAX(0,COEF_CAP(R,V,TT,P)-COEF_CAP(R,V,T,P))*NCAP_OCOM(R,V,P,C)/FPD(T);
+    COEF_OCOM(R,V,T(TT+1),P,C)$((B(T)>PASTSUM(R,V,P))$VNT(V,TT)$RPC_CONLY(R,V,P,C)) = COEF_RPTI(R,V,P) * MAX(0,COEF_CAP(R,V,TT,P)-COEF_CAP(R,V,T,P))*NCAP_OCOM(R,V,P,C)/FPD(T);
+    COEF_RCOM(RTP_CPTYR(R,V,T(TT+1),P),C)$(RPC_CONLY(R,V,P,C)$RCAP_OCAP(R,V,P,C)) = COEF_CAP(R,V,TT,P) * NCAP_OCOM(R,V,P,C) / FPD(T);
   );
-  OPTION CLEAR=RTP_CGC,CLEAR=COEF_CAP,CLEAR=PASTSUM,CLEAR=RVPRL;
+* Filter off RCOMs by age
+  COEF_OCOM(R,VNT(V,T),P,C)$RCAP_OCAP(R,V,P,C) = (COEF_OCOM(R,V,T,P,C)+EPS$COEF_RCOM(R,V,T,P,C))$(SIGN(RCAP_OCAP(R,V,P,C))*(B(T)-(B(V)+NCAP_ILED(R,V,P)+1/PI**9))<RCAP_OCAP(R,V,P,C));
+  OPTION CLEAR=RPC_CONLY,CLEAR=COEF_CAP,CLEAR=PASTSUM,CLEAR=RVPRL;

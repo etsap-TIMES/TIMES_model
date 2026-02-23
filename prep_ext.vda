@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -72,6 +72,8 @@ $IFI %WAVER%==YES PRC_YMAX(R,P)=Z+1$(MY_F>0); IF(MY_F=0, PRC_RESID(R,LL+(Z-MIYR_
   COM_LIM(RC,BDNEQ)$COM_LIM(RC,'FX')=NO;
 *-----------------------------------------------------------------------------
   ACT_MINLD(RTP) $= ACT_UPS(RTP,'ANNUAL','FX');
+$IF NOT DEFINED VNRET $CLEAR RCAP_OCAP
+  RPC_CAPFLO(RTP,C) $= RCAP_OCAP(RTP,C);
 * Move non-standard share parameters to dedicated parameter
   FLO_ASHAR(R,DM_YEAR,P,C,CG,S,BD) $= FLO_SHAR(R,DM_YEAR,P,C,CG,S,BD)$(NOT COM_GMAP(R,CG,C)*RPC(R,P,C));
 * Process cost-neutral ILEDs

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -10,7 +10,8 @@
 *=============================================================================*
   OPTION CLEAR=NCAP_YES,CLEAR=RTP_OBJ,CLEAR=RTP_NPV,CLEAR=RTP_CAPVL;
   RTP_CAPVL(RTP)=VAR_NCAP.L(RTP)+NCAP_PASTI(RTP);
-  NCAP_YES(RTP)$(RTP_CAPVL(RTP)>0) = YES;
+  Z=MAX(0,RPT_OPT('NCAP','9')/8);
+  NCAP_YES(RTP)$(RTP_CAPVL(RTP)>Z-INF$NCAP_PASTI(RTP)) $= RTP_CAPVL(RTP);
   MY_F=ROUND(RPT_OPT('OBJ','1'));
 $ SETLOCAL SIC '' SET TMP ''
 $IFI '%STAGES%'==YES $SETLOCAL SIC "*(1+PASTSUM(R,V,P))"

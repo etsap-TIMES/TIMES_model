@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -202,7 +202,7 @@ $IF %1==S $EXIT
 * Salvage costs (not for stochastic runs)
 *------------------------------------------------------------------------------
 * Calculate actual Salvage values
-  PAR_OBJSAL(OBJ_ICUR(R,T,P,CUR)) = PAR_OBJSAL(R,T,P,CUR)*VAR_NCAP.L(R,T,P);
+  PAR_OBJSAL(OBJ_ICUR(R,T,P,CUR)) = PAR_OBJSAL(R,T,P,CUR)*VAR_NCAP.L(R,T,P)$NCAP_YES(R,T,P);
 $IF %ETL% == YES
   PAR_OBJSAL(RTP(R,T,TEG(P)),CUR)$G_RCUR(R,CUR) = PAR_OBJSAL(RTP,CUR)+SUM(OBJ_SUMS(RTP),OBJSIC(RTP)*VAR_IC.L(RTP))*OBJ_DCEOH(R,CUR);
   %1CST_SALV(%2R,T,P) $= SUM(RDCUR(R,CUR),PAR_OBJSAL(R,T,P,CUR));

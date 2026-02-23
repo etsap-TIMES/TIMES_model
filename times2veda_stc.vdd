@@ -73,6 +73,7 @@ not-0 var_fin var_fout var_act var_actm var_cap var_capm cost_flo cost_act eq_co
   Cost_Dam      scst_dam          w r t c
   Cost_ire      scst_irec         w r v t p c
   Time_NPV      scst_time         w r t s uc_n
+  Val_Flo       sval_flo          w r v t p c
   ObjZ          ObjZ.l
   Reg_wobj      reg_wobj          r uc_n c
   Reg_obj       sreg_wobj         w r uc_n c

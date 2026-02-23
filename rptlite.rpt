@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -43,7 +43,6 @@ $IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
    REG_OBJ(REG)                    //
    BC_INVACT(R,ALLYEAR,LL,PRC,S)   //
    BC_INVTOT(R,ALLYEAR,PRC)        //
-   VAL_FLO(R,ALLYEAR,LL,PRC,C)     //
    PAR_RTCS(R,T,C,S)
    PAR_TOP(R,T,P,C,IO);
 
@@ -77,7 +76,6 @@ $IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
  PARAMETER %1PAR_NCAPM(%2R,ALLYEAR,P)   //;
  PARAMETER %1PAR_NCAPR(%2R,ALLYEAR,P,ITEM) //;
  PARAMETER %1PAR_OBJSAL(%2R,ALLYEAR,P,CUR) //;
-
  PARAMETER %1PAR_COMPRDL(%2R,ALLYEAR,C,S)   //;
  PARAMETER %1PAR_COMPRDM(%2R,ALLYEAR,C,S)   //;
  PARAMETER %1PAR_COMNETL(%2R,ALLYEAR,C,S)   //;
@@ -115,6 +113,7 @@ $IF %RPT_FLOTS%==COM RPT_OPT('FLO','1')=1;
  PARAMETER %1CST_SALV(%2R,ALLYEAR,P)           //;
  PARAMETER %1CST_TIME(%2R,ALLYEAR,S,SYSUC)     //;
  PARAMETER %1CAP_NEW(%2R,ALLYEAR,P,T,SYSUC)    //;
+ PARAMETER %1VAL_FLO(%2R,ALLYEAR,LL,PRC,C)     //;
 * Damage cost and custom parameters
  PARAMETER %1DAM_OBJ(%2R,T,C,CUR);
  PARAMETER %1CST_DAM(%2R,T,C) 'Damage costs'   //;

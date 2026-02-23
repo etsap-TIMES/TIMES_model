@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -38,7 +38,8 @@ $ SET MX ,SEASON, WEEKLY, DAYNITE
   ACT_MAXNON(R,LL,P,UPT)      'Max. non-operational time before transition to next stand-by condition, by start-up type, in hours' //
   ACT_SDTIME(R,LL,P,UPT,BD)   'Duration of start-up (BD=UP) and shut-down BD=LO) phases, by start-up type, in hours' //
   ACT_LOSSD(R,LL,P,UPT,BD)    'Efficiency at one hour from start-up (BD=UP) or at one hour to end of shut-down (BD=LO)' //
-  STG_MAXCYC(R,YEAR,P)        'Maximum number of storage cycles over lifetime' //;
+  STG_MAXCYC(R,YEAR,P)        'Maximum number of storage cycles over lifetime' //
+  RCAP_OCAP(R,YEAR,P,C)       'Maximum age of retired process to have NCAP_OCOM flow' //;
 *-----------------------------------------------------------------------------
 * Risk parameters & network modeling attributes
   PARAMETER UC_ACTBET(UC_N,ALL_REG,ALLYEAR,PRC);

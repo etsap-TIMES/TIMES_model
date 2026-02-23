@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=========================================================================
@@ -254,6 +254,7 @@ $LABEL RESTOBJ
   SET        FIL(ALLYEAR);
   SET        MY_FIL(ALLYEAR) //;
   SET        VNT(ALLYEAR,ALLYEAR);
+  SET        VNTRT(YEAR,YEAR) //;
   SET        YK1(ALLYEAR,ALLYEAR);
   PARAMETER  FIL2(ALLYEAR);
   PARAMETER  MY_FIL2(ALLYEAR) //;
