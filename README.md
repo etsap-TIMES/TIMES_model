@@ -1,6 +1,6 @@
 <p align=center><a rel="license" href="https://www.gnu.org/licenses/gpl-3.0.html"><img alt="GNU General Public License" style="height:30px;border-width:0" src="https://www.gnu.org/graphics/gplv3-or-later.png" /></a>This work is licensed under a <a rel="license" href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License</a>.</p>
 
-# TIMES_model
+![Times-Logo](https://github.com/user-attachments/assets/196ff9db-1cd5-4f29-b83d-86d192d79b7d)
 
 ## The Integrated MARKAL-EFOM System (TIMES) – a bottom-up optimization model for energy-environment systems.
 
@@ -59,3 +59,4 @@ If you are interested in receiving information and newsletters on ETSAP's tool y
 A forum for TIMES users is [available](http://iea-etsap.org/forum/index.php).
 
 [![DOI](https://zenodo.org/badge/229031856.svg)](https://zenodo.org/badge/latestdoi/229031856)
+
