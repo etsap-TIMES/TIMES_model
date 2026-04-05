@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -205,11 +205,10 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Process with zero PRC_ACTFLO for C
 $IFI '%DEBUG%'==YES $SET XTQA YES
 $IFI NOT '%VDA%%XTQA%'==YESYES $GOTO FINISH
 * Not same commodity TOP IN/OUT
-   LOOP(RPC(R,P,C)$(TOP(R,P,C,'IN')*TOP(R,P,C,'OUT')),
-     IF(NOT PRC_MAP(R,'STG',P),
-$        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Same Commodity IN and OUT of non-STG process'
+   LOOP(RPC(RP_STD(R,P),C)$(TOP(R,P,C,'IN')*TOP(R,P,C,'OUT')),
+$        BATINCLUDE pp_qaput.%1 PUTOUT PUTGRP 01 'Same Commodity IN and OUT of a regular process'
          PUT QLOG ' WARNING       -     R=',%RL%,' P=',%PL%,' C=',C.TL;
-     ));
+   );
    PUTGRP = 0;
 *-----------------------------------------------------------------------------
 * IRE process parameter check

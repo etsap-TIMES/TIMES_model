@@ -3200,3 +3200,16 @@ rpt_obj.rpt   : (5)
 cost_ann.rpt  : (5)
 rptmisc.rpt   : (4)
 pextlevs.stc  : (4)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.4
+-----------------------------------------------------------------------------------------
+Date: 5-Apr-2026 [AL]: Maintenence release
+1) Fixed possible division by zero condition introduced in v4.9.3
+2) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.4
+pp_qack.mod   : (2)
+rpt_obj.rpt   : (1)
+coef_ext.vda  : (2)
