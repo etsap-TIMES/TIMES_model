@@ -3213,3 +3213,17 @@ initsys.mod   : Increased version number to 4.9.4
 pp_qack.mod   : (2)
 rpt_obj.rpt   : (1)
 coef_ext.vda  : (2)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.5
+-----------------------------------------------------------------------------------------
+Date: 11-May-2026 [AL]: Maintenence release
+1) Fixed several compatibility issues in the add-on grid facility
+2) Extended support for filtering out time series to currency data (IE=-13)
+3) Cosmetic improvements
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.5
+maplists.def  : (1),(3)
+curex.gms     : (2)
+powerflo.vda  : (1)

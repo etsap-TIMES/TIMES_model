@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *==============================================================================*
@@ -73,7 +73,9 @@
     / ELC        'Electricity'
       LTHEAT     'Low-temperature Heat'
       HTHEAT     'High-temperature Heat'
-      GAS        'Gaseous' /;
+      GAS        'Gaseous'
+      H2G        'Hydrogen grid'
+      CO2G       'CO2 gas grid'  /;
   SET NRG_TYPE   'List of energy types'
     / FOSSIL     'Fossil'
       NUCLR      'Nuclear'
