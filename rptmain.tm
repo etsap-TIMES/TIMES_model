@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------
@@ -64,12 +64,6 @@ $ BATINCLUDE rptmisc.rpt '%1' "%3"
 * [AL]: COEF_OBJINV includes the full effect of one unit of NCAP_ICOST on the objective:
 * PAR_NCAPM(R,T,P)$(VAR_NCAP.M(R,T,P)*SUM(RDCUR(R,CUR),COEF_OBJINV(R,T,P,CUR)))
 *    = VAR_NCAP.M(R,T,P)/SUM(RDCUR(R,CUR),COEF_OBJINV(R,T,P,CUR));
-
-*---------------------------------------------------------------------
-* CHP-related reporting parameters
-*---------------------------------------------------------------------
-$IF %CHP_MODE% == YES $BATINCLUDE rpt_chp.ier
-
 
 *---------------------------------------------------------------------
 * Shadow prices of user constraints

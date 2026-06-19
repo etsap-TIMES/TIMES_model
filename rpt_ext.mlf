@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ $   BATINCLUDE cost_ann.rpt
   VDA_DISC(MR,T) = ABS(-EQ_ENSCST.M(MR,T) * TM_SCALE_CST);
   VDA_DISC(MR,T)$(NOT RT_PP(MR,T)) = COEF_PVT(MR,T);
   LOOP(MIYR_1(TT(T-1)),VDA_DISC(R,TT)$(VDA_DISC(R,TT) LE 0) = COEF_PVT(R,TT)/COEF_PVT(R,T)*VDA_DISC(R,T));
-  VAR_OBJ.L(R,OBV(OBVANN),CUR)=0;
+  VAR_OBJ.L(R,OBV(OBVANN),CUR) = 0;
 * Trade prices and implied costs/revenues
   PAR_IPRIC(MR(R),PP(T),P,C,TS,IE)$PAR_IPRIC(R,T,P,C,TS,IE) = -PAR_IPRIC(R,T,P,C,TS,IE)*COEF_PVT(R,T)/VDA_DISC(R,T);
   CST_IREC(RTP_VINTYR(MR(R),V,PP(T),P),C)$(RPC(R,P,C)$RP_IRE(R,P)) $=
@@ -110,6 +110,6 @@ $ LABEL UC_DONE
   TM_RESULT('TM_CON-C',MR,T)   = VAR_C.L(MR,T);
   TM_RESULT('TM_CAP-K',MR,T)   = VAR_K.L(MR,T);
   TM_RESULT('TM_INV-I',MR,T)   = VAR_INV.L(MR,T);
-  TM_RESULT('TM_ESCOST',MR,T)  = VAR_EC.L(MR,T);
+  TM_RESULT('TM_ESCOST',MR,T)  = VAR_EC.L(MR,T)*TM_HDF(MR,T);
   TM_RESULT('TM_GDPLOS',MR,T) = 100*(TM_GDPGOAL(MR,T)-TM_GDP(MR,T))/TM_GDPGOAL(MR,T);
   DISPLAY TM_RESULT;
