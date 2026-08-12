@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -74,7 +74,9 @@ $ SET VAS %VAR%
 $ IF '%STAGES%'==YES $%SW_STVARS%
 $ SET UPSCAP0 (%UPSCAPS%$PRC_TS(R,P,S))$RP_UPL(R,P,'FX')
   PARAMETER DP_UNS(R,LL,T,P,TSL,IPS,L) //;
-  RP_PL(RP,BD)$SUM(RPG_PACE(RP,CG),1)=NO;
+  RP_PL(RP,BD)$SUM(RPG_PACE(RP,CG),1) = NO;
+* Filter out superfluous EQ_CAFLACs
+  AFS(RTP(R,T,P),S,BDUPX)$NCAP_AFCS(RTP,'ACT',S) = NO;
 
 *-----------------------------------------------------------------------------
 * Call for Implementations

@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2024 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -219,14 +219,15 @@ $IF DEFINED %VAR%_DAM VAR_DAM.L(R,T,C,BD,J)$NO=0; %VAR%_DAM.FX(R,T(BACKWARD),C,B
    %VAR%_CAP.LO(NO_RVP(R,T,P)%SOW%)$CAP_BND(R,T,P,'LO') = CAP_BND(R,T,P,'LO');
    %VAR%_SCAP.FX(RTP_CPTYR(R,V,BACKWARD(T),P)%SOW%)$PRC_RCAP(R,P) = VAR_SCAP.L(R,V,T,P);
 * Cumulative variables
-   Z = (SMAX(T,M(T)) > MIYR_VL);
+   Z = SMAX(T,M(T));
+   LOOP(REG(R)$(REG_FIXT(R)>=Z), RPC_CUMFLO(R,P,C,YEAR,LL) = NO; RC_CUMCOM(R,COM_VAR,YEAR,LL,C) = NO);
+   Z = (Z > MIYR_VL);
    FIL(LL) = Z*(MIYR_VL < YEARVAL(LL));
 * Get new modifiers for flexible model horizon
 $IFI NOT %SENSIS%==YES $BATINCLUDE bnd_cum.mod COM_VAR
 * Remove LO bounds if years only partially in current horizon and no adjustment for shorter horizon
-   %VAR%_CUMFLO.LO(R,P,C,YEAR,LL %SOW%)$((NOT FLO_CUM(R,P,C,YEAR,LL,'N'))$FIL(LL)) = 0;
-   %VAR%_CUMCOM.LO(R,C,COM_VAR,YEAR,LL %SOW%)$((NOT COM_CUM(R,COM_VAR,YEAR,LL,C,'N'))$FIL(LL)) = 0;
-$LABEL DONECUM
+   %VAR%_CUMFLO.LO(R,P,C,YEAR,FIL%SOW%)$(NOT FLO_CUM(R,P,C,YEAR,FIL,'N')) = 0;
+   %VAR%_CUMCOM.LO(R,C,COM_VAR,YEAR,FIL%SOW%)$(NOT COM_CUM(R,COM_VAR,YEAR,FIL,C,'N')) = 0;
 * Blending
    VAR_BLND.L(RT_PP,BLE,OPR)=0;
    %VAR%_BLND.FX(R,BACKWARD(T),BLE,OPR%SOW%)$BLE_OPR(R,BLE,OPR) = VAR_BLND.L(R,T,BLE,OPR);
@@ -234,7 +235,7 @@ $IF '%RTPX%'==X ); BACKWARD(T) = M(T) < YR_V1; SUBT(T) = TT(T)-BACKWARD(T)-FORWA
 *-----------------------------------------------------------------------------
   IF(MY_FYEAR,
 * Find all regions REG linked to IRE equations in region R
-   TRACKPC(RPC(R,P,C))$(RPC_EQIRE(R,P,C,'EXP')+RPC_MARKET(R,P,C,'EXP')) = YES;
+   TRACKPC(RPC)$(RPC_EQIRE(RPC,'EXP')+RPC_MARKET(RPC,'EXP')) = YES;
    LOOP((TRACKPC(R,P,C),TOP_IRE(R,C,REG,COM,P)),IRE_RPR(R,P,REG,'EXP') = YES);
    OPTION CLEAR=TRACKPC;
    LOOP((TOP_IRE(R,C,REG,COM,P),RPC_EQIRE(REG,P,COM,'IMP')),IRE_RPR(REG,P,R,'IMP') = YES);

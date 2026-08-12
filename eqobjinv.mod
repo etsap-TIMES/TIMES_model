@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -224,7 +224,7 @@ $LABEL CONT_2
     MY_F = MY_F/F/CNT-1;
 *..Interest according to rounded and accurate spreads using constant discount rate
     F = ((OBJ_C**CNT)-1)/(1-1/OBJ_C)/CNT-1;
-    CNT = MAX(0.001,Z);
+    CNT = MAX(1.E-5,Z);
     Z = ((OBJ_C**CNT)-1)/(1-1/OBJ_C)/CNT-1;
     ELSE F=1); OBJ_DIVI(R,V,P) = 1/(1+Z*MY_F/F));
 * Add spread header tuples

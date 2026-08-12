@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -112,11 +112,13 @@ $IF NOT %REDUCE%==YES OPTION CLEAR=TRACKPC;
   TRACKPG(RP_GRP(RP_STG,%PGPRIM%))=YES;
   NCAP_AFC(R,V,P,CG,STL(S))$TRACKPG(R,P,CG) $= NCAP_AFCS(R,V,P,CG,S);
   NCAP_AFC(R,V,P,C,STL(S))$(RC(R,C)$NCAP_AFCS(R,'0',P,%PGPRIM%,S)) $= NCAP_AFCS(R,V,P,C,S);
-  NCAP_AFCS(R,V,P,CG,S)$(RP_STD(R,P)$TRACKPG(R,P,CG)) = 0;
+  NCAP_AFCS(R,V,P,CG,S)$(RP_FLO(R,P)$TRACKPG(R,P,CG)) = 0;
   NCAP_AFCS(R,V,P,CG,S)$(NCAP_AFCS(R,'0',P,%PGPRIM%,S)$RP_FLO(R,P)) = 0;
   NCAP_AFCS(R,V,P,CG,S)$((NOT RP_STG(R,P))$RP_PGTYPE(R,P,CG)) $= NCAP_AFCS(R,V,P,%PGPRIM%,S);
 * Set into RTPS_BD tuples to be searched
   OPTION RVPS < NCAP_AFCS;
+* Mark orphan storage ACT
+  NCAP_AFCS(RTP(R,V,P),ACTCG,S(STL))$((NOT RVPS(RTP,S))$RP_STG(R,P)) $= NCAP_AFC(RTP,ACTCG,STL);
 * Processes with no ACTFLO are not supported:
   RVPS(R,V,P,S)$(RTP(R,V,P)->RP_STD(R,P)$RP_PGACT(R,P)) = NO;
 * Set into RTPS_BD availability tuples found

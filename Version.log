@@ -3244,3 +3244,19 @@ rpt_ext.mlf   : (3)
 calibase.mlf  : (3)
 atlearn.etl   : (2)
 rptmain.tm    : (3)
+
+-----------------------------------------------------------------------------------------
+TIMES Version 4.9.7
+-----------------------------------------------------------------------------------------
+Date: 9-Aug-2026 [AL]: Maintenence release
+
+1) Cleaned up superfluous cum equations under FIXBOH
+2) Cleaned up superfluous EQ_CAFLAC equations for storage
+3) Improved consistency in LUMPINV reporting for I.2 cases with ILED<1
+
+Modified files: (reason)
+initsys.mod   : Increased version number to 4.9.7
+solve.stp     : (1)
+ppm_ext.vda   : (2)
+equ_ext.vda   : (2)
+rpt_obj.rpt   : (3)
