@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *==============================================================================*
@@ -11,9 +11,10 @@
 * Back-pressure point should correspond to the maximum HEAT/POWER ratio
   NCAP_CHPR(RTP,BDNEQ)$NCAP_CHPR(RTP,'FX') = 0;
   COEF_RTP(RTP(R,V,P))$CHP(R,P) = MAX(0,SMAX(BD,NCAP_CHPR(RTP,BD)));
+  NCAP_CDME(RTP)$(NCAP_CDME(RTP)=0)=0;
 *-----------------------------------------------------------------------------
 * calculate the slope: (CDEF/BPEF*(1+CHPR)-1)/CHPR
-  NCAP_CEH(RTP)$((COEF_RTP(RTP)>0)$NCAP_CDME(RTP)) = MAX(.001,(NCAP_CDME(RTP)/NCAP_BPME(RTP)*(1+COEF_RTP(RTP))-1)/COEF_RTP(RTP));
+  NCAP_CEH(RTP)$((COEF_RTP(RTP)>0)$NCAP_CDME(RTP)) = MAX(.001,(NCAP_CDME(RTP)/MAX(NCAP_CDME(RTP),NCAP_BPME(RTP))*(1+COEF_RTP(RTP))-1)/COEF_RTP(RTP));
 * EQ_PTRANS control - overall efficiency
   FLO_SUM(RTP(R,V,P),C,COM,C,ANNUAL)$(RPC_SPG(R,P,COM)$RPC_PG(R,P,C)$NRG_TMAP(R,'ELC',C)) $= NCAP_CDME(RTP);
 *-----------------------------------------------------------------------------
@@ -23,19 +24,19 @@
    OPTION PRC_ACT < NCAP_CHPR;
    CHP_ELC(RPC_PG(CHP(PRC_ACT(R,P)),C))$NRG_TMAP(R,'ELC',C) = YES;
    OPTION TRACKP < CHP_ELC; TRACKP(RP_PGACT) = NO;
-   RVP(R,V,P)$(COEF_RTP(R,V,P)$TRACKP(R,P)) = YES;
+   RVP(RTP(R,V,P))$(COEF_RTP(RTP)$TRACKP(R,P)) = YES;
    RP_GRP(RPC_PG(TRACKP(RP),C))$(NOT CHP_ELC(RP,C)) = YES;
    RP_GRP(RP_PGACT(CHP),C)$(TOP(CHP,C,'OUT')$(NOT CHP_ELC(CHP,C))) = YES;
    TRACKPG(RP_GRP(RPC_PG(R,P,C)))$COM_LIM(R,C,'N')=YES; OPTION RP_PRC<TRACKPG;
    NCAP_CEH(RVP(R,V,P))$(NCAP_CEH(RVP)=0) = -0.5$RP_PRC(R,P);
    NCAP_BPME(RVP) = MIN(0,SMIN(BD$NCAP_CHPR(RVP,BD),NCAP_CHPR(RVP,BD))*((NCAP_CEH(RVP)+1)$NCAP_CEH(RVP)-1));
    NCAP_CEH(RVP)$(NCAP_CEH(RVP)<0) = -NCAP_CEH(RVP);
-* If slope is different from 1, we should always have a maximum heat share:
+* If slope is different from 1, we should always have a maximum heat share
    NCAP_CHPR(RVP,'FX')$((ABS(NCAP_CEH(RVP)-1)>.01)$(NOT NCAP_CHPR(RVP,'UP'))) = COEF_RTP(RVP)+EPS;
   );
 *-----------------------------------------------------------------------------
 * Calculate ACTFLOs for pg and elc
-  PRC_ACTFLO(RVP(R,V,P),C)$RPC_PG(R,P,C) = 1+((PRC_ACTFLO(RVP,C)/COEF_RTP(RVP)+1)/MAX(1E-3,EXP(ABS(LOG(NCAP_CEH(RVP))))-PRC_ACTFLO(RVP,C))-1)$TRACKPG(R,P,C);
+  PRC_ACTFLO(RVP(R,V,P),C)$RPC_PG(R,P,C) = 1+((PRC_ACTFLO(RVP,C)/COEF_RTP(RVP)+1)/MAX(1E-3,EXP(ABS(LOG(NCAP_CEH(RVP))))-PRC_ACTFLO(RVP,C))-1)$(COEF_RTP(RVP)>0)$TRACKPG(R,P,C);
   PRC_ACTFLO(RVP(R,V,P),C)$((NCAP_CEH(RVP) LE 1)$RPC_PG(R,P,C)) =
      POWER(NCAP_CEH(RVP),(1$CHP_ELC(R,P,C)-1)$NCAP_CEH(RVP)) * (1-NCAP_BPME(RVP)) * PRC_ACTFLO(RVP,C);
   PRC_ACTFLO(RVP(R,V,P),C)$(((NCAP_CEH(RVP) GT 1)*NCAP_CEH(RVP))$RPC_PG(R,P,C)) =

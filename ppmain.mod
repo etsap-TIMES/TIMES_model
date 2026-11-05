@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2025 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -121,9 +121,9 @@ $ IF WARNINGS $BATINCLUDE pp_qaput.%1 PUTOUT 0 * 'GAMS Warnings Detected%TMP%'
 *-----------------------------------------------------------------------------
     SET PHYR(ALLYEAR) //;
     PARAMETER PASTSUM(R,ALLYEAR,P) //;
-    OPTION PRC_CAP < NCAP_PASTY;
+    OPTION PRC_CAP < NCAP_PASTY, PASTYEAR < NCAP_PASTY;
     LOOP((PRC_CAP(RP(R,P)),PASTYEAR(LL))$(NCAP_PASTY(R,PASTYEAR,P) > 1),
-         F = NCAP_PASTY(R,LL,P); MY_F = NCAP_PASTI(R,LL,P) / F;
+         F = ROUND(NCAP_PASTY(R,LL,P)); MY_F = NCAP_PASTI(R,LL,P) / F;
 * for each year within spread build running sum of distributed PASTIs
          FOR(Z = F-1 DOWNTO 0, PASTSUM(R,ALLYEAR(LL-Z),P) = PASTSUM(R,ALLYEAR,P) + MY_F);
 * since spread this guy, clear original value
@@ -536,10 +536,12 @@ $    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP IFQ 'Inconsistent CAP_BND(UP/FX) defi
    CAP_BND(RTP,BDLOX)$MAPVAL(CAP_BND(RTP,BDLOX)) = 0;
 * Check whether both UP and LO bounds (then it pays to have VAR_CAP)
    RTP_VARP(RTP(R,T,P))$(CAP_BND(RTP,'UP')*CAP_BND(RTP,'LO')) = YES;
-   PUTGRP=0;
-   LOOP(RTP(RTP_VARP)$((CAP_BND(RTP,'LO')>CAP_BND(RTP,'UP'))$CAP_BND(RTP,'UP')),
-$    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 1 'Inconsistent CAP_BND(UP/LO/FX) defined for process capacity'
-     PUT ' WARNING       - Lower bound set equal to upper bound,   R.T.P= ',RTP.TE(RTP));
+   OPTION CLEAR=RVP; PUTGRP = 0;
+   RVP(RTP_VARP(R,T,P))$(CAP_BND(R,T,P,'LO')>CAP_BND(R,T,P,'UP')) $= CAP_BND(R,T,P,'UP');
+   RVP(RTP)$((NCAP_BND(RTP,'LO')>NCAP_BND(RTP,'UP'))$NCAP_BND(RTP,'UP')) = YES;
+   LOOP(RVP,
+$    BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 1 'Inconsistent CAP_BND(UP/LO) or NCAP_BND(UP/LO) defined for process capacity'
+     PUT ' WARNING       - Lower bound set equal to upper bound,   R.T.P= ',RVP.TE(RVP));
 
 *-----------------------------------------------------------------------------
 * turn off RTP/CPTYR if no new investment & installed capacity no longer available

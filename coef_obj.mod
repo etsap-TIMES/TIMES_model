@@ -1,5 +1,5 @@
 *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-* Copyright (C) 2000-2023 Energy Technology Systems Analysis Programme (ETSAP)
+* Copyright (C) 2000-2026 Energy Technology Systems Analysis Programme (ETSAP)
 * This file is part of the IEA-ETSAP TIMES model generator, licensed
 * under the GNU General Public License v3.0 (see file NOTICE-GPLv3.txt).
 *=============================================================================*
@@ -25,7 +25,7 @@
 
 * establish eachyear sets matching documentation
   YR_VL = MIYR_VL+DUR_MAX;
-  LOOP(RTP(R,PASTMILE(LL),P)$NCAP_ILED(R,LL,P), K(LL+NCAP_ILED(R,LL,P)) = YES);
+  LOOP(RTP(R,PASTMILE(LL),P)$NCAP_ILED(RTP), K(LL+NCAP_ILED(RTP)) = YES);
   Y(K)$((YEARVAL(K) >= MINYR) * (YEARVAL(K) <= YR_VL)) = YES;
   YK(Y,K)$(YEARVAL(K)<=YEARVAL(Y)) = YES;
 $IFI '%ANNCOST%'==LEV ACL=MINYR; MINYR=MIYR_V1; RPT_OPT('OBJ','2')=1;
@@ -59,11 +59,11 @@ $ BATINCLUDE filparam.gms G_DRATE 'R,' CUR  ",'','','','',''" ALLYEAR LL FIL(LL)
   LOOP(R$(NOT SUM(G_RCUR(RDCUR(R,CUR)),1)),
     Z = SMAX(RDCUR(R,CUR), SUM(T,D(T)*OBJ_DISC(R,T,CUR)));
     LOOP(RDCUR(R,CUR)$Z, F=SUM(T,D(T)*OBJ_DISC(R,T,CUR));
-      IF(ABS(F-Z) LT 1E-7, G_RCUR(R,CUR) = YES; Z = 0)));
+      IF(ABS(F-Z)<1E-7, G_RCUR(R,CUR) = YES; Z = 0)));
   OBJ_PVT(R,T,CUR)$RDCUR(R,CUR) = SUM(PERIODYR(T,Y_EOH),OBJ_DISC(R,Y_EOH,CUR));
   COEF_PVT(R,T) = SUM(G_RCUR(R,CUR),OBJ_PVT(R,T,CUR));
   OBJ_RFR(R,V,CUR) $= G_DRATE(R,V,CUR);
-  OBJ_RFR(R,V,CUR)$RDCUR(R,CUR) $= G_RFRIR(R,V);
+  OBJ_RFR(R,V,CUR)$((G_RFRIR(R,V)>0)$RDCUR(R,CUR)) $= G_RFRIR(R,V);
 *-----------------------------------------------------------------------------
 * move original data from input to annual value arrays
 * commodity costs
@@ -104,7 +104,7 @@ $IF DEFINED R_CUREX $SET TAKE 1
   PRC_YMAX(RP(R,P)) = SMAX(RTP(R,PYR,P),YEARVAL(PYR));
 * Make sure last commissioning year of repeated investments is included
   LOOP(T, Z = M(T)-E(T)+LAGT(T);
-    PRC_YMAX(RP(R,P))$RTP(R,T,P) = MAX(PRC_YMAX(R,P),E(T)+NCAP_ILED(R,T,P)+MAX(Z,NCAP_TLIFE(R,T,P))$(COEF_RPTI(R,T,P) GT 1)));
+    PRC_YMAX(RP(R,P))$RTP(R,T,P) = MAX(PRC_YMAX(R,P),E(T)+NCAP_ILED(R,T,P)+MAX(Z,NCAP_TLIFE(R,T,P))$(COEF_RPTI(R,T,P)>1)));
 
 *-----------------------------------------------------------------------------*
 * Interpolation/extrapolation of cost parameters

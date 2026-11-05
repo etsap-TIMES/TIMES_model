@@ -193,12 +193,19 @@ $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Internal Region without Discount R
     OPTION CLEAR=RXX; LOOP(OBJ_ICUR(R,V,P,CUR)$(NOT RDCUR(R,CUR)),RXX(R,R,CUR)=YES);
     LOOP(RXX(R,R,CUR),
 $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Active Currency without Discount Rate'
-    PUT QLOG ' FATAL ERROR   -     R=',%RL%,' CUR =',CUR.TL);
-    LOOP(RTPC(R,T,P,C)$((PRC_ACTFLO(R,T,P,C) EQ 0)$RPC_PG(R,P,C)),TRACKPC(R,P,C)=YES);
-    LOOP(TRACKPC(R,P,C),
+    PUT QLOG ' FATAL ERROR   -     R=',%RL%,' CUR =',CUR.TL); PUTGRP=0);
+  RTP_CG(RTPC(R,T,P,C),'IN')$(PRC_ACTFLO(RTPC)=0) $= RPC_PG(R,P,C);
+  IF(CARD(RTP_CG), OPTION TRACKPG < RTP_CG;
+    LOOP(TRACKPG(R,P,C),
 $   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Process with zero PRC_ACTFLO for C in PG'
     PUT QLOG ' FATAL ERROR   -     R=',%RL%,' P=',%PL%,' C=',%CL%);
-    OPTION CLEAR=TRACKPC; PUTGRP = 0);
+    OPTION CLEAR=RTP_CG,CLEAR=TRACKPC; PUTGRP=0);
+  RVPS(RTP,S)$((ACT_BND(RTP,S,'LO')>ACT_BND(RTP,S,'UP'))$ACT_BND(RTP,S,'UP'))=YES;
+  IF(CARD(RVPS),RVPS(R,T,P,S)$(NOT RPS_PRCTS(R,P,S)$RTP_VARA(R,T,P))=NO; OPTION PRC_YMIN<RVPS;
+    LOOP(RP(R,P)$PRC_YMIN(RP),
+$   BATINCLUDE pp_qaput.mod PUTOUT PUTGRP 99 'Process has inconsistent ACT_BND(LO/UP) - Infeasible.'
+    PUT QLOG ' FATALE ERROR  -     R=',%RL%,' P=',%PL%);
+    OPTION CLEAR=RVPS,CLEAR=PRC_YMIN; PUTGRP=0);
 *-----------------------------------------------------------------------------
 * Extended QA chacks - Activated when either DEBUG=YES or XTQA is set
 *-----------------------------------------------------------------------------
